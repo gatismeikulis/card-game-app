@@ -1,0 +1,62 @@
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
+from typing import override
+
+from .five_hundred_seat import FiveHundredSeat
+from .five_hundred_round import FiveHundredRound
+from .five_hundred_round_results import FiveHundredRoundResults
+from .constants import GAME_STARTING_POINTS
+
+
+@dataclass(frozen=True, slots=True)
+class FiveHundredGame:
+    _round: FiveHundredRound  # current round
+    _results: Sequence[FiveHundredRoundResults]  # round-by-round results
+    _summary: Mapping[FiveHundredSeat, int]  # running game-points
+
+    @staticmethod
+    def create(round: FiveHundredRound) -> "FiveHundredGame":
+        return FiveHundredGame(
+            _round=round,
+            _results=[],
+            _summary={
+                FiveHundredSeat.ONE: GAME_STARTING_POINTS,
+                FiveHundredSeat.TWO: GAME_STARTING_POINTS,
+                FiveHundredSeat.THREE: GAME_STARTING_POINTS,
+            },
+        )
+
+    @property
+    def round(self) -> FiveHundredRound:
+        return self._round
+
+    @property
+    def summary(self) -> Mapping[FiveHundredSeat, int]:
+        return self._summary
+
+    @property
+    def results(self) -> Sequence[FiveHundredRoundResults]:
+        return self._results
+
+    @property
+    def winner(self) -> FiveHundredSeat | None:
+        return next((seat for seat, points in self.summary.items() if points <= 0), None)
+
+    @override
+    def __str__(self) -> str:
+        return f"""
+SUMMARY: {self.summary}
+ROUND {self._round.round_number} - {self.round.phase} | ACTIVE SEAT: {self.round.active_seat} 
+REQUIRED SUIT: {self.round.required_suit} | TRUMP: {self.round.trump_suit} | HIGHEST BID: {self.round.highest_bid if self.round.highest_bid else "None"}
+
+SEAT 1: {self.round.seat_infos[FiveHundredSeat.ONE]}
+SEAT 2: {self.round.seat_infos[FiveHundredSeat.TWO]}
+SEAT 3: {self.round.seat_infos[FiveHundredSeat.THREE]}
+
+CARDS TO TAKE: {self.round.cards_to_take}
+CARDS ON BOARD: {self.round.cards_on_board}
+"""
+
+    @override
+    def __repr__(self) -> str:
+        return self.__str__()
