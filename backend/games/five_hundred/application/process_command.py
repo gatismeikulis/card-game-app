@@ -1,12 +1,12 @@
-from .application.apply_event import apply_event
-from .application.handle_command import handle_command
-from .domain.constants import (
+from .apply_event import apply_event
+from .handle_command import handle_command
+from ..domain.constants import (
     EMPTY_HAND_SIZE,
     LARGE_MARRIAGE_POINTS,
     SMALL_MARRIAGE_POINTS,
 )
-from .domain.five_hundred_command import FiveHundredCommand
-from .domain.five_hundred_event import (
+from ..domain.five_hundred_command import FiveHundredCommand
+from ..domain.five_hundred_event import (
     BiddingFinishedEvent,
     GameFinishedEvent,
     FiveHundredEvent,
@@ -15,15 +15,14 @@ from .domain.five_hundred_event import (
     RoundFinishedEvent,
     TrickTakenEvent,
 )
-from .domain.five_hundred_game import FiveHundredGame
-from .engine.helpers import (
+from ..domain.five_hundred_game import FiveHundredGame
+from ..logic.helpers import (
     get_next_seat_to_bid,
     get_trick_winning_card,
     is_played_card_part_of_marriage,
 )
 
 
-# Entry point for the game
 def process_command(
     game: FiveHundredGame, command: FiveHundredCommand
 ) -> tuple[FiveHundredGame, list[FiveHundredEvent]]:

@@ -1,14 +1,14 @@
 from ..domain.five_hundred_event import FiveHundredEvent
-from ..engine.add_marriage_points import add_marriage_points
-from ..engine.finish_bidding import finish_bidding
-from ..engine.finish_game import finish_game
-from ..engine.finish_round import finish_round
-from ..engine.play_card import play_card
-from ..engine.take_hidden_cards import take_hidden_cards
-from ..engine.pass_cards import pass_cards
-from ..engine.make_bid import make_bid
+from ..logic.add_marriage_points import add_marriage_points
+from ..logic.finish_bidding import finish_bidding
+from ..logic.finish_game import finish_game
+from ..logic.finish_round import finish_round
+from ..logic.play_card import play_card
+from ..logic.take_hidden_cards import take_hidden_cards
+from ..logic.pass_cards import pass_cards
+from ..logic.make_bid import make_bid
 from ..domain.five_hundred_game import FiveHundredGame
-from ..engine.take_trick import take_trick
+from ..logic.take_trick import take_trick
 
 
 def apply_event(game: FiveHundredGame, event: FiveHundredEvent) -> FiveHundredGame:
