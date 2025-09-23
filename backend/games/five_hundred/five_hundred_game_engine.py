@@ -43,7 +43,7 @@ def cli_play():
                 print("\nEnter bid amount (60 -> 200) or negative number to pass:")
                 try:
                     bid = int(input("> "))
-                    cmd = MakeBidCommand(type="MAKE_BID", bid=bid)
+                    cmd = MakeBidCommand(bid=bid)
                     game = engine.process_command(game, cmd)[0]
                 except ValueError:
                     print("Invalid input! Please enter a number.")
@@ -69,7 +69,6 @@ def cli_play():
                         raise ValueError("Card not found in hand")
 
                     cmd = PassCardsCommand(
-                        type="PASS_CARDS",
                         card_to_next_seat=card1,
                         card_to_prev_seat=card2,
                     )
@@ -95,7 +94,7 @@ def cli_play():
                     )
                     if card is None:
                         raise ValueError("Card not found or not allowed")
-                    cmd = PlayCardCommand(type="PLAY_CARD", card=card)
+                    cmd = PlayCardCommand(card=card)
                     game = engine.process_command(game, cmd)[0]
                 except (ValueError, IndexError):
                     print("Invalid input! Please enter a valid card (e.g. 'Ah')")

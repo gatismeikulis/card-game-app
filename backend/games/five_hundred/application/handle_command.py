@@ -1,6 +1,6 @@
 from ..domain.constants import BID_STEP, MIN_BID, MAX_BID
 from ..domain.five_hundred_card import FiveHundredCard
-from ..domain.five_hundred_command import FiveHundredCommand
+from ..domain.five_hundred_command import FiveHundredCommand, MakeBidCommand, PassCardsCommand, PlayCardCommand
 from ..domain.five_hundred_event import (
     BidMadeEvent,
     CardPlayedEvent,
@@ -16,12 +16,13 @@ from ..domain.five_hundred_phase import FiveHundredPhase
 # and it can see if command sender is the same as active seat
 # we only need to validate that actual command's data is valid for applying event
 def handle_command(game: FiveHundredGame, cmd: FiveHundredCommand) -> FiveHundredEvent:
-    if cmd["type"] == "MAKE_BID":
-        return handle_make_bid(game, cmd["bid"])
-    elif cmd["type"] == "PASS_CARDS":
-        return handle_pass_cards(game, cmd["card_to_next_seat"], cmd["card_to_prev_seat"])
-    elif cmd["type"] == "PLAY_CARD":
-        return handle_play_card(game, cmd["card"])
+    match cmd:
+        case MakeBidCommand(bid=bid):
+            return handle_make_bid(game, bid)
+        case PassCardsCommand(card_to_next_seat=card_to_next_seat, card_to_prev_seat=card_to_prev_seat):
+            return handle_pass_cards(game, card_to_next_seat, card_to_prev_seat)
+        case PlayCardCommand(card=card):
+            return handle_play_card(game, card)
 
 
 def handle_make_bid(game: FiveHundredGame, bid: int) -> FiveHundredEvent:

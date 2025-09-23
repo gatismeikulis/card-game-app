@@ -1,21 +1,29 @@
-from typing import Literal, TypedDict
+from dataclasses import dataclass
+from typing import ClassVar, Literal
+from backend.games.common.command import Command
 
 from .five_hundred_card import FiveHundredCard
 
 
-class MakeBidCommand(TypedDict):
-    type: Literal["MAKE_BID"]
+@dataclass(frozen=True, slots=True)
+class MakeBidCommand(Command):
+    source: ClassVar[Literal["five_hundred"]] = "five_hundred"
+    type: ClassVar[Literal["make_bid"]] = "make_bid"
     bid: int
 
 
-class PassCardsCommand(TypedDict):
-    type: Literal["PASS_CARDS"]
+@dataclass(frozen=True, slots=True)
+class PassCardsCommand(Command):
+    source: ClassVar[Literal["five_hundred"]] = "five_hundred"
+    type: ClassVar[Literal["pass_cards"]] = "pass_cards"
     card_to_next_seat: FiveHundredCard
     card_to_prev_seat: FiveHundredCard
 
 
-class PlayCardCommand(TypedDict):
-    type: Literal["PLAY_CARD"]
+@dataclass(frozen=True, slots=True)
+class PlayCardCommand(Command):
+    source: ClassVar[Literal["five_hundred"]] = "five_hundred"
+    type: ClassVar[Literal["play_card"]] = "play_card"
     card: FiveHundredCard
 
 
