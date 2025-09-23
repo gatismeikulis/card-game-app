@@ -18,7 +18,7 @@ class FiveHundredSeatInfo:
 
     @override
     def __str__(self) -> str:
-        return f"{self.hand} | BID:{self.bid} | POINTS: {self.points} | TRICK COUNT:{self.trick_count} | {self.marriage_points}"
+        return f"{self.hand} | {self.bid if self.bid >= 0 else 'passed'} | {self.points} points from {self.trick_count} tricks {self.marriage_points if self.marriage_points else ''}"
 
     @override
     def __repr__(self) -> str:

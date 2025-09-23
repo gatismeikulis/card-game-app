@@ -6,7 +6,6 @@ class FiveHundredPhase(Enum):
     BIDDING = "Bidding"
     FORMING_HANDS = "Forming Hands"
     PLAYING_CARDS = "Playing Cards"
-    FINISHING_ROUND = "Finishing Round"
     GAME_FINISHED = "Game Ended"
 
     @override

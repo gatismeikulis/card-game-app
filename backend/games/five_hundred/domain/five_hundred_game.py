@@ -34,15 +34,15 @@ class FiveHundredGame:
     def __str__(self) -> str:
         return f"""
 SUMMARY: {self.summary}
-ROUND {self.round.round_number} - {self.round.phase} | ACTIVE SEAT: {self.round.active_seat} 
-REQUIRED SUIT: {self.round.required_suit} | TRUMP: {self.round.trump_suit} | HIGHEST BID: {self.round.highest_bid if self.round.highest_bid else "None"}
+ROUND {self.round.round_number}, {self.round.phase} | Seat {self.round.active_seat} is playing
+Required {self.round.required_suit if self.round.required_suit else "-"} | Trump is {self.round.trump_suit if self.round.trump_suit else "-"} | {f"Highest bid is {self.round.highest_bid[1]} by {self.round.highest_bid[0]}" if self.round.highest_bid else "-"}
 
-SEAT 1: {self.round.seat_infos[FiveHundredSeat(1)]}
-SEAT 2: {self.round.seat_infos[FiveHundredSeat(2)]}
-SEAT 3: {self.round.seat_infos[FiveHundredSeat(3)]}
+{FiveHundredSeat(1)} {self.round.seat_infos[FiveHundredSeat(1)]}
+{FiveHundredSeat(2)} {self.round.seat_infos[FiveHundredSeat(2)]}
+{FiveHundredSeat(3)} {self.round.seat_infos[FiveHundredSeat(3)]}
 
 CARDS TO TAKE: {self.round.cards_to_take}
-CARDS ON BOARD: {self.round.cards_on_board}
+CARDS ON BOARD: {' ==> '.join(f'{k} {v}' for k, v in self.round.cards_on_board.items() if v)}
 """
 
     @override

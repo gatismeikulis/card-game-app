@@ -9,7 +9,7 @@ class Seat(ABC):
 
     @override
     def __str__(self) -> str:
-        return f"<< {self.number} >>"
+        return f"-{self.number}-"
 
     @override
     def __repr__(self) -> str:

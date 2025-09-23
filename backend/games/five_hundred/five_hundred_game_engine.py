@@ -34,8 +34,10 @@ def cli_play():
 
     engine = FiveHundredGameEngine()
     game = engine.init_game()
+    events = []
 
     while True:
+        print(events)
         print(f"\n{game}")
 
         match game.round.phase:
@@ -44,7 +46,7 @@ def cli_play():
                 try:
                     bid = int(input("> "))
                     cmd = MakeBidCommand(bid=bid)
-                    game = engine.process_command(game, cmd)[0]
+                    game, events = engine.process_command(game, cmd)
                 except ValueError:
                     print("Invalid input! Please enter a number.")
                     continue
@@ -72,7 +74,7 @@ def cli_play():
                         card_to_next_seat=card1,
                         card_to_prev_seat=card2,
                     )
-                    game = engine.process_command(game, cmd)[0]
+                    game, events = engine.process_command(game, cmd)
                 except (ValueError, IndexError):
                     print("Invalid input! Please enter two valid cards (e.g. 'Ah Kd')")
                     continue
@@ -95,12 +97,12 @@ def cli_play():
                     if card is None:
                         raise ValueError("Card not found or not allowed")
                     cmd = PlayCardCommand(card=card)
-                    game = engine.process_command(game, cmd)[0]
+                    game, events = engine.process_command(game, cmd)
                 except (ValueError, IndexError):
                     print("Invalid input! Please enter a valid card (e.g. 'Ah')")
                     continue
 
-            case FiveHundredPhase.FINISHING_ROUND | FiveHundredPhase.GAME_FINISHED:
+            case FiveHundredPhase.GAME_FINISHED:
                 print("\nGame over! Final scores:")
                 for seat, points in game.summary.items():
                     print(f"Seat {seat}: {points}")
