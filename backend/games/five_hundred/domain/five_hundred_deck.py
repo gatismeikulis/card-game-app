@@ -14,7 +14,7 @@ class FiveHundredDeck(Deck[FiveHundredCard]):
     @staticmethod
     @override
     def build(shuffled: bool = True) -> "FiveHundredDeck":
-        deck = FiveHundredDeck([FiveHundredCard(_suit=suit, _rank=rank) for suit in Suit for rank in RANKS])
+        deck = FiveHundredDeck([FiveHundredCard(suit=suit, rank=rank) for suit in Suit for rank in RANKS])
         if shuffled:
             deck._shuffle()
         return deck

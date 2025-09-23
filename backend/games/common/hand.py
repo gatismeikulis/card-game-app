@@ -11,28 +11,24 @@ TCard = TypeVar("TCard", bound=Card)
 
 @dataclass(frozen=True, slots=True)
 class Hand(ABC, Generic[TCard]):
-    _cards: list[TCard]
-
-    @property
-    def cards(self) -> Sequence[TCard]:
-        return self._cards
+    cards: tuple[TCard, ...]
 
     def with_added_cards(self, cards: Sequence[TCard]) -> Self:
-        return type(self)(self._cards + list(cards))
+        return type(self)(self.cards + tuple(cards))
 
     def without_cards(self, cards: Sequence[TCard]) -> Self:
         for c in cards:
-            if c not in self._cards:
-                raise ValueError(f"Card {c} is not in the hand {self._cards}")
+            if c not in self.cards:
+                raise ValueError(f"Card {c} is not in the hand {self.cards}")
         result: Sequence[TCard] = []
-        for c in self._cards:
+        for c in self.cards:
             if c not in cards:
                 result.append(c)
-        return type(self)(result)
+        return type(self)(tuple(result))
 
     @override
     def __str__(self) -> str:
-        return f"{sorted(self._cards, key=lambda card: (card.suit.symbol, -card.strength().value))}"
+        return f"{sorted(self.cards, key=lambda card: (card.suit.symbol, -card.strength().value))}"
 
     @override
     def __repr__(self) -> str:

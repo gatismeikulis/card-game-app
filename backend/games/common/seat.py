@@ -5,15 +5,11 @@ from typing import override
 
 @dataclass(frozen=True, slots=True)
 class Seat(ABC):
-    _number: int
-
-    @property
-    def number(self) -> int:
-        return self._number
+    number: int
 
     @override
     def __str__(self) -> str:
-        return f"<< {self._number} >>"
+        return f"<< {self.number} >>"
 
     @override
     def __repr__(self) -> str:
@@ -26,5 +22,5 @@ class Seat(ABC):
     def prev(self) -> "Seat": ...
 
     @classmethod
-    def from_int(cls, number: int):
-        return cls(_number=number)
+    @abstractmethod
+    def from_int(cls, number: int) -> "Seat": ...

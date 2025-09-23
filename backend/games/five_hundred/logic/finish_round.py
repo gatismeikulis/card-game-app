@@ -23,9 +23,9 @@ def finish_round(game: FiveHundredGame) -> FiveHundredGame:
     seat_points = {seat: -get_round_points_for_seat(seat, game.summary[seat]) for seat in game.round.seat_infos.keys()}
 
     round_results = FiveHundredRoundResults(
-        _round_number=game.round.round_number,
-        _bidding_results=game.round.highest_bid,
-        _seat_points=seat_points,
+        round_number=game.round.round_number,
+        bidding_results=game.round.highest_bid,
+        seat_points=seat_points,
     )
 
     game_summary_updated = {seat: game.summary[seat] + seat_points[seat] for seat in seat_points.keys()}
@@ -36,7 +36,7 @@ def finish_round(game: FiveHundredGame) -> FiveHundredGame:
 
     return replace(
         game,
-        _results=list(game.results) + [round_results],
-        _summary=game_summary_updated,
-        _round=new_round,
+        results=list(game.results) + [round_results],
+        summary=game_summary_updated,
+        round=new_round,
     )

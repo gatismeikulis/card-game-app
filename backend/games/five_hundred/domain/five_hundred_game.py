@@ -10,33 +10,21 @@ from .constants import GAME_STARTING_POINTS
 
 @dataclass(frozen=True, slots=True)
 class FiveHundredGame:
-    _round: FiveHundredRound  # current round
-    _results: Sequence[FiveHundredRoundResults]  # round-by-round results
-    _summary: Mapping[FiveHundredSeat, int]  # running game-points
+    round: FiveHundredRound  # current round
+    results: Sequence[FiveHundredRoundResults]  # round-by-round results
+    summary: Mapping[FiveHundredSeat, int]  # running game-points
 
     @staticmethod
     def create(round: FiveHundredRound) -> "FiveHundredGame":
         return FiveHundredGame(
-            _round=round,
-            _results=[],
-            _summary={
+            round=round,
+            results=[],
+            summary={
                 FiveHundredSeat(1): GAME_STARTING_POINTS,
                 FiveHundredSeat(2): GAME_STARTING_POINTS,
                 FiveHundredSeat(3): GAME_STARTING_POINTS,
             },
         )
-
-    @property
-    def round(self) -> FiveHundredRound:
-        return self._round
-
-    @property
-    def summary(self) -> Mapping[FiveHundredSeat, int]:
-        return self._summary
-
-    @property
-    def results(self) -> Sequence[FiveHundredRoundResults]:
-        return self._results
 
     @property
     def winner(self) -> FiveHundredSeat | None:
@@ -46,7 +34,7 @@ class FiveHundredGame:
     def __str__(self) -> str:
         return f"""
 SUMMARY: {self.summary}
-ROUND {self._round.round_number} - {self.round.phase} | ACTIVE SEAT: {self.round.active_seat} 
+ROUND {self.round.round_number} - {self.round.phase} | ACTIVE SEAT: {self.round.active_seat} 
 REQUIRED SUIT: {self.round.required_suit} | TRUMP: {self.round.trump_suit} | HIGHEST BID: {self.round.highest_bid if self.round.highest_bid else "None"}
 
 SEAT 1: {self.round.seat_infos[FiveHundredSeat(1)]}

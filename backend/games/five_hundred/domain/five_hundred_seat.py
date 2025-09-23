@@ -19,3 +19,8 @@ class FiveHundredSeat(Seat):
             return FiveHundredSeat(3)
         else:
             return FiveHundredSeat(self.number - 1)
+
+    @classmethod
+    @override
+    def from_int(cls, number: int) -> "FiveHundredSeat":
+        return FiveHundredSeat(number) # consider adding some kind of validation here

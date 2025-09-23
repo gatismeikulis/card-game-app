@@ -9,10 +9,10 @@ def add_marriage_points(game: FiveHundredGame, points: int, add_to: FiveHundredS
     marriage_points_updated = list(seat_info.marriage_points) + [points]
     seat_info_updated = replace(
         seat_info,
-        _marriage_points=marriage_points_updated,
-        _points=seat_info.points + points,
+        marriage_points=marriage_points_updated,
+        points=seat_info.points + points,
     )
     seat_infos_updated = dict(game.round.seat_infos) | {add_to: seat_info_updated}
-    round_updated = replace(game.round, _seat_infos=seat_infos_updated, _is_marriage_announced=True)
+    round_updated = replace(game.round, seat_infos=seat_infos_updated, is_marriage_announced=True)
 
-    return replace(game, _round=round_updated)
+    return replace(game, round=round_updated)

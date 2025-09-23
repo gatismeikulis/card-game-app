@@ -15,15 +15,15 @@ def make_bid(game: FiveHundredGame, bid: int) -> FiveHundredGame:
         else game.round.highest_bid
     )
 
-    active_seats_info_updated = replace(game.round.seat_infos[active_seat], _bid=bid)
+    active_seats_info_updated = replace(game.round.seat_infos[active_seat], bid=bid)
 
     seat_infos_updated = dict(game.round.seat_infos) | {active_seat: active_seats_info_updated}
 
     round_updated = replace(
         game.round,
-        _seat_infos=seat_infos_updated,
-        _active_seat=(next_seat_to_bid if next_seat_to_bid is not None else active_seat),
-        _highest_bid=highest_bid_updated,
+        seat_infos=seat_infos_updated,
+        active_seat=(next_seat_to_bid if next_seat_to_bid is not None else active_seat),
+        highest_bid=highest_bid_updated,
     )
 
-    return replace(game, _round=round_updated)
+    return replace(game, round=round_updated)

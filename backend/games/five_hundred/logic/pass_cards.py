@@ -22,18 +22,18 @@ def pass_cards(
     next_seats_hand_updated = next_seats_info.hand.with_added_cards([card_to_next_seat])
     prev_seats_hand_updated = prev_seats_info.hand.with_added_cards([card_to_prev_seat])
 
-    active_seats_info_updated = replace(active_seats_info, _hand=active_seats_hand_updated)
-    next_seats_info_updated = replace(next_seats_info, _hand=next_seats_hand_updated)
-    prev_seats_info_updated = replace(prev_seats_info, _hand=prev_seats_hand_updated)
+    active_seats_info_updated = replace(active_seats_info, hand=active_seats_hand_updated)
+    next_seats_info_updated = replace(next_seats_info, hand=next_seats_hand_updated)
+    prev_seats_info_updated = replace(prev_seats_info, hand=prev_seats_hand_updated)
 
     round_updated = replace(
         game.round,
-        _seat_infos={
+        seat_infos={
             active_seat: active_seats_info_updated,
             next_seat: next_seats_info_updated,
             prev_seat: prev_seats_info_updated,
         },
-        _phase=FiveHundredPhase.PLAYING_CARDS,
+        phase=FiveHundredPhase.PLAYING_CARDS,
     )
 
-    return replace(game, _round=round_updated)
+    return replace(game, round=round_updated)

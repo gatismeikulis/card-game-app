@@ -4,5 +4,5 @@ from ..domain.five_hundred_phase import FiveHundredPhase
 
 
 def finish_bidding(game: FiveHundredGame) -> FiveHundredGame:
-    round_updated = replace(game.round, _phase=FiveHundredPhase.FORMING_HANDS)
-    return replace(game, _round=round_updated)
+    round_updated = replace(game.round, phase=FiveHundredPhase.FORMING_HANDS)
+    return replace(game, round=round_updated)

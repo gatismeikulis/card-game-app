@@ -9,7 +9,7 @@ def take_hidden_cards(game: FiveHundredGame) -> FiveHundredGame:
 
     active_seats_hand_updated = active_seats_info.hand.with_added_cards(game.round.cards_to_take)
 
-    active_seats_info_updated = replace(active_seats_info, _hand=active_seats_hand_updated)
+    active_seats_info_updated = replace(active_seats_info, hand=active_seats_hand_updated)
 
     seat_infos_updated = dict(game.round.seat_infos) | {active_seat: active_seats_info_updated}
 
@@ -17,8 +17,8 @@ def take_hidden_cards(game: FiveHundredGame) -> FiveHundredGame:
 
     round_updated = replace(
         game.round,
-        _seat_infos=seat_infos_updated,
-        _cards_to_take=cards_to_take_updated,
+        seat_infos=seat_infos_updated,
+        cards_to_take=cards_to_take_updated,
     )
 
-    return replace(game, _round=round_updated)
+    return replace(game, round=round_updated)

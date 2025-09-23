@@ -108,23 +108,15 @@ SUIT_COLORS = {
 
 @dataclass(frozen=True, slots=True)
 class Card(ABC):
-    _suit: Suit
-    _rank: Rank
+    suit: Suit
+    rank: Rank
 
     @classmethod
     def from_string(cls, card_str: str):
         """Create a card from string representation. Format is 'rank' + 'suit'. E.g. 'Ah', '2D', 'Tc'."""
         rank = Rank.from_string(card_str[0])
         suit = Suit.from_string(card_str[1])
-        return cls(_suit=suit, _rank=rank)
-
-    @property
-    def suit(self) -> Suit:
-        return self._suit
-
-    @property
-    def rank(self) -> Rank:
-        return self._rank
+        return cls(suit=suit, rank=rank)
 
     @override
     def __str__(self) -> str:

@@ -13,10 +13,6 @@ TCard = TypeVar("TCard", bound=Card)
 class Deck(ABC, Generic[TCard]):
     _cards: list[TCard]
 
-    @property
-    def cards(self) -> list[TCard]:
-        return self._cards
-
     def _shuffle(self) -> None:
         shuffle(self._cards)
 

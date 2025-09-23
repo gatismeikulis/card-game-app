@@ -13,8 +13,8 @@ def take_trick(game: FiveHundredGame, taken_by: FiveHundredSeat) -> FiveHundredG
 
     trick_winning_seats_info_updated = replace(
         trick_winning_seats_info,
-        _points=points_updated,
-        _trick_count=trick_count_updated,
+        points=points_updated,
+        trick_count=trick_count_updated,
     )
 
     cards_on_board_updated: dict[FiveHundredSeat, FiveHundredCard | None] = dict.fromkeys(
@@ -25,10 +25,10 @@ def take_trick(game: FiveHundredGame, taken_by: FiveHundredSeat) -> FiveHundredG
 
     round_updated = replace(
         game.round,
-        _cards_on_board=cards_on_board_updated,
-        _required_suit=None,
-        _seat_infos=seat_infos_updated,
-        _active_seat=taken_by,
+        cards_on_board=cards_on_board_updated,
+        required_suit=None,
+        seat_infos=seat_infos_updated,
+        active_seat=taken_by,
     )
 
-    return replace(game, _round=round_updated)
+    return replace(game, round=round_updated)

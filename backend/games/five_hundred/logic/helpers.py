@@ -63,5 +63,5 @@ def get_trick_winning_card(
         return trump_cards_played[0]
     else:
         required_suit_cards_played = [card for card in trick_cards if card.suit == required_suit]
-        required_suit_cards_played.sort(key=lambda c: c.strength().value)
+        required_suit_cards_played.sort(key=lambda c: c.strength().value, reverse=True)
         return required_suit_cards_played[0]
