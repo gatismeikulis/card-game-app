@@ -9,8 +9,8 @@ def get_next_seat_to_bid(
     active_seat: FiveHundredSeat,
     seat_infos: Mapping[FiveHundredSeat, FiveHundredSeatInfo],
 ) -> FiveHundredSeat | None:
-    next_seat = active_seat.next
-    prev_seat = active_seat.prev
+    next_seat = active_seat.next()
+    prev_seat = active_seat.prev()
 
     next_seats_latest_bid = seat_infos[next_seat].bid
     prev_seats_latest_bid = seat_infos[prev_seat].bid

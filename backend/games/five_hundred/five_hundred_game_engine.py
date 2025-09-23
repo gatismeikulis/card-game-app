@@ -26,7 +26,7 @@ class FiveHundredGameEngine(GameEngine[FiveHundredGame, FiveHundredCommand, Five
     @override
     def init_game(self) -> FiveHundredGame:
         deck = FiveHundredDeck.build()
-        round = FiveHundredRound.create(deck, 1, FiveHundredSeat.ONE)
+        round = FiveHundredRound.create(deck, 1, FiveHundredSeat(1))
         return FiveHundredGame.create(round)
 
 

@@ -32,7 +32,7 @@ def finish_round(game: FiveHundredGame) -> FiveHundredGame:
 
     deck = FiveHundredDeck.build()
 
-    new_round = FiveHundredRound.create(deck, game.round.round_number + 1, game.round.first_seat.next)
+    new_round = FiveHundredRound.create(deck, game.round.round_number + 1, game.round.first_seat.next())
 
     return replace(
         game,

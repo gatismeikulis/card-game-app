@@ -11,8 +11,8 @@ def pass_cards(
 ) -> FiveHundredGame:
 
     active_seat = game.round.active_seat
-    next_seat = active_seat.next
-    prev_seat = active_seat.prev
+    next_seat = active_seat.next()
+    prev_seat = active_seat.prev()
 
     active_seats_info = game.round.active_seats_info
     next_seats_info = game.round.seat_infos[next_seat]

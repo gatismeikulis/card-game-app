@@ -20,9 +20,9 @@ class FiveHundredGame:
             _round=round,
             _results=[],
             _summary={
-                FiveHundredSeat.ONE: GAME_STARTING_POINTS,
-                FiveHundredSeat.TWO: GAME_STARTING_POINTS,
-                FiveHundredSeat.THREE: GAME_STARTING_POINTS,
+                FiveHundredSeat(1): GAME_STARTING_POINTS,
+                FiveHundredSeat(2): GAME_STARTING_POINTS,
+                FiveHundredSeat(3): GAME_STARTING_POINTS,
             },
         )
 
@@ -49,9 +49,9 @@ SUMMARY: {self.summary}
 ROUND {self._round.round_number} - {self.round.phase} | ACTIVE SEAT: {self.round.active_seat} 
 REQUIRED SUIT: {self.round.required_suit} | TRUMP: {self.round.trump_suit} | HIGHEST BID: {self.round.highest_bid if self.round.highest_bid else "None"}
 
-SEAT 1: {self.round.seat_infos[FiveHundredSeat.ONE]}
-SEAT 2: {self.round.seat_infos[FiveHundredSeat.TWO]}
-SEAT 3: {self.round.seat_infos[FiveHundredSeat.THREE]}
+SEAT 1: {self.round.seat_infos[FiveHundredSeat(1)]}
+SEAT 2: {self.round.seat_infos[FiveHundredSeat(2)]}
+SEAT 3: {self.round.seat_infos[FiveHundredSeat(3)]}
 
 CARDS TO TAKE: {self.round.cards_to_take}
 CARDS ON BOARD: {self.round.cards_on_board}

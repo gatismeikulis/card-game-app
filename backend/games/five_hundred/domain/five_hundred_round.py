@@ -32,21 +32,21 @@ class FiveHundredRound:
         seat_three_cards = deck.draw_many(CARDS_IN_STARTING_HAND)
 
         seat_infos: Mapping[FiveHundredSeat, FiveHundredSeatInfo] = {
-            FiveHundredSeat.ONE: FiveHundredSeatInfo(
+            FiveHundredSeat(1): FiveHundredSeatInfo(
                 _hand=Hand(seat_one_cards),
                 _bid=0,
                 _points=0,
                 _trick_count=0,
                 _marriage_points=[],
             ),
-            FiveHundredSeat.TWO: FiveHundredSeatInfo(
+            FiveHundredSeat(2): FiveHundredSeatInfo(
                 _hand=Hand(seat_two_cards),
                 _bid=0,
                 _points=0,
                 _trick_count=0,
                 _marriage_points=[],
             ),
-            FiveHundredSeat.THREE: FiveHundredSeatInfo(
+            FiveHundredSeat(3): FiveHundredSeatInfo(
                 _hand=Hand(seat_three_cards),
                 _bid=0,
                 _points=0,
@@ -56,9 +56,9 @@ class FiveHundredRound:
         }
 
         cards_on_board: Mapping[FiveHundredSeat, FiveHundredCard | None] = {
-            FiveHundredSeat.ONE: None,
-            FiveHundredSeat.TWO: None,
-            FiveHundredSeat.THREE: None,
+            FiveHundredSeat(1): None,
+            FiveHundredSeat(2): None,
+            FiveHundredSeat(3): None,
         }
 
         return FiveHundredRound(
