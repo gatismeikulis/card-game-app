@@ -25,7 +25,7 @@ def play_card(game: FiveHundredGame, card: FiveHundredCard) -> FiveHundredGame:
         round_updated = replace(
             game.round,
             _cards_on_board=cards_on_board_updated,
-            _active_seat=active_seat.next,
+            _active_seat=active_seat.next(),
             _seat_infos=seat_infos_updated,
             _required_suit=required_suit_updated,
             _trump_suit=trump_suit_updated,
@@ -40,7 +40,7 @@ def play_card(game: FiveHundredGame, card: FiveHundredCard) -> FiveHundredGame:
         round_updated = replace(
             game.round,
             _cards_on_board=cards_on_board_updated,
-            _active_seat=active_seat.next,
+            _active_seat=active_seat.next(),
             _seat_infos=seat_infos_updated,
         )
 

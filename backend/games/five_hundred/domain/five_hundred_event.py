@@ -1,52 +1,72 @@
-from typing import Literal, TypedDict
+from dataclasses import dataclass
+from typing import ClassVar, Literal
+from backend.games.common.event import Event
 
 from .five_hundred_card import FiveHundredCard
 from .five_hundred_seat import FiveHundredSeat
 
 
-class BidMadeEvent(TypedDict):
-    type: Literal["BID_MADE"]
+@dataclass(frozen=True, slots=True)
+class BidMadeEvent(Event):
+    source: ClassVar[Literal["five_hundred"]] = "five_hundred"
+    type: ClassVar[Literal["bid_made"]] = "bid_made"
     bid: int
     made_by: FiveHundredSeat
 
 
-class BiddingFinishedEvent(TypedDict):
-    type: Literal["BIDDING_FINISHED"]
+@dataclass(frozen=True, slots=True)
+class BiddingFinishedEvent(Event):
+    source: ClassVar[Literal["five_hundred"]] = "five_hundred"
+    type: ClassVar[Literal["bidding_finished"]] = "bidding_finished"
 
 
-class HiddenCardsTakenEvent(TypedDict):
-    type: Literal["HIDDEN_CARDS_TAKEN"]
+@dataclass(frozen=True, slots=True)
+class HiddenCardsTakenEvent(Event):
+    source: ClassVar[Literal["five_hundred"]] = "five_hundred"
+    type: ClassVar[Literal["hidden_cards_taken"]] = "hidden_cards_taken"
 
 
-class CardsPassedEvent(TypedDict):
-    type: Literal["CARDS_PASSED"]
+@dataclass(frozen=True, slots=True)
+class CardsPassedEvent(Event):
+    source: ClassVar[Literal["five_hundred"]] = "five_hundred"
+    type: ClassVar[Literal["cards_passed"]] = "cards_passed"
     card_to_next_seat: FiveHundredCard
     card_to_prev_seat: FiveHundredCard
 
 
-class CardPlayedEvent(TypedDict):
-    type: Literal["CARD_PLAYED"]
+@dataclass(frozen=True, slots=True)
+class CardPlayedEvent(Event):
+    source: ClassVar[Literal["five_hundred"]] = "five_hundred"
+    type: ClassVar[Literal["card_played"]] = "card_played"
     card: FiveHundredCard
     played_by: FiveHundredSeat
 
 
-class MarriagePointsAddedEvent(TypedDict):
-    type: Literal["MARRIAGE_POINTS_ADDED"]
+@dataclass(frozen=True, slots=True)
+class MarriagePointsAddedEvent(Event):
+    source: ClassVar[Literal["five_hundred"]] = "five_hundred"
+    type: ClassVar[Literal["marriage_points_added"]] = "marriage_points_added"
     points: int
     added_to: FiveHundredSeat
 
 
-class TrickTakenEvent(TypedDict):
-    type: Literal["TRICK_TAKEN"]
+@dataclass(frozen=True, slots=True)
+class TrickTakenEvent(Event):
+    source: ClassVar[Literal["five_hundred"]] = "five_hundred"
+    type: ClassVar[Literal["trick_taken"]] = "trick_taken"
     taken_by: FiveHundredSeat
 
 
-class RoundFinishedEvent(TypedDict):
-    type: Literal["ROUND_FINISHED"]
+@dataclass(frozen=True, slots=True)
+class RoundFinishedEvent(Event):
+    source: ClassVar[Literal["five_hundred"]] = "five_hundred"
+    type: ClassVar[Literal["round_finished"]] = "round_finished"
 
 
-class GameFinishedEvent(TypedDict):
-    type: Literal["GAME_FINISHED"]
+@dataclass(frozen=True, slots=True)
+class GameFinishedEvent(Event):
+    source: ClassVar[Literal["five_hundred"]] = "five_hundred"
+    type: ClassVar[Literal["game_finished"]] = "game_finished"
 
 
 FiveHundredEvent = (

@@ -2,9 +2,10 @@ from dataclasses import dataclass
 from typing import override
 from backend.games.common.seat import Seat
 
+
 @dataclass(frozen=True, slots=True, repr=False)
 class FiveHundredSeat(Seat):
-    
+
     @override
     def next(self) -> "FiveHundredSeat":
         if self.number == 3:

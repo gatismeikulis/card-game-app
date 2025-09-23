@@ -41,7 +41,7 @@ def handle_make_bid(game: FiveHundredGame, bid: int) -> FiveHundredEvent:
     elif bid >= 0 and game.round.highest_bid and bid <= game.round.highest_bid[1]:
         raise ValueError(f"Bid must be greater than bid form previous bidder ({game.round.highest_bid[1]})")
 
-    return BidMadeEvent(type="BID_MADE", bid=bid, made_by=game.round.active_seat)
+    return BidMadeEvent(bid=bid, made_by=game.round.active_seat)
 
 
 def handle_pass_cards(
@@ -61,7 +61,6 @@ def handle_pass_cards(
         raise ValueError("Cannot pass cards. Active seat do not have one or both of the passed cards.")
 
     return CardsPassedEvent(
-        type="CARDS_PASSED",
         card_to_next_seat=card_to_next_seat,
         card_to_prev_seat=card_to_prev_seat,
     )
@@ -83,4 +82,4 @@ def handle_play_card(game: FiveHundredGame, card: FiveHundredCard) -> FiveHundre
     if card not in cards_allowed_to_play:
         raise ValueError("Cannot play card. Card is not allowed to play.")
 
-    return CardPlayedEvent(type="CARD_PLAYED", card=card, played_by=game.round.active_seat)
+    return CardPlayedEvent(card=card, played_by=game.round.active_seat)

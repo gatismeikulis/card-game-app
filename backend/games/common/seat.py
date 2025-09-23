@@ -5,7 +5,7 @@ from typing import override
 
 @dataclass(frozen=True, slots=True)
 class Seat(ABC):
-    _number: int    
+    _number: int
 
     @property
     def number(self) -> int:
