@@ -1,8 +1,9 @@
 from dataclasses import dataclass
 from typing import override
+
+from ...common.card import Rank, Suit
 from ...common.deck import Deck
 from .five_hundred_card import FiveHundredCard
-from ...common.card import Suit, Rank
 
 # Game 'Five Hundred' only uses 24 card deck, 9 - Ace
 RANKS = [Rank.NINE, Rank.JACK, Rank.QUEEN, Rank.KING, Rank.TEN, Rank.ACE]

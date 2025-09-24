@@ -1,4 +1,5 @@
 from collections.abc import Mapping, Sequence
+
 from ...common.card import Rank, Suit
 from ..domain.five_hundred_card import FiveHundredCard
 from ..domain.five_hundred_seat import FiveHundredSeat

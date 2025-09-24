@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from enum import Enum
 from typing import override
+
 from ...common.card import Card, Rank, Strength
 
 

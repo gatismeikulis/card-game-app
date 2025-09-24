@@ -1,8 +1,9 @@
 from __future__ import annotations
+
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from random import shuffle
 from typing import Generic, TypeVar
-from abc import ABC, abstractmethod
 
 from .card import Card
 

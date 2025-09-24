@@ -1,4 +1,4 @@
-from ..domain.constants import BID_STEP, MIN_BID, MAX_BID
+from ..domain.constants import BID_STEP, MAX_BID, MIN_BID
 from ..domain.five_hundred_card import FiveHundredCard
 from ..domain.five_hundred_command import FiveHundredCommand, MakeBidCommand, PassCardsCommand, PlayCardCommand
 from ..domain.five_hundred_event import (

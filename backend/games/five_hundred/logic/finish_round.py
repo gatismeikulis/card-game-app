@@ -1,4 +1,5 @@
 from dataclasses import replace
+
 from ..domain.constants import MUST_BID_THRESHOLD
 from ..domain.five_hundred_deck import FiveHundredDeck
 from ..domain.five_hundred_game import FiveHundredGame

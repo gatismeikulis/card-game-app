@@ -1,4 +1,5 @@
 from dataclasses import replace
+
 from ..domain.five_hundred_game import FiveHundredGame
 from .helpers import get_next_seat_to_bid
 

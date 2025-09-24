@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import ClassVar, Literal
+
 from backend.games.common.command import Command
 
 from .five_hundred_card import FiveHundredCard

@@ -1,6 +1,6 @@
 from ..domain.five_hundred_event import (
-    BidMadeEvent,
     BiddingFinishedEvent,
+    BidMadeEvent,
     CardPlayedEvent,
     CardsPassedEvent,
     FiveHundredEvent,
@@ -10,15 +10,15 @@ from ..domain.five_hundred_event import (
     RoundFinishedEvent,
     TrickTakenEvent,
 )
+from ..domain.five_hundred_game import FiveHundredGame
 from ..logic.add_marriage_points import add_marriage_points
 from ..logic.finish_bidding import finish_bidding
 from ..logic.finish_game import finish_game
 from ..logic.finish_round import finish_round
+from ..logic.make_bid import make_bid
+from ..logic.pass_cards import pass_cards
 from ..logic.play_card import play_card
 from ..logic.take_hidden_cards import take_hidden_cards
-from ..logic.pass_cards import pass_cards
-from ..logic.make_bid import make_bid
-from ..domain.five_hundred_game import FiveHundredGame
 from ..logic.take_trick import take_trick
 
 

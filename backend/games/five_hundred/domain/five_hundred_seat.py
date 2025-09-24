@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import override
+
 from backend.games.common.seat import Seat
 
 

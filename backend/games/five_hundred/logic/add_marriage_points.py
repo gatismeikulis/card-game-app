@@ -1,4 +1,5 @@
 from dataclasses import replace
+
 from ..domain.five_hundred_game import FiveHundredGame
 from ..domain.five_hundred_seat import FiveHundredSeat
 

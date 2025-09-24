@@ -1,5 +1,3 @@
-from .apply_event import apply_event
-from .handle_command import handle_command
 from ..domain.constants import (
     EMPTY_HAND_SIZE,
     LARGE_MARRIAGE_POINTS,
@@ -7,11 +5,11 @@ from ..domain.constants import (
 )
 from ..domain.five_hundred_command import FiveHundredCommand
 from ..domain.five_hundred_event import (
-    BidMadeEvent,
     BiddingFinishedEvent,
+    BidMadeEvent,
     CardPlayedEvent,
-    GameFinishedEvent,
     FiveHundredEvent,
+    GameFinishedEvent,
     HiddenCardsTakenEvent,
     MarriagePointsAddedEvent,
     RoundFinishedEvent,
@@ -23,6 +21,8 @@ from ..logic.helpers import (
     get_trick_winning_card,
     is_played_card_part_of_marriage,
 )
+from .apply_event import apply_event
+from .handle_command import handle_command
 
 
 def process_command(

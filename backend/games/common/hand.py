@@ -1,8 +1,9 @@
 from __future__ import annotations
-from dataclasses import dataclass
-from typing import Generic, Self, TypeVar, override
+
 from abc import ABC
 from collections.abc import Sequence
+from dataclasses import dataclass
+from typing import Generic, Self, TypeVar, override
 
 from .card import Card
 

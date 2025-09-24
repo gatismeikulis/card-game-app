@@ -4,8 +4,8 @@ from backend.core.game_config import GameTableConfig
 from backend.games.common.command import Command
 from backend.games.common.event import Event
 from backend.games.common.game_engine import GameEngine
-from backend.games.common.seat import Seat
 from backend.games.common.game_state import GameState
+from backend.games.common.seat import Seat
 
 TCommand = TypeVar("TCommand", bound=Command)
 TEvent = TypeVar("TEvent", bound=Event)

@@ -5,10 +5,10 @@ from typing import override
 from backend.games.common.game_state import GameState
 from backend.games.five_hundred.domain.five_hundred_phase import FiveHundredPhase
 
-from .five_hundred_seat import FiveHundredSeat
+from .constants import GAME_STARTING_POINTS
 from .five_hundred_round import FiveHundredRound
 from .five_hundred_round_results import FiveHundredRoundResults
-from .constants import GAME_STARTING_POINTS
+from .five_hundred_seat import FiveHundredSeat
 
 
 @dataclass(frozen=True, slots=True)

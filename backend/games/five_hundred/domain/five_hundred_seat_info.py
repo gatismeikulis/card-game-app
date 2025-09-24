@@ -3,8 +3,8 @@ from dataclasses import dataclass
 from typing import override
 
 from ...common.card import Suit
-from .five_hundred_card import FiveHundredCard
 from ...common.hand import Hand
+from .five_hundred_card import FiveHundredCard
 
 
 # Seat info is the round-specific information about a player
