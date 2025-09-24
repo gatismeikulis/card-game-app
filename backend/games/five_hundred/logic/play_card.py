@@ -8,10 +8,10 @@ def play_card(game: FiveHundredGame, card: FiveHundredCard) -> FiveHundredGame:
 
     cards_on_board_count = game.round.cards_on_board_count
 
-    cards_on_board_updated = dict(game.round.cards_on_board) | {game.round.active_seat: card}
+    cards_on_board_updated = dict(game.round.cards_on_board) | {game.active_seat: card}
 
-    active_seat = game.round.active_seat
-    active_seats_info = game.round.active_seats_info
+    active_seat = game.active_seat
+    active_seats_info = game.active_seats_info
     active_seats_hand_updated = active_seats_info.hand.without_cards([card])
 
     active_seats_info_updated = replace(active_seats_info, hand=active_seats_hand_updated)
@@ -26,13 +26,12 @@ def play_card(game: FiveHundredGame, card: FiveHundredCard) -> FiveHundredGame:
         round_updated = replace(
             game.round,
             cards_on_board=cards_on_board_updated,
-            active_seat=active_seat.next(),
             seat_infos=seat_infos_updated,
             required_suit=required_suit_updated,
             trump_suit=trump_suit_updated,
         )
 
-        return replace(game, round=round_updated)
+        return replace(game, round=round_updated, active_seat=active_seat.next())
 
     # 2nd or 3rd card played for this trick
     else:
@@ -41,8 +40,7 @@ def play_card(game: FiveHundredGame, card: FiveHundredCard) -> FiveHundredGame:
         round_updated = replace(
             game.round,
             cards_on_board=cards_on_board_updated,
-            active_seat=active_seat.next(),
             seat_infos=seat_infos_updated,
         )
 
-        return replace(game, round=round_updated)
+        return replace(game, round=round_updated, active_seat=active_seat.next())

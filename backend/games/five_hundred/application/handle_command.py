@@ -29,7 +29,7 @@ def handle_make_bid(game: FiveHundredGame, bid: int) -> FiveHundredEvent:
     if game.round.phase != FiveHundredPhase.BIDDING:
         raise ValueError("Cannot make bid. Not bidding phase.")
 
-    active_seats_match_points = game.summary[game.round.active_seat]
+    active_seats_match_points = game.summary[game.active_seat]
     if active_seats_match_points >= 1000 and bid >= 0:
         raise ValueError(
             "Cannot make a bid. Player has reached more than 1000 points are not allowed to make non-passing bid."
@@ -44,7 +44,7 @@ def handle_make_bid(game: FiveHundredGame, bid: int) -> FiveHundredEvent:
     elif bid >= 0 and game.round.highest_bid and bid <= game.round.highest_bid[1]:
         raise ValueError(f"Bid must be greater than bid form previous bidder ({game.round.highest_bid[1]})")
 
-    return BidMadeEvent(bid=bid, made_by=game.round.active_seat)
+    return BidMadeEvent(bid=bid, made_by=game.active_seat)
 
 
 def handle_pass_cards(
@@ -55,7 +55,7 @@ def handle_pass_cards(
     if game.round.phase != FiveHundredPhase.FORMING_HANDS:
         raise ValueError("Cannot pass cards. Not 'forming hands' phase.")
 
-    active_seats_cards = game.round.active_seats_info.hand.cards
+    active_seats_cards = game.active_seats_info.hand.cards
 
     if len(active_seats_cards) != 10:
         raise ValueError("Cannot pass cards. Bidding winner have not taken hidden cards yet.")
@@ -73,16 +73,16 @@ def handle_play_card(game: FiveHundredGame, card: FiveHundredCard) -> FiveHundre
     if game.round.phase != FiveHundredPhase.PLAYING_CARDS:
         raise ValueError("Cannot play card. Not 'playing cards' phase.")
 
-    active_seats_cards = game.round.active_seats_info.hand.cards
+    active_seats_cards = game.active_seats_info.hand.cards
 
     if card not in active_seats_cards:
         raise ValueError("Cannot play card. Active seat does not have the card.")
 
-    cards_allowed_to_play = game.round.active_seats_info.cards_allowed_to_play(
+    cards_allowed_to_play = game.active_seats_info.cards_allowed_to_play(
         game.round.required_suit, game.round.trump_suit
     )
 
     if card not in cards_allowed_to_play:
         raise ValueError("Cannot play card. Card is not allowed to play.")
 
-    return CardPlayedEvent(card=card, played_by=game.round.active_seat)
+    return CardPlayedEvent(card=card, played_by=game.active_seat)

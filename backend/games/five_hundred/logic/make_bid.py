@@ -6,9 +6,9 @@ from .helpers import get_next_seat_to_bid
 
 def make_bid(game: FiveHundredGame, bid: int) -> FiveHundredGame:
 
-    next_seat_to_bid = get_next_seat_to_bid(game.round.active_seat, game.round.seat_infos)
+    next_seat_to_bid = get_next_seat_to_bid(game.active_seat, game.round.seat_infos)
 
-    active_seat = game.round.active_seat
+    active_seat = game.active_seat
 
     highest_bid_updated = (
         (active_seat, bid)
@@ -23,8 +23,9 @@ def make_bid(game: FiveHundredGame, bid: int) -> FiveHundredGame:
     round_updated = replace(
         game.round,
         seat_infos=seat_infos_updated,
-        active_seat=(next_seat_to_bid if next_seat_to_bid is not None else active_seat),
         highest_bid=highest_bid_updated,
     )
 
-    return replace(game, round=round_updated)
+    return replace(
+        game, round=round_updated, active_seat=(next_seat_to_bid if next_seat_to_bid is not None else active_seat)
+    )

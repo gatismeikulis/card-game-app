@@ -56,7 +56,7 @@ def cli_play() -> None:
                 print("\nEnter two cards to pass (e.g. 'Ah Kd'):")
                 try:
                     card1_str, card2_str = input("> ").split()
-                    cards = list(game.round.active_seats_info.hand.cards)
+                    cards = list(game.active_seats_info.hand.cards)
 
                     # Find the matching cards in hand
                     card1 = next(
@@ -81,7 +81,7 @@ def cli_play() -> None:
                     continue
 
             case FiveHundredPhase.PLAYING_CARDS:
-                allowed_cards = game.round.active_seats_info.cards_allowed_to_play(
+                allowed_cards = game.active_seats_info.cards_allowed_to_play(
                     game.round.required_suit, game.round.trump_suit
                 )
                 print(

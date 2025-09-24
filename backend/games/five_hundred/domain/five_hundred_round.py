@@ -20,13 +20,12 @@ class FiveHundredRound:
     trump_suit: Suit | None
     highest_bid: tuple[FiveHundredSeat, int] | None
     phase: FiveHundredPhase
-    active_seat: FiveHundredSeat
     round_number: int
     first_seat: FiveHundredSeat  # seat which started this round
     is_marriage_announced: bool
 
     @staticmethod
-    def create(deck: Deck[FiveHundredCard], round_number: int, active_seat: FiveHundredSeat) -> "FiveHundredRound":
+    def create(deck: Deck[FiveHundredCard], round_number: int, first_seat: FiveHundredSeat) -> "FiveHundredRound":
         cards_to_take = deck.draw_many(CARDS_TO_TAKE)
         seat_one_cards = deck.draw_many(CARDS_IN_STARTING_HAND)
         seat_two_cards = deck.draw_many(CARDS_IN_STARTING_HAND)
@@ -70,15 +69,10 @@ class FiveHundredRound:
             trump_suit=None,
             highest_bid=None,
             phase=FiveHundredPhase.BIDDING,
-            active_seat=active_seat,
             round_number=round_number,
-            first_seat=active_seat,
+            first_seat=first_seat,
             is_marriage_announced=False,
         )
-
-    @property
-    def active_seats_info(self) -> FiveHundredSeatInfo:
-        return self.seat_infos[self.active_seat]
 
     @property
     def cards_on_board_count(self) -> int:

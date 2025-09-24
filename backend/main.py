@@ -84,7 +84,7 @@ def auto_player(
                     continue
 
             case FiveHundredPhase.FORMING_HANDS:
-                active_seats_cards = list(game_state.round.active_seats_info.hand.cards)
+                active_seats_cards = list(game_state.active_seats_info.hand.cards)
 
                 try:
                     card1, card2 = random.sample(active_seats_cards, 2)
@@ -101,7 +101,7 @@ def auto_player(
 
             case FiveHundredPhase.PLAYING_CARDS:
 
-                cards_allowed_to_play = game_state.round.active_seats_info.cards_allowed_to_play(
+                cards_allowed_to_play = game_state.active_seats_info.cards_allowed_to_play(
                     game_state.round.required_suit, game_state.round.trump_suit
                 )
 

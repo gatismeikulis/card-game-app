@@ -49,7 +49,7 @@ def check_for_additional_events(game: FiveHundredGame, last_event: FiveHundredEv
     match last_event:
         case BidMadeEvent(made_by=made_by):
             current_highest_bidder = game.round.highest_bid[0] if game.round.highest_bid else None
-            next_seat_to_bid = get_next_seat_to_bid(game.round.active_seat, game.round.seat_infos)
+            next_seat_to_bid = get_next_seat_to_bid(game.active_seat, game.round.seat_infos)
             have_all_seats_passed = all(seat_info.bid < 0 for seat_info in game.round.seat_infos.values())
             is_current_bidder_the_highest_bidder = current_highest_bidder == made_by
             if (is_current_bidder_the_highest_bidder and next_seat_to_bid is None) or have_all_seats_passed:
@@ -97,7 +97,7 @@ def check_for_additional_events(game: FiveHundredGame, last_event: FiveHundredEv
 
         case TrickTakenEvent():
             # if any of seats does not have cards left, then round is finished
-            if len(game.round.active_seats_info.hand.cards) == EMPTY_HAND_SIZE:
+            if len(game.active_seats_info.hand.cards) == EMPTY_HAND_SIZE:
                 return RoundFinishedEvent()
             return None
 
