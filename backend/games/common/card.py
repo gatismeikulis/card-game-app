@@ -3,6 +3,7 @@ from enum import Enum, auto
 from abc import ABC, abstractmethod
 from typing import override
 
+
 class Suit(Enum):
     HEART = ("Heart", "h")
     DIAMOND = ("Diamond", "d")

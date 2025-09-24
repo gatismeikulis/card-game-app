@@ -1,10 +1,14 @@
-[project]
-name = "card-game-backend"
-version = "0.1.0"
-description = "Server for playing different multiplayer card games. Currently only 'Five Hundred' is supported."
-authors = [{name = "Gatis M"}]
-readme = "README.md"
-requires-python = ">=3.12"
-
 [tool.black]
 line-length = 120
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]  # pycodestyle, pyflakes, isort
+ignore = ["E501"]         # example: ignore line-too-long
+
+[tool.mypy]
+python_version = "3.12"
+disallow_untyped_defs = true
+strict_optional = true
