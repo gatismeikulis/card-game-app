@@ -2,6 +2,8 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import override
 
+from backend.games.common.game_state import GameState
+
 from .five_hundred_seat import FiveHundredSeat
 from .five_hundred_round import FiveHundredRound
 from .five_hundred_round_results import FiveHundredRoundResults
@@ -9,7 +11,7 @@ from .constants import GAME_STARTING_POINTS
 
 
 @dataclass(frozen=True, slots=True)
-class FiveHundredGame:
+class FiveHundredGame(GameState):
     round: FiveHundredRound  # current round
     results: Sequence[FiveHundredRoundResults]  # round-by-round results
     summary: Mapping[FiveHundredSeat, int]  # running game-points
@@ -25,6 +27,11 @@ class FiveHundredGame:
                 FiveHundredSeat(3): GAME_STARTING_POINTS,
             },
         )
+
+    @property
+    @override
+    def active_seat(self) -> FiveHundredSeat:
+        return self.round.active_seat
 
     @property
     def winner(self) -> FiveHundredSeat | None:

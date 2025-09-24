@@ -23,4 +23,4 @@ class FiveHundredSeat(Seat):
     @classmethod
     @override
     def from_int(cls, number: int) -> "FiveHundredSeat":
-        return FiveHundredSeat(number)  # consider adding some kind of validation here
+        return FiveHundredSeat(number)  # TODO: consider adding some kind of validation here
