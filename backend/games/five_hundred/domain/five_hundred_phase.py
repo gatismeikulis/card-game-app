@@ -10,7 +10,7 @@ class FiveHundredPhase(Enum):
 
     @override
     def __str__(self) -> str:
-        return self.value.upper()
+        return f"{self.value} phase"
 
     @override
     def __repr__(self) -> str:

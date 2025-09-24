@@ -23,6 +23,22 @@ class GameTable(Generic[TGameState, TCommand, TEvent, TSeat]):
         self._engine: GameEngine[TGameState, TCommand, TEvent] = engine
 
     @property
+    def config(self) -> GameTableConfig:
+        return self._config
+
+    @property
+    def players(self) -> dict[str, TSeat]:
+        return self._players
+
+    @property
+    def spectators(self) -> set[str]:
+        return self._spectators
+
+    @property
+    def table_id(self) -> str:
+        return self._table_id
+
+    @property
     def game_state(self) -> TGameState:
         if self._game_state is None:
             raise ValueError("Game state is not initialized")

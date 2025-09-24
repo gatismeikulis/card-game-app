@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import override
 
 from backend.games.common.game_state import GameState
+from backend.games.five_hundred.domain.five_hundred_phase import FiveHundredPhase
 
 from .five_hundred_seat import FiveHundredSeat
 from .five_hundred_round import FiveHundredRound
@@ -34,11 +35,18 @@ class FiveHundredGame(GameState):
         return self.round.active_seat
 
     @property
-    def winner(self) -> FiveHundredSeat | None:
-        return next((seat for seat, points in self.summary.items() if points <= 0), None)
+    def winners(self) -> Sequence[FiveHundredSeat] | None:
+        if self.round.phase != FiveHundredPhase.GAME_FINISHED:
+            return None
+        return [seat for seat, points in self.summary.items() if points <= 0]
 
     @override
     def __str__(self) -> str:
+        if self.round.phase == FiveHundredPhase.GAME_FINISHED:
+            return f"""
+SUMMARY: {self.summary}
+WINNERS: {self.winners}
+"""
         return f"""
 SUMMARY: {self.summary}
 ROUND {self.round.round_number}, {self.round.phase} | Seat {self.round.active_seat} is playing

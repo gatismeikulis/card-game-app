@@ -30,8 +30,10 @@ def handle_make_bid(game: FiveHundredGame, bid: int) -> FiveHundredEvent:
         raise ValueError("Cannot make bid. Not bidding phase.")
 
     active_seats_match_points = game.summary[game.round.active_seat]
-    if active_seats_match_points >= 1000:
-        raise ValueError("Cannot make bid. Player has reached more than 1000 points and is not allowed to bid.")
+    if active_seats_match_points >= 1000 and bid >= 0:
+        raise ValueError(
+            "Cannot make a bid. Player has reached more than 1000 points are not allowed to make non-passing bid."
+        )
 
     if bid >= 0 and bid % BID_STEP != 0:
         raise ValueError(f"Invalid bid. Bid must be with a step of {BID_STEP}")

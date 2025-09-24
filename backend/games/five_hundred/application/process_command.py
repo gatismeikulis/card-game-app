@@ -101,6 +101,8 @@ def check_for_additional_events(game: FiveHundredGame, last_event: FiveHundredEv
         case RoundFinishedEvent():
             if any(points <= 0 for points in game.summary.values()):
                 return GameFinishedEvent()
+            if all(points >= 1000 for points in game.summary.values()):
+                return GameFinishedEvent()
             return None
 
         case _:
