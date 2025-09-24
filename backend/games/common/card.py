@@ -3,8 +3,6 @@ from enum import Enum, auto
 from abc import ABC, abstractmethod
 from typing import override
 
-
-#         return f"{SUIT_COLORS[self.suit]}{self.rank.symbol}{self.suit.symbol}\033[0m"
 class Suit(Enum):
     HEART = ("Heart", "h")
     DIAMOND = ("Diamond", "d")
