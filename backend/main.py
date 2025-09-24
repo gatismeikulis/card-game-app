@@ -70,7 +70,7 @@ def auto_player(
 
                 try:
                     if random.random() < passing_probability:
-                        cmd = MakeBidCommand(bid=-1)
+                        cmd: FiveHundredCommand = MakeBidCommand(bid=-1)
                     else:
                         cmd = MakeBidCommand(bid=random.choice(range(highest_bid, 120 + 1, BID_STEP)))
 

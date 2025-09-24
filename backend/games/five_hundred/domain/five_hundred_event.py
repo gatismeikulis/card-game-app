@@ -1,8 +1,7 @@
 from dataclasses import dataclass
 from typing import ClassVar, Literal
 
-from backend.games.common.event import Event
-
+from ...common.event import Event
 from .five_hundred_card import FiveHundredCard
 from .five_hundred_seat import FiveHundredSeat
 

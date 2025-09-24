@@ -15,9 +15,7 @@ def finish_game(game: FiveHundredGame) -> FiveHundredGame:
         required_suit=None,
         trump_suit=None,
         highest_bid=None,
-        active_seat=None,
         round_number=0,
-        first_seat=None,
         is_marriage_announced=False,
     )
     return replace(game, round=round_updated)

@@ -21,7 +21,7 @@ class Hand(ABC, Generic[TCard]):
         for c in cards:
             if c not in self.cards:
                 raise ValueError(f"Card {c} is not in the hand {self.cards}")
-        result: Sequence[TCard] = []
+        result: list[TCard] = []
         for c in self.cards:
             if c not in cards:
                 result.append(c)

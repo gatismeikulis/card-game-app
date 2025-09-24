@@ -34,7 +34,7 @@ def process_command(
     game_updated = game
     all_events: list[FiveHundredEvent] = []
 
-    current_event = event
+    current_event: FiveHundredEvent | None = event
 
     while current_event is not None:
         game_updated = apply_event(game_updated, current_event)
@@ -54,6 +54,7 @@ def check_for_additional_events(game: FiveHundredGame, last_event: FiveHundredEv
             is_current_bidder_the_highest_bidder = current_highest_bidder == made_by
             if (is_current_bidder_the_highest_bidder and next_seat_to_bid is None) or have_all_seats_passed:
                 return BiddingFinishedEvent()
+            return None
 
         case BiddingFinishedEvent():
             if game.round.highest_bid is None:
@@ -92,11 +93,13 @@ def check_for_additional_events(game: FiveHundredGame, last_event: FiveHundredEv
                 )
                 trick_winning_seat = next(seat for seat, card in cards_on_board.items() if card == trick_winning_card)
                 return TrickTakenEvent(taken_by=trick_winning_seat)
+            return None
 
         case TrickTakenEvent():
             # if any of seats does not have cards left, then round is finished
             if len(game.round.active_seats_info.hand.cards) == EMPTY_HAND_SIZE:
                 return RoundFinishedEvent()
+            return None
 
         case RoundFinishedEvent():
             if any(points <= 0 for points in game.summary.values()):

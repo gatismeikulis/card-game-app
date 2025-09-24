@@ -2,10 +2,9 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import override
 
-from backend.games.common.game_state import GameState
-from backend.games.five_hundred.domain.five_hundred_phase import FiveHundredPhase
-
+from ...common.game_state import GameState
 from .constants import GAME_STARTING_POINTS
+from .five_hundred_phase import FiveHundredPhase
 from .five_hundred_round import FiveHundredRound
 from .five_hundred_round_results import FiveHundredRoundResults
 from .five_hundred_seat import FiveHundredSeat

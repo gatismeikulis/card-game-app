@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import override
+from typing import Self, override
 
 
 class Suit(Enum):
@@ -112,7 +112,7 @@ class Card(ABC):
     rank: Rank
 
     @classmethod
-    def from_string(cls, card_str: str):
+    def from_string(cls, card_str: str) -> Self:
         """Create a card from string representation. Format is 'rank' + 'suit'. E.g. 'Ah', '2D', 'Tc'."""
         rank = Rank.from_string(card_str[0])
         suit = Suit.from_string(card_str[1])

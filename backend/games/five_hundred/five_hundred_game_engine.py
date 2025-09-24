@@ -31,11 +31,11 @@ class FiveHundredGameEngine(GameEngine[FiveHundredGame, FiveHundredCommand, Five
         return FiveHundredGame.create(round)
 
 
-def cli_play():
+def cli_play() -> None:
 
     engine = FiveHundredGameEngine()
     game = engine.init_game()
-    events = []
+    events: list[FiveHundredEvent] = []
 
     while True:
         print(events)
@@ -46,7 +46,7 @@ def cli_play():
                 print("\nEnter bid amount (60 -> 200) or negative number to pass:")
                 try:
                     bid = int(input("> "))
-                    cmd = MakeBidCommand(bid=bid)
+                    cmd: FiveHundredCommand = MakeBidCommand(bid=bid)
                     game, events = engine.process_command(game, cmd)
                 except ValueError:
                     print("Invalid input! Please enter a number.")

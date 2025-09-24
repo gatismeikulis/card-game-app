@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import override
 
-from backend.games.common.seat import Seat
+from ...common.seat import Seat
 
 
 @dataclass(frozen=True, slots=True, repr=False)

@@ -55,7 +55,7 @@ class GameTable(Generic[TGameState, TCommand, TEvent, TSeat]):
         self._game_state = game_state_updated
         return events
 
-    def add_player(self, user_id: str, seat: TSeat):
+    def add_player(self, user_id: str, seat: TSeat) -> None:
         if len(self._players) >= self._config.max_players:
             raise ValueError("Table is full")
         if user_id in self._players.keys():
@@ -64,12 +64,12 @@ class GameTable(Generic[TGameState, TCommand, TEvent, TSeat]):
             raise ValueError("Seat already taken")
         self._players[user_id] = seat
 
-    def remove_player(self, user_id: str):
+    def remove_player(self, user_id: str) -> None:
         # not allowed to leave if game is started
         # should end the game before leaving
         del self._players[user_id]
 
-    def start_game(self):
+    def start_game(self) -> None:
         if len(self._players) < self._config.min_players:
             raise ValueError("Not enough players to start the game")
         self._game_state = self._engine.init_game()
