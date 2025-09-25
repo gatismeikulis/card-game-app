@@ -1,7 +1,8 @@
 import random
 from typing import Any
 
-from backend.core.game_config import GameTableConfig
+from backend.domain.table.game_table import GameTable
+from backend.domain.table.game_table_config import GameTableConfig
 from backend.games.five_hundred.domain.constants import BID_STEP, MAX_BID, MIN_BID
 from backend.games.five_hundred.domain.five_hundred_command import (
     FiveHundredCommand,
@@ -14,7 +15,6 @@ from backend.games.five_hundred.domain.five_hundred_game import FiveHundredGame
 from backend.games.five_hundred.domain.five_hundred_phase import FiveHundredPhase
 from backend.games.five_hundred.domain.five_hundred_seat import FiveHundredSeat
 from backend.games.five_hundred.five_hundred_game_engine import FiveHundredGameEngine
-from backend.multiplayer.game_table import GameTable
 
 tables: list[GameTable[Any, Any, Any, Any]] = []
 

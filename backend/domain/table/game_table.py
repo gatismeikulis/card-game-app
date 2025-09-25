@@ -1,6 +1,6 @@
 from typing import Generic, TypeVar, override
 
-from backend.core.game_config import GameTableConfig
+from backend.domain.table.game_table_config import GameTableConfig
 from backend.games.common.command import Command
 from backend.games.common.event import Event
 from backend.games.common.game_engine import GameEngine
