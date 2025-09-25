@@ -16,11 +16,12 @@ from backend.domain.game.five_hundred.domain.five_hundred_seat import FiveHundre
 from backend.domain.game.five_hundred.five_hundred_game_engine import FiveHundredGameEngine
 from backend.domain.table.game_table import GameTable
 from backend.domain.table.game_table_config import GameTableConfig
+from backend.domain.table.table_id import TableId
 
 tables: list[GameTable[Any, Any, Any, Any]] = []
 
 fivehundred_table_1 = GameTable[FiveHundredGame, FiveHundredCommand, FiveHundredEvent, FiveHundredSeat](
-    table_id="fivehundred_table_1",
+    table_id=TableId.generate(),
     config=GameTableConfig(min_players=3, max_players=3, automatic_start=True),
     engine=FiveHundredGameEngine(),
 )

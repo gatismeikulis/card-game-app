@@ -7,6 +7,7 @@ from backend.domain.game.common.game_engine import GameEngine
 from backend.domain.game.common.game_state import GameState
 from backend.domain.game.common.seat import Seat
 from backend.domain.table.game_table_config import GameTableConfig
+from backend.domain.table.table_id import TableId
 
 TCommand = TypeVar("TCommand", bound=Command)
 TEvent = TypeVar("TEvent", bound=Event)
@@ -15,8 +16,8 @@ TGameState = TypeVar("TGameState", bound=GameState)
 
 
 class GameTable(Generic[TGameState, TCommand, TEvent, TSeat]):
-    def __init__(self, table_id: str, config: GameTableConfig, engine: GameEngine[TGameState, TCommand, TEvent]):
-        self._table_id: str = table_id
+    def __init__(self, table_id: TableId, config: GameTableConfig, engine: GameEngine[TGameState, TCommand, TEvent]):
+        self._id: TableId = table_id
         self._config: GameTableConfig = config
         self._players: dict[UserId, TSeat] = {}  # change to user_id -> game_seat
         self._game_state: TGameState | None = None
@@ -36,8 +37,8 @@ class GameTable(Generic[TGameState, TCommand, TEvent, TSeat]):
         return self._spectators
 
     @property
-    def table_id(self) -> str:
-        return self._table_id
+    def id(self) -> TableId:
+        return self._id
 
     @property
     def game_state(self) -> TGameState:
@@ -77,7 +78,7 @@ class GameTable(Generic[TGameState, TCommand, TEvent, TSeat]):
 
     @override
     def __str__(self) -> str:
-        return f"""Table {self._table_id} with {len(self._players)} players and {len(self._spectators)} spectators:
+        return f"""Table {self._id} with {len(self._players)} players and {len(self._spectators)} spectators:
         Players: {self._players}
         Spectators: {self._spectators}
         Game state: {self._game_state}
