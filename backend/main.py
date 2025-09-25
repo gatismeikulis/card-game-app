@@ -1,6 +1,7 @@
 import random
 from typing import Any
 
+from backend.domain.core.user_id import UserId
 from backend.domain.table.game_table import GameTable
 from backend.domain.table.game_table_config import GameTableConfig
 from backend.games.five_hundred.domain.constants import BID_STEP, MAX_BID, MIN_BID
@@ -24,9 +25,9 @@ fivehundred_table_1 = GameTable[FiveHundredGame, FiveHundredCommand, FiveHundred
     engine=FiveHundredGameEngine(),
 )
 
-fivehundred_table_1.add_player(user_id="user_1", seat=FiveHundredSeat(1))
-fivehundred_table_1.add_player(user_id="user_2", seat=FiveHundredSeat(2))
-fivehundred_table_1.add_player(user_id="user_3", seat=FiveHundredSeat(3))
+fivehundred_table_1.add_player(user_id=UserId.generate(), seat=FiveHundredSeat(1))
+fivehundred_table_1.add_player(user_id=UserId.generate(), seat=FiveHundredSeat(2))
+fivehundred_table_1.add_player(user_id=UserId.generate(), seat=FiveHundredSeat(3))
 fivehundred_table_1.start_game()
 
 
@@ -35,12 +36,12 @@ def auto_player(
 ) -> list[FiveHundredEvent]:
 
     # Helper to find the user_id for the active seat
-    def active_user_id(game_state: FiveHundredGame) -> str:
+    def active_user_id(game_state: FiveHundredGame) -> UserId:
         active_seat = game_state.active_seat
-        for uid, seat in table.players.items():
+        for user_id, seat in table.players.items():
             if seat == active_seat:
-                return uid
-        return "none"
+                return user_id
+        return UserId.generate()  # should not happen
 
     all_events: list[FiveHundredEvent] = []
 

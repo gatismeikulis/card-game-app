@@ -1,7 +1,9 @@
 from dataclasses import dataclass
 
+from backend.domain.core.user_id import UserId
+
 
 @dataclass(frozen=True, slots=True)
 class User:
-    id: str
+    id: UserId
     name: str

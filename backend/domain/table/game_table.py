@@ -1,5 +1,6 @@
 from typing import Generic, TypeVar, override
 
+from backend.domain.core.user_id import UserId
 from backend.domain.table.game_table_config import GameTableConfig
 from backend.games.common.command import Command
 from backend.games.common.event import Event
@@ -17,9 +18,9 @@ class GameTable(Generic[TGameState, TCommand, TEvent, TSeat]):
     def __init__(self, table_id: str, config: GameTableConfig, engine: GameEngine[TGameState, TCommand, TEvent]):
         self._table_id: str = table_id
         self._config: GameTableConfig = config
-        self._players: dict[str, TSeat] = {}  # change to user_id -> game_seat
+        self._players: dict[UserId, TSeat] = {}  # change to user_id -> game_seat
         self._game_state: TGameState | None = None
-        self._spectators: set[str] = set()  # change to user_id
+        self._spectators: set[UserId] = set()  # change to user_id
         self._engine: GameEngine[TGameState, TCommand, TEvent] = engine
 
     @property
@@ -27,11 +28,11 @@ class GameTable(Generic[TGameState, TCommand, TEvent, TSeat]):
         return self._config
 
     @property
-    def players(self) -> dict[str, TSeat]:
+    def players(self) -> dict[UserId, TSeat]:
         return self._players
 
     @property
-    def spectators(self) -> set[str]:
+    def spectators(self) -> set[UserId]:
         return self._spectators
 
     @property
@@ -45,7 +46,7 @@ class GameTable(Generic[TGameState, TCommand, TEvent, TSeat]):
         return self._game_state
 
     # this command should update game state and return events so they can be persisted in layer above
-    def process_command(self, user_id: str, command: TCommand) -> list[TEvent]:
+    def process_command(self, user_id: UserId, command: TCommand) -> list[TEvent]:
         game_state = self._game_state
         if game_state is None:
             raise ValueError("Game state is not initialized")
@@ -55,7 +56,7 @@ class GameTable(Generic[TGameState, TCommand, TEvent, TSeat]):
         self._game_state = game_state_updated
         return events
 
-    def add_player(self, user_id: str, seat: TSeat) -> None:
+    def add_player(self, user_id: UserId, seat: TSeat) -> None:
         if len(self._players) >= self._config.max_players:
             raise ValueError("Table is full")
         if user_id in self._players.keys():
@@ -64,7 +65,7 @@ class GameTable(Generic[TGameState, TCommand, TEvent, TSeat]):
             raise ValueError("Seat already taken")
         self._players[user_id] = seat
 
-    def remove_player(self, user_id: str) -> None:
+    def remove_player(self, user_id: UserId) -> None:
         # not allowed to leave if game is started
         # should end the game before leaving
         del self._players[user_id]
