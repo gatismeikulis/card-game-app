@@ -32,10 +32,6 @@ RANK_TO_STRENGTH: dict[Rank, Strength] = {
     Rank.ACE: Strength.SIX,
 }
 
-# 'frozen = True' makes the class immutable meaning that the attributes cannot be changed after the object is created
-# 'slots = True' is a performance optimization that replaces the __dict__ attribute with a slots attribute
-# meaning that the attributes are stored in a tuple instead of a dictionary.
-
 
 @dataclass(slots=True, frozen=True, repr=False)
 class FiveHundredCard(Card):

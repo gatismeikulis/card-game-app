@@ -1,9 +1,13 @@
 from abc import ABC, abstractmethod
 from typing import Generic, TypeVar
 
-TGameState = TypeVar("TGameState")
-TCommand = TypeVar("TCommand")
-TEvent = TypeVar("TEvent")
+from ..common.command import Command
+from ..common.event import Event
+from ..common.game_state import GameState
+
+TGameState = TypeVar("TGameState", bound=GameState)
+TCommand = TypeVar("TCommand", bound=Command)
+TEvent = TypeVar("TEvent", bound=Event)
 
 
 class GameEngine(ABC, Generic[TGameState, TCommand, TEvent]):
