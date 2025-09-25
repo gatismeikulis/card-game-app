@@ -18,6 +18,8 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+.mypy_cache/
+.ruff_cache/
 
 # Virtual Environment
 .venv
@@ -39,3 +41,5 @@ Desktop.ini
 coverage.xml
 htmlcov/
 .pytest_cache/
+
+my-notes
