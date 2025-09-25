@@ -1,12 +1,12 @@
 from typing import Generic, TypeVar, override
 
 from backend.domain.core.user_id import UserId
+from backend.domain.game.common.command import Command
+from backend.domain.game.common.event import Event
+from backend.domain.game.common.game_engine import GameEngine
+from backend.domain.game.common.game_state import GameState
+from backend.domain.game.common.seat import Seat
 from backend.domain.table.game_table_config import GameTableConfig
-from backend.games.common.command import Command
-from backend.games.common.event import Event
-from backend.games.common.game_engine import GameEngine
-from backend.games.common.game_state import GameState
-from backend.games.common.seat import Seat
 
 TCommand = TypeVar("TCommand", bound=Command)
 TEvent = TypeVar("TEvent", bound=Event)
