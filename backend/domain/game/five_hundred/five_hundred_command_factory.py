@@ -8,7 +8,7 @@ class FiveHundredCommandFactory:
     @staticmethod
     def from_json(data: dict[str, Any]) -> FiveHundredCommand:
         match data["type"]:
-            case "bid":
+            case "make_bid":
                 if "bid" not in data:
                     raise ValueError("Could not create five hundred command from json data")
                 return MakeBidCommand(bid=data["bid"])

@@ -77,7 +77,8 @@ class GameTable(Generic[TGameState, TCommand, TEvent]):
         # should end the game before leaving
         del self._players[user_id]
 
-    def start_game(self) -> None:
+    def start_game(self, iniated_by: UserId) -> None:
+        # TODO: check if iniated_by is a player at the table. maybe keep track if all players have agreed to start the game
         if len(self._players) < self._config.min_players:
             raise ValueError("Not enough players to start the game")
         self._game_state = self._engine.init_game()

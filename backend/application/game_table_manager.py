@@ -35,8 +35,8 @@ class GameTableManager:
     def leave_table(self, table_id: TableId, user_id: UserId) -> None:
         self._lobby.table_by_id(table_id).remove_player(user_id)
 
-    def start_game(self, table_id: TableId) -> None:
-        self._lobby.table_by_id(table_id).start_game()
+    def start_game(self, table_id: TableId, iniated_by: UserId) -> None:
+        self._lobby.table_by_id(table_id).start_game(iniated_by)
 
     def process_raw_command(self, table_id: TableId, user_id: UserId, raw_command: dict[str, Any]) -> None:
         table = self._lobby.table_by_id(table_id)
