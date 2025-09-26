@@ -19,9 +19,9 @@ class GameTable(Generic[TGameState, TCommand, TEvent, TSeat]):
     def __init__(self, table_id: TableId, config: GameTableConfig, engine: GameEngine[TGameState, TCommand, TEvent]):
         self._id: TableId = table_id
         self._config: GameTableConfig = config
-        self._players: dict[UserId, TSeat] = {}  # change to user_id -> game_seat
+        self._players: dict[UserId, TSeat] = {}
         self._game_state: TGameState | None = None
-        self._spectators: set[UserId] = set()  # change to user_id
+        self._spectators: set[UserId] = set()
         self._engine: GameEngine[TGameState, TCommand, TEvent] = engine
 
     @property

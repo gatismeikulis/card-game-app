@@ -1,5 +1,4 @@
 import random
-from typing import Any
 
 from backend.domain.core.user_id import UserId
 from backend.domain.game.five_hundred.domain.constants import BID_STEP, MAX_BID, MIN_BID
@@ -13,17 +12,14 @@ from backend.domain.game.five_hundred.domain.five_hundred_event import FiveHundr
 from backend.domain.game.five_hundred.domain.five_hundred_game import FiveHundredGame
 from backend.domain.game.five_hundred.domain.five_hundred_phase import FiveHundredPhase
 from backend.domain.game.five_hundred.domain.five_hundred_seat import FiveHundredSeat
-from backend.domain.game.five_hundred.five_hundred_game_engine import FiveHundredGameEngine
+from backend.domain.game.game_name import GameName
 from backend.domain.table.game_table import GameTable
 from backend.domain.table.game_table_config import GameTableConfig
-from backend.domain.table.table_id import TableId
+from backend.domain.table.game_table_factory import GameTableFactory
 
-tables: list[GameTable[Any, Any, Any, Any]] = []
-
-fivehundred_table_1 = GameTable[FiveHundredGame, FiveHundredCommand, FiveHundredEvent, FiveHundredSeat](
-    table_id=TableId.generate(),
+fivehundred_table_1 = GameTableFactory.create(
     config=GameTableConfig(min_players=3, max_players=3, automatic_start=True),
-    engine=FiveHundredGameEngine(),
+    game_name=GameName.FIVE_HUNDRED,
 )
 
 fivehundred_table_1.add_player(user_id=UserId.generate(), seat=FiveHundredSeat(1))
