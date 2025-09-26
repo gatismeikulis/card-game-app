@@ -11,32 +11,36 @@ from backend.domain.game.five_hundred.domain.five_hundred_command import (
 from backend.domain.game.five_hundred.domain.five_hundred_event import FiveHundredEvent
 from backend.domain.game.five_hundred.domain.five_hundred_game import FiveHundredGame
 from backend.domain.game.five_hundred.domain.five_hundred_phase import FiveHundredPhase
-from backend.domain.game.five_hundred.domain.five_hundred_seat import FiveHundredSeat
 from backend.domain.game.game_name import GameName
 from backend.domain.table.game_table import GameTable
 from backend.domain.table.game_table_config import GameTableConfig
 from backend.domain.table.game_table_factory import GameTableFactory
 
 fivehundred_table_1 = GameTableFactory.create(
-    config=GameTableConfig(min_players=3, max_players=3, automatic_start=True),
+    config=GameTableConfig(
+        game_name=GameName.FIVE_HUNDRED,
+        min_players=3,
+        max_players=3,
+        automatic_start=True,
+    ),
     game_name=GameName.FIVE_HUNDRED,
 )
 
-fivehundred_table_1.add_player(user_id=UserId.generate(), seat=FiveHundredSeat(1))
-fivehundred_table_1.add_player(user_id=UserId.generate(), seat=FiveHundredSeat(2))
-fivehundred_table_1.add_player(user_id=UserId.generate(), seat=FiveHundredSeat(3))
+fivehundred_table_1.add_player(user_id=UserId.generate())
+fivehundred_table_1.add_player(user_id=UserId.generate())
+fivehundred_table_1.add_player(user_id=UserId.generate())
 fivehundred_table_1.start_game()
 
 
 def auto_player(
-    table: GameTable[FiveHundredGame, FiveHundredCommand, FiveHundredEvent, FiveHundredSeat],
+    table: GameTable[FiveHundredGame, FiveHundredCommand, FiveHundredEvent],
 ) -> list[FiveHundredEvent]:
 
     # Helper to find the user_id for the active seat
     def active_user_id(game_state: FiveHundredGame) -> UserId:
         active_seat = game_state.active_seat
         for user_id, seat in table.players.items():
-            if seat == active_seat:
+            if seat == active_seat.number:
                 return user_id
         return UserId.generate()  # should not happen
 

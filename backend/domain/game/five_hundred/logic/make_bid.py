@@ -27,5 +27,7 @@ def make_bid(game: FiveHundredGame, bid: int) -> FiveHundredGame:
     )
 
     return replace(
-        game, round=round_updated, active_seat=(next_seat_to_bid if next_seat_to_bid is not None else active_seat)
+        game,
+        round=round_updated,
+        active_seat=(next_seat_to_bid if next_seat_to_bid is not None else active_seat),
     )

@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import override
 
+type SeatNumber = int
+
 
 @dataclass(frozen=True, slots=True)
 class Seat(ABC):
@@ -20,7 +22,3 @@ class Seat(ABC):
 
     @abstractmethod
     def prev(self) -> "Seat": ...
-
-    @classmethod
-    @abstractmethod
-    def from_int(cls, number: int) -> "Seat": ...

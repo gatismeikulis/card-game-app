@@ -25,7 +25,10 @@ def take_trick(game: FiveHundredGame, taken_by: FiveHundredSeat) -> FiveHundredG
     seat_infos_updated = dict(game.round.seat_infos) | {taken_by: trick_winning_seats_info_updated}
 
     round_updated = replace(
-        game.round, cards_on_board=cards_on_board_updated, required_suit=None, seat_infos=seat_infos_updated
+        game.round,
+        cards_on_board=cards_on_board_updated,
+        required_suit=None,
+        seat_infos=seat_infos_updated,
     )
 
     return replace(game, round=round_updated, active_seat=taken_by)
