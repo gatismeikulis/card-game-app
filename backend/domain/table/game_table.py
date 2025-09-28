@@ -16,17 +16,11 @@ TGameState = TypeVar("TGameState", bound=GameState)
 
 
 class GameTable(Generic[TGameState, TCommand, TEvent]):
-    def __init__(
-        self,
-        table_id: TableId,
-        config: GameTableConfig,
-        engine: GameEngine[TGameState, TCommand, TEvent],
-    ):
+    def __init__(self, table_id: TableId, config: GameTableConfig, engine: GameEngine[TGameState, TCommand, TEvent]):
         self._id: TableId = table_id
         self._config: GameTableConfig = config
         self._players: dict[UserId, SeatNumber] = {}
         self._game_state: TGameState | None = None
-        self._spectators: set[UserId] = set()
         self._engine: GameEngine[TGameState, TCommand, TEvent] = engine
 
     @property
@@ -36,10 +30,6 @@ class GameTable(Generic[TGameState, TCommand, TEvent]):
     @property
     def players(self) -> dict[UserId, SeatNumber]:
         return self._players
-
-    @property
-    def spectators(self) -> set[UserId]:
-        return self._spectators
 
     @property
     def id(self) -> TableId:
@@ -62,13 +52,18 @@ class GameTable(Generic[TGameState, TCommand, TEvent]):
         self._game_state = game_state_updated
         return events
 
-    def add_player(self, user_id: UserId) -> None:
+    def add_player(self, user_id: UserId, seat_number: SeatNumber | None = None) -> None:
         if len(self._players) >= self._config.max_players:
             raise ValueError("Table is full")
         if user_id in self._players.keys():
             raise ValueError("Player already exists at this table")
         taken_seat_numbers = set(self._players.values())
         available_seat_numbers = set(self._config.possible_seat_numbers) - taken_seat_numbers
+        # if seat number is not provided, choose random one. if it is provided, use it if it is available
+        if seat_number is not None:
+            if seat_number not in available_seat_numbers:
+                raise ValueError("Seat number is not available")
+            available_seat_numbers = {seat_number}
         seat_number = random.choice(list(available_seat_numbers))
         self._players[user_id] = seat_number
 
@@ -85,11 +80,10 @@ class GameTable(Generic[TGameState, TCommand, TEvent]):
 
     @override
     def __str__(self) -> str:
-        return f"""Table {self._id} with {len(self._players)} players and {len(self._spectators)} spectators:
-        Players: {self._players}
-        Spectators: {self._spectators}
-        Game state: {self._game_state}
-        """
+        return f"""Table [{self._id}] with {len(self._players)} players:
+Players: {[k for k in self.players.keys()]}
+{self._game_state}
+"""
 
     @override
     def __repr__(self) -> str:

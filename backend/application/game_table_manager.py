@@ -2,6 +2,7 @@ from typing import Any, final
 
 from backend.application.game_command_factory import GameCommandFactory
 from backend.domain.core.user_id import UserId
+from backend.domain.game.common.seat import SeatNumber
 from backend.domain.game.game_name import GameName
 from backend.domain.lobby.lobby import Lobby
 from backend.domain.table.game_table import GameTable
@@ -29,8 +30,8 @@ class GameTableManager:
 
     # Table related methods
 
-    def join_table(self, table_id: TableId, user_id: UserId) -> None:
-        self._lobby.table_by_id(table_id).add_player(user_id)
+    def join_table(self, table_id: TableId, user_id: UserId, seat_number: SeatNumber | None = None) -> None:
+        self._lobby.table_by_id(table_id).add_player(user_id, seat_number)
 
     def leave_table(self, table_id: TableId, user_id: UserId) -> None:
         self._lobby.table_by_id(table_id).remove_player(user_id)

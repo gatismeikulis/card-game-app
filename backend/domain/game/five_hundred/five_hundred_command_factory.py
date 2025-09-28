@@ -10,11 +10,13 @@ class FiveHundredCommandFactory:
         match data["type"]:
             case "make_bid":
                 if "bid" not in data:
-                    raise ValueError("Could not create five hundred command from json data")
+                    raise ValueError(f"Could not create five hundred command from json data, missing bid: {data}")
                 return MakeBidCommand(bid=data["bid"])
             case "pass_cards":
                 if "card_to_next_seat" not in data or "card_to_prev_seat" not in data:
-                    raise ValueError("Could not create five hundred command from json data")
+                    raise ValueError(
+                        f"Could not create five hundred command from json data, missing card_to_next_seat or card_to_prev_seat: {data}"
+                    )
                 card_to_next_seat = FiveHundredCard.from_string(data["card_to_next_seat"])
                 card_to_prev_seat = FiveHundredCard.from_string(data["card_to_prev_seat"])
                 return PassCardsCommand(
@@ -23,8 +25,8 @@ class FiveHundredCommandFactory:
                 )
             case "play_card":
                 if "card" not in data:
-                    raise ValueError("Could not create five hundred command from json data")
+                    raise ValueError(f"Could not create five hundred command from json data, missing card: {data}")
                 card = FiveHundredCard.from_string(data["card"])
                 return PlayCardCommand(card=card)
             case _:
-                raise ValueError("Could not create five hundred command from json data")
+                raise ValueError(f"Could not create five hundred command from json data, missing type: {data}")
