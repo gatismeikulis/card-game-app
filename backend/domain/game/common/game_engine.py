@@ -16,3 +16,6 @@ class GameEngine(ABC, Generic[TGameState, TCommand, TEvent]):
 
     @abstractmethod
     def process_command(self, game_state: TGameState, command: TCommand) -> tuple[TGameState, list[TEvent]]: ...
+
+    @abstractmethod
+    def create_automatic_command(self, game_state: TGameState) -> TCommand: ...

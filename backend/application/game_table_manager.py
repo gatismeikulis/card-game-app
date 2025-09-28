@@ -39,7 +39,10 @@ class GameTableManager:
     def start_game(self, table_id: TableId, iniated_by: UserId) -> None:
         self._lobby.table_by_id(table_id).start_game(iniated_by)
 
-    def process_raw_command(self, table_id: TableId, user_id: UserId, raw_command: dict[str, Any]) -> None:
+    def play_turn(self, table_id: TableId, user_id: UserId, raw_command: dict[str, Any] | None = None) -> None:
         table = self._lobby.table_by_id(table_id)
-        command = self._game_command_factory.create(table.config.game_name, raw_command)
-        self._lobby.table_by_id(table_id).process_command(user_id, command)
+        if raw_command is None:
+            command = None
+        else:
+            command = self._game_command_factory.create(table.config.game_name, raw_command)
+        self._lobby.table_by_id(table_id).play_turn(user_id, command)

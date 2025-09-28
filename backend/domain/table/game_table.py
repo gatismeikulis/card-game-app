@@ -42,13 +42,17 @@ class GameTable(Generic[TGameState, TCommand, TEvent]):
         return self._game_state
 
     # this command should update game state and return events so they can be persisted in layer above
-    def process_command(self, user_id: UserId, command: TCommand) -> list[TEvent]:
+    def play_turn(self, user_id: UserId, command: TCommand | None = None) -> list[TEvent]:
         game_state = self._game_state
         if game_state is None:
             raise ValueError("Game state is not initialized")
         if game_state.active_seat.number != self._players[user_id]:
             raise ValueError("Not the player's turn")
-        game_state_updated, events = self._engine.process_command(game_state, command)
+        if command is None:
+            cmd = self._engine.create_automatic_command(game_state)
+        else:
+            cmd = command
+        game_state_updated, events = self._engine.process_command(game_state, cmd)
         self._game_state = game_state_updated
         return events
 

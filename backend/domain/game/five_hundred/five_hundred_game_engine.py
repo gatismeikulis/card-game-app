@@ -1,6 +1,7 @@
 from typing import override
 
 from ..common.game_engine import GameEngine
+from .application.create_automatic_command import create_automatic_command
 from .application.process_command import process_command
 from .domain.five_hundred_card import FiveHundredCard
 from .domain.five_hundred_command import (
@@ -29,6 +30,10 @@ class FiveHundredGameEngine(GameEngine[FiveHundredGame, FiveHundredCommand, Five
         deck = FiveHundredDeck.build()
         round = FiveHundredRound.create(deck, 1, FiveHundredSeat(1))
         return FiveHundredGame.create(round)
+
+    @override
+    def create_automatic_command(self, game_state: FiveHundredGame) -> FiveHundredCommand:
+        return create_automatic_command(game_state)
 
 
 def cli_play() -> None:
