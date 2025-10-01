@@ -40,6 +40,14 @@ class GameTable:
             raise ValueError("Game state is not initialized")
         return self._game_state
 
+    @property
+    def active_user_id(self) -> UserId:
+        active_seat_number = self.game_state.active_seat.number
+        for user_id, player in self._players.items():
+            if player.seat_number == active_seat_number:
+                return user_id
+        raise ValueError(f"No player found for active seat {active_seat_number}")
+
     # regular turn is a turn taken by a human player by providing a command
     def take_regular_turn(self, user_id: UserId, command: GameCommand) -> Sequence[GameEvent]:
         game_state = self._validate_can_take_turn(user_id)
@@ -97,8 +105,8 @@ class GameTable:
     @override
     def __str__(self) -> str:
         return f"""Table [{self._id}] with {len(self._players)} players:
-Players: {[k for k in self.players.keys()]}
-{self._game_state}
+{"\n".join(f"-{player.seat_number}- {f'BOT({player.bot_strategy.kind.value})' if player.bot_strategy else 'HUMAN      '} [{user_id}]" for user_id, player in self._players.items())}
+{self._game_state.str_repr_for_table() if self._game_state else "Game not started yet"}
 """
 
     @override

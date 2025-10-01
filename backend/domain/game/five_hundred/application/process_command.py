@@ -60,7 +60,7 @@ def check_for_additional_events(game: FiveHundredGame, last_event: FiveHundredEv
 
         case BiddingFinishedEvent():
             if game.round.highest_bid is None:
-                return RoundFinishedEvent()
+                return RoundFinishedEvent(round_number=game.round.round_number)
             else:
                 return HiddenCardsTakenEvent()
 
@@ -94,13 +94,13 @@ def check_for_additional_events(game: FiveHundredGame, last_event: FiveHundredEv
                     trick_cards, game.round.required_suit, game.round.trump_suit
                 )
                 trick_winning_seat = next(seat for seat, card in cards_on_board.items() if card == trick_winning_card)
-                return TrickTakenEvent(taken_by=trick_winning_seat)
+                return TrickTakenEvent(taken_by=trick_winning_seat, cards=trick_cards)
             return None
 
         case TrickTakenEvent():
             # if any of seats does not have cards left, then round is finished
             if len(game.active_seats_info.hand.cards) == EMPTY_HAND_SIZE:
-                return RoundFinishedEvent()
+                return RoundFinishedEvent(round_number=game.round.round_number)
             return None
 
         case RoundFinishedEvent():

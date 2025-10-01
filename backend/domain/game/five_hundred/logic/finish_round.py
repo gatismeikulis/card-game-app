@@ -33,11 +33,14 @@ def finish_round(game: FiveHundredGame) -> FiveHundredGame:
 
     deck = FiveHundredDeck.build()
 
-    new_round = FiveHundredRound.create(deck, game.round.round_number + 1, game.round.first_seat.next())
+    first_seat_updated = game.round.first_seat.next()
+
+    round_updated = FiveHundredRound.create(deck, game.round.round_number + 1, first_seat_updated)
 
     return replace(
         game,
+        active_seat=first_seat_updated,
         results=list(game.results) + [round_results],
         summary=game_summary_updated,
-        round=new_round,
+        round=round_updated,
     )

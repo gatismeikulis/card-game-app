@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import ClassVar, Literal
 
@@ -55,12 +56,14 @@ class TrickTakenEvent(GameEvent):
     source: ClassVar[Literal["five_hundred"]] = "five_hundred"
     type: ClassVar[Literal["trick_taken"]] = "trick_taken"
     taken_by: FiveHundredSeat
+    cards: Sequence[FiveHundredCard]
 
 
 @dataclass(frozen=True, slots=True)
 class RoundFinishedEvent(GameEvent):
     source: ClassVar[Literal["five_hundred"]] = "five_hundred"
     type: ClassVar[Literal["round_finished"]] = "round_finished"
+    round_number: int
 
 
 @dataclass(frozen=True, slots=True)

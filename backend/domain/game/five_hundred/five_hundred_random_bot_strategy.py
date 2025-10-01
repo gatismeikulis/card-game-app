@@ -1,8 +1,6 @@
 import random
 
-from backend.domain.game.five_hundred.domain.five_hundred_game import FiveHundredGame
-from backend.domain.game.five_hundred.domain.five_hundred_phase import FiveHundredPhase
-
+from ...game.bot_strategy_kind import BotStrategyKind
 from ..common.game_command import GameCommand
 from ..common.game_state import GameState
 from .domain.constants import BID_STEP, MAX_BID, MIN_BID, NOT_ALLOWED_TO_BID_THRESHOLD
@@ -11,9 +9,13 @@ from .domain.five_hundred_command import (
     PassCardsCommand,
     PlayCardCommand,
 )
+from .domain.five_hundred_game import FiveHundredGame
+from .domain.five_hundred_phase import FiveHundredPhase
 
 
 class FiveHundredRandomBotStrategy:
+    kind: BotStrategyKind = BotStrategyKind.RANDOM
+
     def create_command(self, game_state: GameState) -> GameCommand:
         if not isinstance(game_state, FiveHundredGame):
             raise TypeError(f"FiveHundredRandomBotStrategy expects FiveHundredGame, got {type(game_state).__name__}")

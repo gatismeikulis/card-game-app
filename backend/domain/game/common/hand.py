@@ -14,6 +14,11 @@ TCard = TypeVar("TCard", bound=Card)
 class Hand(ABC, Generic[TCard]):
     cards: tuple[TCard, ...]
 
+    def __post_init__(self) -> None:
+        # Sort cards on construction (frozen dataclass workaround)
+        sorted_cards = tuple(sorted(self.cards, key=lambda card: (card.suit.symbol, -card.strength().value)))
+        object.__setattr__(self, "cards", sorted_cards)
+
     def with_added_cards(self, cards: Sequence[TCard]) -> Self:
         return type(self)(self.cards + tuple(cards))
 
@@ -29,7 +34,7 @@ class Hand(ABC, Generic[TCard]):
 
     @override
     def __str__(self) -> str:
-        return f"{sorted(self.cards, key=lambda card: (card.suit.symbol, -card.strength().value))}"
+        return f"{" ".join(str(card) for card in self.cards)}"
 
     @override
     def __repr__(self) -> str:

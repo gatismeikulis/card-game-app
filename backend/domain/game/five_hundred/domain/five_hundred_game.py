@@ -32,9 +32,9 @@ class FiveHundredGame(GameState):
         )
 
     @property
-    def winners(self) -> Sequence[FiveHundredSeat] | None:
+    def winners(self) -> Sequence[FiveHundredSeat]:
         if self.round.phase != FiveHundredPhase.GAME_FINISHED:
-            return None
+            raise ValueError("Game is not finished")
         return [seat for seat, points in self.summary.items() if points <= 0]
 
     @property
@@ -42,25 +42,9 @@ class FiveHundredGame(GameState):
         return self.round.seat_infos[self.active_seat]
 
     @override
-    def __str__(self) -> str:
-        if self.round.phase == FiveHundredPhase.GAME_FINISHED:
-            return f"""
-SUMMARY: {self.summary}
-WINNERS: {self.winners}
-"""
-        return f"""
-SUMMARY: {self.summary}
-ROUND {self.round.round_number}, {self.round.phase} | Seat {self.active_seat} is playing
-Required {self.round.required_suit if self.round.required_suit else "-"} | Trump is {self.round.trump_suit if self.round.trump_suit else "-"} | {f"Highest bid is {self.round.highest_bid[1]} by {self.round.highest_bid[0]}" if self.round.highest_bid else "-"}
-
-{FiveHundredSeat(1)} {self.round.seat_infos[FiveHundredSeat(1)]}
-{FiveHundredSeat(2)} {self.round.seat_infos[FiveHundredSeat(2)]}
-{FiveHundredSeat(3)} {self.round.seat_infos[FiveHundredSeat(3)]}
-
-CARDS TO TAKE: {self.round.cards_to_take}
-CARDS ON BOARD: {' ==> '.join(f'{k} {v}' for k, v in self.round.cards_on_board.items() if v)}
-"""
-
-    @override
-    def __repr__(self) -> str:
-        return self.__str__()
+    def str_repr_for_table(self) -> str:
+        match self.round.phase:
+            case FiveHundredPhase.GAME_FINISHED:
+                return f"Game Finished, Winners: {", ".join(str(seat) for seat in self.winners)}, Final Scores: {", ".join(f"{seat}: {self.summary[seat]}" for seat in self.summary.keys())}"
+            case _:
+                return f"Game in progress, Round {self.round.round_number}, {self.round.phase}, Seat {self.active_seat} is taking turn, Current scores: {", ".join(f"{seat}: {self.summary[seat]}" for seat in self.summary.keys())}"
