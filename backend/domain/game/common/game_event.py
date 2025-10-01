@@ -4,6 +4,6 @@ from typing import ClassVar
 
 
 @dataclass(frozen=True, slots=True)
-class Event(ABC):
+class GameEvent(ABC):
     source: ClassVar[str]  # game name
     type: ClassVar[str]  # event kind/type

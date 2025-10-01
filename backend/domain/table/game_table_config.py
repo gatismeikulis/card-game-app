@@ -1,3 +1,4 @@
+from collections.abc import Set
 from dataclasses import dataclass
 
 from backend.domain.game.common.seat import SeatNumber
@@ -9,8 +10,7 @@ class GameTableConfig:
     game_name: GameName
     min_players: int
     max_players: int
-    automatic_start: bool
 
     @property
-    def possible_seat_numbers(self) -> set[SeatNumber]:
-        return set(range(1, self.max_players + 1))
+    def possible_seat_numbers(self) -> Set[SeatNumber]:
+        return frozenset(range(1, self.max_players + 1))

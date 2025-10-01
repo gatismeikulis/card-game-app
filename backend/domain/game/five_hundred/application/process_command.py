@@ -1,3 +1,5 @@
+from collections.abc import Sequence
+
 from ..domain.constants import (
     EMPTY_HAND_SIZE,
     LARGE_MARRIAGE_POINTS,
@@ -27,7 +29,7 @@ from .handle_command import handle_command
 
 def process_command(
     game: FiveHundredGame, command: FiveHundredCommand
-) -> tuple[FiveHundredGame, list[FiveHundredEvent]]:
+) -> tuple[FiveHundredGame, Sequence[FiveHundredEvent]]:
 
     event = handle_command(game, command)
 

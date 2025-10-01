@@ -4,6 +4,5 @@ from typing import ClassVar
 
 
 @dataclass(frozen=True, slots=True)
-class Command(ABC):
-    source: ClassVar[str]  # game name
+class GameCommand(ABC):
     type: ClassVar[str]  # command kind/type

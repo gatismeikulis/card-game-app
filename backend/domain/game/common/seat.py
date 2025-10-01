@@ -7,7 +7,7 @@ type SeatNumber = int
 
 @dataclass(frozen=True, slots=True)
 class Seat(ABC):
-    number: int
+    number: SeatNumber
 
     @override
     def __str__(self) -> str:

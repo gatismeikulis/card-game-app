@@ -1,13 +1,13 @@
 from dataclasses import dataclass
 from typing import ClassVar, Literal
 
-from ...common.event import Event
+from ...common.game_event import GameEvent
 from .five_hundred_card import FiveHundredCard
 from .five_hundred_seat import FiveHundredSeat
 
 
 @dataclass(frozen=True, slots=True)
-class BidMadeEvent(Event):
+class BidMadeEvent(GameEvent):
     source: ClassVar[Literal["five_hundred"]] = "five_hundred"
     type: ClassVar[Literal["bid_made"]] = "bid_made"
     bid: int
@@ -15,19 +15,19 @@ class BidMadeEvent(Event):
 
 
 @dataclass(frozen=True, slots=True)
-class BiddingFinishedEvent(Event):
+class BiddingFinishedEvent(GameEvent):
     source: ClassVar[Literal["five_hundred"]] = "five_hundred"
     type: ClassVar[Literal["bidding_finished"]] = "bidding_finished"
 
 
 @dataclass(frozen=True, slots=True)
-class HiddenCardsTakenEvent(Event):
+class HiddenCardsTakenEvent(GameEvent):
     source: ClassVar[Literal["five_hundred"]] = "five_hundred"
     type: ClassVar[Literal["hidden_cards_taken"]] = "hidden_cards_taken"
 
 
 @dataclass(frozen=True, slots=True)
-class CardsPassedEvent(Event):
+class CardsPassedEvent(GameEvent):
     source: ClassVar[Literal["five_hundred"]] = "five_hundred"
     type: ClassVar[Literal["cards_passed"]] = "cards_passed"
     card_to_next_seat: FiveHundredCard
@@ -35,7 +35,7 @@ class CardsPassedEvent(Event):
 
 
 @dataclass(frozen=True, slots=True)
-class CardPlayedEvent(Event):
+class CardPlayedEvent(GameEvent):
     source: ClassVar[Literal["five_hundred"]] = "five_hundred"
     type: ClassVar[Literal["card_played"]] = "card_played"
     card: FiveHundredCard
@@ -43,7 +43,7 @@ class CardPlayedEvent(Event):
 
 
 @dataclass(frozen=True, slots=True)
-class MarriagePointsAddedEvent(Event):
+class MarriagePointsAddedEvent(GameEvent):
     source: ClassVar[Literal["five_hundred"]] = "five_hundred"
     type: ClassVar[Literal["marriage_points_added"]] = "marriage_points_added"
     points: int
@@ -51,20 +51,20 @@ class MarriagePointsAddedEvent(Event):
 
 
 @dataclass(frozen=True, slots=True)
-class TrickTakenEvent(Event):
+class TrickTakenEvent(GameEvent):
     source: ClassVar[Literal["five_hundred"]] = "five_hundred"
     type: ClassVar[Literal["trick_taken"]] = "trick_taken"
     taken_by: FiveHundredSeat
 
 
 @dataclass(frozen=True, slots=True)
-class RoundFinishedEvent(Event):
+class RoundFinishedEvent(GameEvent):
     source: ClassVar[Literal["five_hundred"]] = "five_hundred"
     type: ClassVar[Literal["round_finished"]] = "round_finished"
 
 
 @dataclass(frozen=True, slots=True)
-class GameFinishedEvent(Event):
+class GameFinishedEvent(GameEvent):
     source: ClassVar[Literal["five_hundred"]] = "five_hundred"
     type: ClassVar[Literal["game_finished"]] = "game_finished"
 

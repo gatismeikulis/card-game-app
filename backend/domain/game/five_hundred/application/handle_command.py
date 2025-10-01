@@ -11,10 +11,6 @@ from ..domain.five_hundred_game import FiveHundredGame
 from ..domain.five_hundred_phase import FiveHundredPhase
 
 
-# if handler receives a command here, then it's already validated that command is received by active player.
-# it should happen a layer above in table instance because table should have a dictionary of players and their seats
-# and it can see if command sender is the same as active seat
-# we only need to validate that actual command's data is valid for applying event
 def handle_command(game: FiveHundredGame, cmd: FiveHundredCommand) -> FiveHundredEvent:
     match cmd:
         case MakeBidCommand(bid=bid):
