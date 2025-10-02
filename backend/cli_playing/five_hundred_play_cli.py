@@ -115,11 +115,12 @@ def five_hundred_play_cli(delay_between_events: float = -1) -> list[GameEvent]:
 
         events = []
 
-        if active_player.bot_strategy is not None:
+        phase = game_state.round.phase
+
+        if active_player.bot_strategy is not None and phase != FiveHundredPhase.GAME_FINISHED:
             events = table.take_automatic_turn(active_user_id)
             all_events.extend(events)
         else:
-            phase = game_state.round.phase
             match phase:
                 case FiveHundredPhase.BIDDING:
                     print(
@@ -173,9 +174,6 @@ def five_hundred_play_cli(delay_between_events: float = -1) -> list[GameEvent]:
                         print(f"Invalid input: {str(e)}")
                         continue
                 case FiveHundredPhase.GAME_FINISHED:
-                    print("\nGame over! Final scores:")
-                    for seat, points in game_state.summary.items():
-                        print(f"Seat {seat}: {points}")
                     return all_events
 
 
