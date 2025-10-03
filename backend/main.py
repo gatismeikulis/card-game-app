@@ -1,3 +1,8 @@
-from backend.cli_playing.five_hundred_play_cli import five_hundred_play_cli
+from fastapi import FastAPI
 
-_ = five_hundred_play_cli(delay_between_events=1)
+app = FastAPI()
+
+
+@app.get("/")
+async def root():
+    return {"fast-api-server": "Running"}
