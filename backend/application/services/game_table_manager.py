@@ -1,8 +1,8 @@
 from collections.abc import Sequence
 from typing import Any, final
 
-from backend.application.bot_strategy_registry import BotStrategyRegistry
-from backend.application.game_command_parsing_service import GameCommandParsingService
+from backend.application.services.bot_strategy_registry import BotStrategyRegistry
+from backend.application.services.game_command_parsing_service import GameCommandParsingService
 from backend.domain.core.user_id import UserId
 from backend.domain.game.bot_strategy_kind import BotStrategyKind
 from backend.domain.game.common.game_event import GameEvent

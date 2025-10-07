@@ -1,2 +1,4 @@
 fastapi==0.118.0
 uvicorn[standard]
+pyjwt
+pwdlib[argon2]
