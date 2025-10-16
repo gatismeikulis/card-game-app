@@ -7,9 +7,7 @@ from ..models import User
 class JWTAuthTests(APITestCase):
     @override
     def setUp(self):
-        self.user = User.objects.create_user(
-            username="testuser", password="testpass123", screen_name="Test"
-        )
+        self.user = User.objects.create_user(username="testuser", password="testpass123", screen_name="Test")
 
     def test_obtain_token(self):
         """Test getting JWT token"""

@@ -29,14 +29,10 @@ DEBUG = True
 ALLOWED_HOSTS = []
 
 
-REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
-    )
-}
+REST_FRAMEWORK = {"DEFAULT_AUTHENTICATION_CLASSES": ("rest_framework_simplejwt.authentication.JWTAuthentication",)}
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=120),  # TODO: change to 15 minutes or something
     "REFRESH_TOKEN_LIFETIME": timedelta(days=14),
 }
 
@@ -52,6 +48,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "corsheaders",
     "apps.users",
+    "apps.gametables",
 ]
 
 MIDDLEWARE = [

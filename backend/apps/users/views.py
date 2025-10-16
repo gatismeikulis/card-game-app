@@ -44,9 +44,7 @@ class UserViewSet(ModelViewSet[User]):
         is_protected_action = self.action in ["update", "partial_update", "destroy"]
         is_owner = obj == self.request.user
         if is_protected_action and not is_owner:
-            self.permission_denied(
-                self.request, message="You can only modify your own user information"
-            )
+            self.permission_denied(self.request, message="You can only modify your own user information")
         return obj
 
     @action(detail=False, methods=["get"], url_path="me")

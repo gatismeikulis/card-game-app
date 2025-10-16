@@ -7,4 +7,8 @@ urlpatterns = [
     path("api/v1/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("api/v1/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("api/v1/users/", include(("apps.users.urls", "users"), namespace="users")),
+    path(
+        "api/v1/tables/",
+        include(("apps.gametables.urls", "gametables"), namespace="gametables"),
+    ),
 ]
