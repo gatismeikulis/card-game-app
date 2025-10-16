@@ -154,6 +154,15 @@ class GameTable:
         self._game_state = self._engine.init_game()
         self._status = TableStatus.JUST_STARTED
 
+    def rebuild_game_state(self, events: Sequence[GameEvent]) -> None:
+        if len(events) == 0:
+            return
+        self._game_state = self._engine.rebuild_game_state(self.game_state, events)
+        if self._game_state.is_finished:
+            self._status = TableStatus.FINISHED
+        else:
+            self._status = TableStatus.IN_PROGRESS
+
     def to_dict(self) -> dict[str, Any]:
         """Serialize to JSON-compatible dict"""
         return {

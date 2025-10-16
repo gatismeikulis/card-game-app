@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework.permissions import AllowAny, BasePermission, IsAuthenticated
 
+from .infra.game_play_event_repository import GamePlayEventRepository
 from .infra.game_table_repository import GameTableRepository
 from .serializers import (
     AddBotRequestSerializer,
@@ -20,7 +21,8 @@ from .application.game_table_manager import GameTableManager
 
 # Creating singletons at module load
 _game_table_repository = GameTableRepository()
-_table_manager = GameTableManager(game_table_repository=_game_table_repository)
+_game_play_event_repository = GamePlayEventRepository()
+_table_manager = GameTableManager(game_table_repository=_game_table_repository, game_play_event_repository=_game_play_event_repository)
 
 
 # TODO ADD GLOBAL EXCEPTION HANDLER
