@@ -22,7 +22,9 @@ from .application.game_table_manager import GameTableManager
 # Creating singletons at module load
 _game_table_repository = GameTableRepository()
 _game_play_event_repository = GamePlayEventRepository()
-_table_manager = GameTableManager(game_table_repository=_game_table_repository, game_play_event_repository=_game_play_event_repository)
+_table_manager = GameTableManager(
+    game_table_repository=_game_table_repository, game_play_event_repository=_game_play_event_repository
+)
 
 
 # TODO ADD GLOBAL EXCEPTION HANDLER

@@ -6,67 +6,94 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('gametables', '0001_initial'),
+        ("gametables", "0001_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='gametableplayer',
-            name='user',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL),
+            model_name="gametableplayer",
+            name="user",
+            field=models.ForeignKey(
+                null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL
+            ),
         ),
         migrations.AddField(
-            model_name='gametablesnapshot',
-            name='owner',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL),
+            model_name="gametablesnapshot",
+            name="owner",
+            field=models.ForeignKey(
+                null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL
+            ),
         ),
         migrations.AddField(
-            model_name='gametableplayer',
-            name='game_table',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='game_table_players', to='gametables.gametablesnapshot'),
+            model_name="gametableplayer",
+            name="game_table",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="game_table_players",
+                to="gametables.gametablesnapshot",
+            ),
         ),
         migrations.AddField(
-            model_name='gameplayevent',
-            name='game_table',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='game_play_events', to='gametables.gametablesnapshot'),
+            model_name="gameplayevent",
+            name="game_table",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="game_play_events",
+                to="gametables.gametablesnapshot",
+            ),
         ),
         migrations.AddField(
-            model_name='gameconfig',
-            name='game_table',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='game_configs', to='gametables.gametablesnapshot'),
+            model_name="gameconfig",
+            name="game_table",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="game_configs",
+                to="gametables.gametablesnapshot",
+            ),
         ),
         migrations.AddField(
-            model_name='tableconfig',
-            name='game_table',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='table_configs', to='gametables.gametablesnapshot'),
+            model_name="tableconfig",
+            name="game_table",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="table_configs",
+                to="gametables.gametablesnapshot",
+            ),
         ),
         migrations.AddIndex(
-            model_name='gametablesnapshot',
-            index=models.Index(fields=['game_name', 'status'], name='game_name_status_index'),
+            model_name="gametablesnapshot",
+            index=models.Index(fields=["game_name", "status"], name="game_name_status_index"),
         ),
         migrations.AddConstraint(
-            model_name='gametableplayer',
-            constraint=models.UniqueConstraint(fields=('game_table', 'screen_name'), name='uniq_player_screen_name_per_table'),
+            model_name="gametableplayer",
+            constraint=models.UniqueConstraint(
+                fields=("game_table", "screen_name"), name="uniq_player_screen_name_per_table"
+            ),
         ),
         migrations.AddConstraint(
-            model_name='gametableplayer',
-            constraint=models.UniqueConstraint(fields=('game_table', 'user'), name='uniq_player_user_per_table'),
+            model_name="gametableplayer",
+            constraint=models.UniqueConstraint(fields=("game_table", "user"), name="uniq_player_user_per_table"),
         ),
         migrations.AddConstraint(
-            model_name='gameplayevent',
-            constraint=models.UniqueConstraint(fields=('game_table', 'sequence_number'), name='uniq_event_seq_per_table'),
+            model_name="gameplayevent",
+            constraint=models.UniqueConstraint(
+                fields=("game_table", "sequence_number"), name="uniq_event_seq_per_table"
+            ),
         ),
         migrations.AddConstraint(
-            model_name='gameconfig',
-            constraint=models.UniqueConstraint(fields=('game_table', 'config_key'), name='uniq_game_config_key_per_table'),
+            model_name="gameconfig",
+            constraint=models.UniqueConstraint(
+                fields=("game_table", "config_key"), name="uniq_game_config_key_per_table"
+            ),
         ),
         migrations.AddConstraint(
-            model_name='tableconfig',
-            constraint=models.UniqueConstraint(fields=('game_table', 'config_key'), name='uniq_table_config_key_per_table'),
+            model_name="tableconfig",
+            constraint=models.UniqueConstraint(
+                fields=("game_table", "config_key"), name="uniq_table_config_key_per_table"
+            ),
         ),
     ]

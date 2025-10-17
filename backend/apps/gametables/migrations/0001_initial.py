@@ -4,55 +4,53 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='GameConfig',
+            name="GameConfig",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('config_key', models.CharField(max_length=100)),
-                ('data', models.JSONField()),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("config_key", models.CharField(max_length=100)),
+                ("data", models.JSONField()),
             ],
         ),
         migrations.CreateModel(
-            name='GamePlayEvent',
+            name="GamePlayEvent",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('sequence_number', models.IntegerField()),
-                ('data', models.JSONField()),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("sequence_number", models.IntegerField()),
+                ("data", models.JSONField()),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
             ],
         ),
         migrations.CreateModel(
-            name='GameTablePlayer',
+            name="GameTablePlayer",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('screen_name', models.CharField(max_length=50)),
-                ('bot_strategy_kind', models.CharField(max_length=50, null=True)),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("screen_name", models.CharField(max_length=50)),
+                ("bot_strategy_kind", models.CharField(max_length=50, null=True)),
             ],
         ),
         migrations.CreateModel(
-            name='GameTableSnapshot',
+            name="GameTableSnapshot",
             fields=[
-                ('id', models.UUIDField(primary_key=True, serialize=False)),
-                ('game_name', models.CharField(max_length=50)),
-                ('status', models.CharField(max_length=30)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('data', models.JSONField()),
+                ("id", models.UUIDField(primary_key=True, serialize=False)),
+                ("game_name", models.CharField(max_length=50)),
+                ("status", models.CharField(max_length=30)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                ("data", models.JSONField()),
             ],
         ),
         migrations.CreateModel(
-            name='TableConfig',
+            name="TableConfig",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('config_key', models.CharField(max_length=100)),
-                ('data', models.JSONField()),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("config_key", models.CharField(max_length=100)),
+                ("data", models.JSONField()),
             ],
         ),
     ]
