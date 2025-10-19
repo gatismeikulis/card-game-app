@@ -58,7 +58,7 @@ class FiveHundredSeatInfo:
             "hand": len(self.hand.cards),
             "bid": self.bid,
             "points": None,
-            "trick_count": None,
+            "trick_count": self.trick_count,
             "marriage_points": None,
         }
 
