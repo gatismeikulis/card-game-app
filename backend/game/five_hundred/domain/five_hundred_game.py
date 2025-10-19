@@ -101,4 +101,5 @@ class FiveHundredGame(GameState):
             "results": [result.to_dict() for result in self.results],
             "summary": {seat.to_dict(): points for seat, points in self.summary.items()},
             "active_seat": self.active_seat.to_dict(),
+            "is_my_turn": self.active_seat.number == seat_number,
         }

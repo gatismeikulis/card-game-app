@@ -68,6 +68,7 @@ class GameTable:
 
     # regular turn is a turn taken by a human player by providing a command
     def take_regular_turn(self, user_id: int, command: GameCommand) -> Sequence[GameEvent]:
+        self._validate_game_status_for_taking_turn()
         if self.active_player.user_id != user_id:
             raise ValueError(f"Not the player's with id {user_id} turn")
         return self._take_turn(self.game_state, command)
@@ -75,6 +76,7 @@ class GameTable:
     # automatic turn is a turn taken by a bot player by producing a command
     # this may be async because it may take time to create a command using bot strategy
     def take_automatic_turn(self) -> Sequence[GameEvent]:
+        self._validate_game_status_for_taking_turn()
         active_player = self.active_player
         if not active_player.is_bot:
             raise ValueError("Not a bot's turn")
@@ -84,6 +86,10 @@ class GameTable:
         game_state = self.game_state
         command = bot_strategy.create_command(game_state)
         return self._take_turn(game_state, command)
+
+    def _validate_game_status_for_taking_turn(self) -> None:
+        if self.status != TableStatus.JUST_STARTED and self.status != TableStatus.IN_PROGRESS:
+            raise ValueError("Game is not started or already finished")
 
     def _take_turn(self, game_state: GameState, command: GameCommand) -> Sequence[GameEvent]:
         game_state_updated, events = self._engine.process_command(game_state, command)
@@ -106,6 +112,8 @@ class GameTable:
         preferred_seat_number: SeatNumber | None = None,
         bot_strategy: BotStrategy | None = None,
     ) -> None:
+        if self.status != TableStatus.NOT_STARTED:
+            raise ValueError(f"Game is already started/finished, can not add player")
         if len(self._players) >= self._config.game_config.max_seats:
             raise ValueError(f"Table {self._id} is full")
         if user_id is not None and user_id in [player.user_id for player in self._players]:
@@ -129,36 +137,43 @@ class GameTable:
         self._players.append(player)
 
     def remove_player(self, user_id: int | None = None, seat_number: SeatNumber | None = None) -> None:
+        if self.status != TableStatus.NOT_STARTED:
+            raise ValueError(f"Game is already started/finished, can not remove player")
         if user_id is not None:
             to_remove = next((player for player in self._players if player.user_id == user_id), None)
-            if to_remove is None:
-                raise ValueError(f"Player with user-id {user_id} not found")
-            self._players.remove(to_remove)
         elif seat_number is not None:
             to_remove = next(
                 (player for player in self._players if player.seat_number == seat_number),
                 None,
             )
-            if to_remove is None:
-                raise ValueError(f"Player with seat number {seat_number} not found")
-            self._players.remove(to_remove)
         else:
-            raise ValueError("Either user id or seat number must be provided")
+            raise ValueError("Either user-id or seat number must be provided")
+        if to_remove is None:
+            raise ValueError(f"Player with user-id {user_id} or seat number {seat_number} not found")
+        self._players.remove(to_remove)
+        return None
 
     def start_game(self) -> None:
         # TODO: maybe check if all players have agreed to start
+        if self.status != TableStatus.NOT_STARTED:
+            raise ValueError("Game is already in progress or finished")
         if len(self._players) < self._config.game_config.min_seats:
             raise ValueError("Not enough players to start the game")
-        if self._status != TableStatus.NOT_STARTED:
-            raise ValueError("Game already started")
         self._game_state = self._engine.init_game()
         self._status = TableStatus.JUST_STARTED
+
+    # this should be done by the owner of the table if all other player agrees...
+    # def cancel_game(self) -> None: ...
+
+    # this should mark game as aborted (because player left or was kicked by owner for some reason) and link the user_id who to blame for this
+    # so that user's reputation can be affected etc... just a reminder for later when these features come in
+    # def abort_game(self, caused_by_user_id: int) -> None: ...
 
     def rebuild_game_state(self, events: Sequence[GameEvent]) -> None:
         if len(events) == 0:
             return
         self._game_state = self._engine.rebuild_game_state(self.game_state, events)
-        if self._game_state.is_finished:
+        if self.game_state.is_finished:
             self._status = TableStatus.FINISHED
         else:
             self._status = TableStatus.IN_PROGRESS
@@ -171,7 +186,7 @@ class GameTable:
             "players": [player.to_dict() for player in self._players],
             "owner_id": self._owner_id,
             "game_state": self._game_state.to_dict() if self._game_state else None,
-            "status": self.status.value,
+            "status": self._status.value,
         }
 
     def to_public_dict(self, seat_number: SeatNumber | None = None) -> dict[str, Any]:
@@ -181,7 +196,7 @@ class GameTable:
             "players": [player.to_dict() for player in self._players],
             "owner_id": self._owner_id,
             "game_state": self._game_state.to_public_dict(seat_number) if self._game_state else None,
-            "status": self.status.value,
+            "status": self._status.value,
         }
 
     @override

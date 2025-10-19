@@ -129,7 +129,7 @@ class GameTableViewSet(ViewSet):
 
         headers = {"Location": request.build_absolute_uri(f"{table_id}/")}
 
-        return Response({"table_id": table_id}, status=status.HTTP_200_OK, headers=headers)
+        return Response({}, status=status.HTTP_201_CREATED, headers=headers)
 
     @action(detail=True, methods=["post"], url_path="leave")
     def leave(self, request: Request, pk: str) -> Response:
@@ -141,7 +141,7 @@ class GameTableViewSet(ViewSet):
         except Exception as e:
             return Response(status=status.HTTP_400_BAD_REQUEST, data={"error": str(e)})
 
-        return Response(status=status.HTTP_200_OK)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=["post"], url_path="add-bot")
     def add_bot(self, request: Request, pk: str) -> Response:
@@ -149,7 +149,7 @@ class GameTableViewSet(ViewSet):
         POST /{table_id}/add-bot/
         {
             "bot_strategy_kind": "random",
-            "preferred_seat": 2
+            "preferred_seat": 2 // optional
         }
         """
         serializer = AddBotRequestSerializer(data=request.data)
@@ -163,7 +163,7 @@ class GameTableViewSet(ViewSet):
         except Exception as e:
             return Response(status=status.HTTP_400_BAD_REQUEST, data={"error": str(e)})
 
-        return Response(status=status.HTTP_200_OK)
+        return Response({}, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=["post"], url_path="remove-bot")
     def remove_bot(self, request: Request, pk: str) -> Response:
@@ -182,7 +182,7 @@ class GameTableViewSet(ViewSet):
         except Exception as e:
             return Response(status=status.HTTP_400_BAD_REQUEST, data={"error": str(e)})
 
-        return Response(status=status.HTTP_200_OK)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=["post"], url_path="start-game")
     def start_game(self, request: Request, pk: str) -> Response:
@@ -194,7 +194,7 @@ class GameTableViewSet(ViewSet):
         except Exception as e:
             return Response(status=status.HTTP_400_BAD_REQUEST, data={"error": str(e)})
 
-        return Response(status=status.HTTP_200_OK)
+        return Response({}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=["post"], url_path="take-turn")
     def take_regular_turn(self, request: Request, pk: str) -> Response:
@@ -215,7 +215,7 @@ class GameTableViewSet(ViewSet):
         except Exception as e:
             return Response(status=status.HTTP_400_BAD_REQUEST, data={"error": str(e)})
 
-        return Response(status=status.HTTP_200_OK)
+        return Response({}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=["post"], url_path="take-automatic-turn")
     def take_automatic_turn(self, request: Request, pk: str) -> Response:
@@ -227,4 +227,4 @@ class GameTableViewSet(ViewSet):
         except Exception as e:
             return Response(status=status.HTTP_400_BAD_REQUEST, data={"error": str(e)})
 
-        return Response(status=status.HTTP_200_OK)
+        return Response({}, status=status.HTTP_200_OK)

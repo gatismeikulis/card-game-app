@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, override
 from rest_framework.fields import CharField, ChoiceField, DictField, IntegerField, SerializerMethodField
 from rest_framework.serializers import ModelSerializer, Serializer
 
@@ -57,7 +57,15 @@ class JoinGameTableRequestSerializer(Serializer[dict[str, Any]]):
 
 class AddBotRequestSerializer(Serializer[dict[str, Any]]):
     bot_strategy_kind: ChoiceField = ChoiceField(choices=[b.value for b in BotStrategyKind])
-    preferred_seat: IntegerField = IntegerField()
+    preferred_seat: IntegerField = IntegerField(required=False, default=None)
+
+    @override
+    def to_internal_value(self, data: dict[str, Any]):
+        if "bot_strategy_kind" in data:
+            data_modified = data.copy()  # don't modify the original data passed to the serializer
+            data_modified["bot_strategy_kind"] = data["bot_strategy_kind"].upper()
+            return super().to_internal_value(data_modified)
+        return super().to_internal_value(data)
 
 
 class RemoveBotRequestSerializer(Serializer[dict[str, Any]]):
