@@ -1,19 +1,14 @@
-version: "3.9"
-
 services:
 
   postgres:
     image: postgres:16
-    container_name: ${POSTGRES_CONTAINER_NAME:-card_game_app_postgres}
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: ${POSTGRES_DB:-card_game_app} # detault DB to build when container starts.
-      POSTGRES_HOST: ${POSTGRES_HOST:-localhost}
-      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-verysecurepassword}
+      POSTGRES_DB: ${POSTGRES_DB:-card_game_app} # default DB to build when container starts
     ports:
-      - "${POSTGRES_PORT:-5432}:5432" # host port: container port
+      - "${POSTGRES_HOST_PORT:-5432}:5432" # host port: container port
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -21,6 +16,22 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+  
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-8000}:8000" # host port: container port
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes: # development only (for hot reloading)
+      - ./backend:/app # 'bind mount' syncs changes from host to container
 
 volumes:
   postgres_data:
