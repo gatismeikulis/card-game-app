@@ -14,6 +14,7 @@ from .five_hundred_seat_info import FiveHundredSeatInfo
 class FiveHundredRound:
     seat_infos: Mapping[FiveHundredSeat, FiveHundredSeatInfo]
     cards_on_board: Mapping[FiveHundredSeat, FiveHundredCard | None]
+    prev_trick: Sequence[FiveHundredCard]  # just for UI
     cards_to_take: Sequence[FiveHundredCard]
     required_suit: Suit | None
     trump_suit: Suit | None
@@ -59,6 +60,7 @@ class FiveHundredRound:
             seat_infos=seat_infos,
             cards_on_board=cards_on_board,
             cards_to_take=[],
+            prev_trick=[],
             required_suit=None,
             trump_suit=None,
             highest_bid=None,
@@ -80,6 +82,7 @@ class FiveHundredRound:
                 seat.to_dict(): card.to_dict() if card else None for seat, card in self.cards_on_board.items()
             },
             "cards_to_take": [card.to_dict() for card in self.cards_to_take],
+            "prev_trick": [card.to_dict() for card in self.prev_trick],
             "required_suit": self.required_suit.symbol if self.required_suit else None,
             "trump_suit": self.trump_suit.symbol if self.trump_suit else None,
             "highest_bid": [self.highest_bid[0].to_dict(), self.highest_bid[1]] if self.highest_bid else None,
@@ -102,6 +105,7 @@ class FiveHundredRound:
                 for seat_num, card in data["cards_on_board"].items()
             },
             cards_to_take=[FiveHundredCard.from_dict(card) for card in data["cards_to_take"]],
+            prev_trick=[FiveHundredCard.from_dict(card) for card in data["prev_trick"]],
             required_suit=Suit.from_string(data["required_suit"]) if data["required_suit"] else None,
             trump_suit=Suit.from_string(data["trump_suit"]) if data["trump_suit"] else None,
             highest_bid=(

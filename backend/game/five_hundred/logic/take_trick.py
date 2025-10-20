@@ -6,7 +6,8 @@ from ..domain.five_hundred_seat import FiveHundredSeat
 
 
 def take_trick(game: FiveHundredGame, taken_by: FiveHundredSeat) -> FiveHundredGame:
-    trick_points = sum(card.points.value for card in game.round.cards_on_board.values() if card is not None)
+    trick_cards = [card for card in game.round.cards_on_board.values() if card is not None]
+    trick_points = sum([card.points.value for card in trick_cards])
 
     trick_winning_seats_info = game.round.seat_infos[taken_by]
     points_updated = trick_winning_seats_info.points + trick_points
@@ -24,9 +25,12 @@ def take_trick(game: FiveHundredGame, taken_by: FiveHundredSeat) -> FiveHundredG
 
     seat_infos_updated = dict(game.round.seat_infos) | {taken_by: trick_winning_seats_info_updated}
 
+    prev_trick_updated = trick_cards
+
     round_updated = replace(
         game.round,
         cards_on_board=cards_on_board_updated,
+        prev_trick=prev_trick_updated,
         required_suit=None,
         seat_infos=seat_infos_updated,
     )

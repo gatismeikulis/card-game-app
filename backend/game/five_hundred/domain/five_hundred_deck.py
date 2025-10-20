@@ -19,4 +19,4 @@ class FiveHundredDeck(Deck[FiveHundredCard]):
     @classmethod
     @override
     def from_card_strings(cls, card_strings: list[str]) -> Self:
-        return cls(shuffled=False, _cards=[FiveHundredCard.from_string(card_str) for card_str in card_strings])
+        return cls(shuffle_on_init=False, _cards=[FiveHundredCard.from_string(card_str) for card_str in card_strings])

@@ -12,11 +12,11 @@ TCard = TypeVar("TCard", bound=Card)
 @dataclass(frozen=True, slots=True)
 class Deck(ABC, Generic[TCard]):
     _cards: list[TCard]
-    shuffled: bool = True  # if True, the deck is shuffled when it is initialized
-    _undealed_deck: Sequence[TCard] = field(default_factory=list)
+    shuffle_on_init: bool = True  # if True, the deck is shuffled when it is initialized
+    _undealed_deck: list[TCard] = field(default_factory=list)
 
     def __post_init__(self) -> None:
-        if self.shuffled:
+        if self.shuffle_on_init:
             shuffle(self._cards)
         object.__setattr__(self, "_undealed_deck", self._cards.copy())
 
@@ -43,7 +43,7 @@ class Deck(ABC, Generic[TCard]):
     @classmethod
     def from_dict(cls, data: list[str], card_class: type[TCard]) -> Self:
         """Reconstruct from JSON-compatible list of strings"""
-        return cls([card_class.from_dict(card) for card in data], shuffled=False)
+        return cls([card_class.from_dict(card) for card in data], shuffle_on_init=False)
 
     @override
     def __str__(self) -> str:

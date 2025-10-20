@@ -173,6 +173,7 @@ class GameTable:
         if len(events) == 0:
             return
         self._game_state = self._engine.rebuild_game_state(self.game_state, events)
+        print(f"Rebuilt game-state for table {self._id} from {len(events)} events")
         if self.game_state.is_finished:
             self._status = TableStatus.FINISHED
         else:
