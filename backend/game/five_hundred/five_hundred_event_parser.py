@@ -4,6 +4,7 @@ from ..common.game_event import GameEvent
 from .domain.five_hundred_event import (
     BidMadeEvent,
     BiddingFinishedEvent,
+    DeckShuffledEvent,
     HiddenCardsTakenEvent,
     CardsPassedEvent,
     CardPlayedEvent,
@@ -19,6 +20,8 @@ class FiveHundredEventParser:
         event_type = data["type"]
 
         match event_type:
+            case "deck_shuffled":
+                return DeckShuffledEvent.from_dict(data)
             case "bid_made":
                 return BidMadeEvent.from_dict(data)
             case "bidding_finished":

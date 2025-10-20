@@ -3,9 +3,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from ...common.card import Suit
-from ...common.deck import Deck
 from ...common.hand import Hand
-from .constants import CARDS_IN_STARTING_HAND, CARDS_TO_TAKE
 from .five_hundred_card import FiveHundredCard
 from .five_hundred_phase import FiveHundredPhase
 from .five_hundred_seat import FiveHundredSeat
@@ -26,29 +24,24 @@ class FiveHundredRound:
     is_marriage_announced: bool
 
     @staticmethod
-    def create(deck: Deck[FiveHundredCard], round_number: int, first_seat: FiveHundredSeat) -> "FiveHundredRound":
-        cards_to_take = deck.draw_many(CARDS_TO_TAKE)
-        seat_one_cards = deck.draw_many(CARDS_IN_STARTING_HAND)
-        seat_two_cards = deck.draw_many(CARDS_IN_STARTING_HAND)
-        seat_three_cards = deck.draw_many(CARDS_IN_STARTING_HAND)
-
+    def create(round_number: int, first_seat: FiveHundredSeat) -> "FiveHundredRound":
         seat_infos: Mapping[FiveHundredSeat, FiveHundredSeatInfo] = {
             FiveHundredSeat(1): FiveHundredSeatInfo(
-                hand=Hand(tuple(seat_one_cards)),
+                hand=Hand(tuple()),
                 bid=0,
                 points=0,
                 trick_count=0,
                 marriage_points=[],
             ),
             FiveHundredSeat(2): FiveHundredSeatInfo(
-                hand=Hand(tuple(seat_two_cards)),
+                hand=Hand(tuple()),
                 bid=0,
                 points=0,
                 trick_count=0,
                 marriage_points=[],
             ),
             FiveHundredSeat(3): FiveHundredSeatInfo(
-                hand=Hand(tuple(seat_three_cards)),
+                hand=Hand(tuple()),
                 bid=0,
                 points=0,
                 trick_count=0,
@@ -65,7 +58,7 @@ class FiveHundredRound:
         return FiveHundredRound(
             seat_infos=seat_infos,
             cards_on_board=cards_on_board,
-            cards_to_take=cards_to_take,
+            cards_to_take=[],
             required_suit=None,
             trump_suit=None,
             highest_bid=None,

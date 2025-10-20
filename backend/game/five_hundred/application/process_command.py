@@ -6,11 +6,13 @@ from ..domain.constants import (
     NOT_ALLOWED_TO_BID_THRESHOLD,
     SMALL_MARRIAGE_POINTS,
 )
+from ..domain.five_hundred_deck import FiveHundredDeck
 from ..domain.five_hundred_command import FiveHundredCommand
 from ..domain.five_hundred_event import (
     BiddingFinishedEvent,
     BidMadeEvent,
     CardPlayedEvent,
+    DeckShuffledEvent,
     FiveHundredEvent,
     GameFinishedEvent,
     HiddenCardsTakenEvent,
@@ -51,7 +53,10 @@ def check_for_additional_events(game: FiveHundredGame, last_event: FiveHundredEv
             have_all_seats_passed = all(seat_info.bid < 0 for seat_info in game.round.seat_infos.values())
             is_current_bidder_the_highest_bidder = current_highest_bidder == made_by
             if (is_current_bidder_the_highest_bidder and next_seat_to_bid is None) or have_all_seats_passed:
-                return BiddingFinishedEvent()
+                return BiddingFinishedEvent(
+                    bid=game.round.highest_bid[1] if game.round.highest_bid else None,
+                    made_by=game.round.highest_bid[0] if game.round.highest_bid else None,
+                )
             return None
 
         case BiddingFinishedEvent():
@@ -104,7 +109,8 @@ def check_for_additional_events(game: FiveHundredGame, last_event: FiveHundredEv
                 return GameFinishedEvent()
             if all(points >= NOT_ALLOWED_TO_BID_THRESHOLD for points in game.summary.values()):
                 return GameFinishedEvent()
-            return None
+            deck = FiveHundredDeck.build()
+            return DeckShuffledEvent(deck=deck)
 
         case _:
             return None

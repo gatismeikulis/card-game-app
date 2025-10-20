@@ -1,4 +1,5 @@
 from ..domain.five_hundred_event import (
+    DeckShuffledEvent,
     BiddingFinishedEvent,
     BidMadeEvent,
     CardPlayedEvent,
@@ -12,6 +13,7 @@ from ..domain.five_hundred_event import (
 )
 from ..domain.five_hundred_game import FiveHundredGame
 from ..logic.add_marriage_points import add_marriage_points
+from ..logic.deal_cards import deal_cards
 from ..logic.finish_bidding import finish_bidding
 from ..logic.finish_game import finish_game
 from ..logic.finish_round import finish_round
@@ -24,6 +26,8 @@ from ..logic.take_trick import take_trick
 
 def apply_event(game: FiveHundredGame, event: FiveHundredEvent) -> FiveHundredGame:
     match event:
+        case DeckShuffledEvent(deck=deck):
+            return deal_cards(game, deck)
         case BidMadeEvent(bid=bid):
             return make_bid(game, bid)
         case BiddingFinishedEvent():

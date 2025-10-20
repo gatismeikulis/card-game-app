@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import override
+from typing import Self, override
 
 from ...common.card import Rank, Suit
 from ...common.deck import Deck
@@ -11,18 +11,12 @@ RANKS = [Rank.NINE, Rank.JACK, Rank.QUEEN, Rank.KING, Rank.TEN, Rank.ACE]
 
 @dataclass(frozen=True, slots=True)
 class FiveHundredDeck(Deck[FiveHundredCard]):
-    @staticmethod
+    @classmethod
     @override
-    def build(shuffled: bool = True) -> "FiveHundredDeck":
-        deck = FiveHundredDeck([FiveHundredCard(suit=suit, rank=rank) for suit in Suit for rank in RANKS])
-        if shuffled:
-            deck._shuffle()
-        return deck
+    def build(cls) -> Self:
+        return cls([FiveHundredCard(suit=suit, rank=rank) for suit in Suit for rank in RANKS])
 
-    @staticmethod
+    @classmethod
     @override
-    def from_card_strings(card_strings: list[str], shuffled: bool = True) -> "FiveHundredDeck":
-        deck = FiveHundredDeck([FiveHundredCard.from_string(card_str) for card_str in card_strings])
-        if shuffled:
-            deck._shuffle()
-        return deck
+    def from_card_strings(cls, card_strings: list[str]) -> Self:
+        return cls(shuffled=False, _cards=[FiveHundredCard.from_string(card_str) for card_str in card_strings])

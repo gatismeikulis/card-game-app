@@ -3,8 +3,29 @@ from dataclasses import dataclass
 from typing import ClassVar, Literal, Any, Self, override
 
 from ...common.game_event import GameEvent
+from .five_hundred_deck import FiveHundredDeck
 from .five_hundred_card import FiveHundredCard
 from .five_hundred_seat import FiveHundredSeat
+
+
+@dataclass(frozen=True, slots=True)
+class DeckShuffledEvent(GameEvent):
+    type: ClassVar[Literal["deck_shuffled"]] = "deck_shuffled"
+    deck: FiveHundredDeck
+
+    @override
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "type": self.type,
+            "deck": self.deck.to_dict(),
+        }
+
+    @classmethod
+    @override
+    def from_dict(cls, data: dict[str, Any]) -> Self:
+        return cls(
+            deck=FiveHundredDeck.from_dict(data["deck"], FiveHundredCard),
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -33,15 +54,20 @@ class BidMadeEvent(GameEvent):
 @dataclass(frozen=True, slots=True)
 class BiddingFinishedEvent(GameEvent):
     type: ClassVar[Literal["bidding_finished"]] = "bidding_finished"
+    bid: int | None
+    made_by: FiveHundredSeat | None
 
     @override
     def to_dict(self) -> dict[str, Any]:
-        return {"type": self.type}
+        return {"type": self.type, "bid": self.bid, "made_by": self.made_by.to_dict() if self.made_by else None}
 
     @classmethod
     @override
     def from_dict(cls, data: dict[str, Any]) -> Self:
-        return cls()
+        return cls(
+            bid=data["bid"],
+            made_by=FiveHundredSeat.from_dict(data["made_by"]),
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -183,7 +209,8 @@ class GameFinishedEvent(GameEvent):
 
 
 FiveHundredEvent = (
-    BidMadeEvent
+    DeckShuffledEvent
+    | BidMadeEvent
     | BiddingFinishedEvent
     | HiddenCardsTakenEvent
     | CardsPassedEvent

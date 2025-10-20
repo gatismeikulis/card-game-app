@@ -1,7 +1,6 @@
 from dataclasses import replace
 
 from ..domain.constants import MUST_BID_THRESHOLD
-from ..domain.five_hundred_deck import FiveHundredDeck
 from ..domain.five_hundred_game import FiveHundredGame
 from ..domain.five_hundred_round import FiveHundredRound
 from ..domain.five_hundred_round_results import FiveHundredRoundResults
@@ -31,11 +30,9 @@ def finish_round(game: FiveHundredGame) -> FiveHundredGame:
 
     game_summary_updated = {seat: game.summary[seat] + seat_points[seat] for seat in seat_points.keys()}
 
-    deck = FiveHundredDeck.build()
-
     first_seat_updated = game.round.first_seat.next()
 
-    round_updated = FiveHundredRound.create(deck, game.round.round_number + 1, first_seat_updated)
+    round_updated = FiveHundredRound.create(game.round.round_number + 1, first_seat_updated)
 
     return replace(
         game,
