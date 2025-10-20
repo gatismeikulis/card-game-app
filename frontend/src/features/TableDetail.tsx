@@ -39,6 +39,37 @@ const getCardStyle = (card: string) => {
   }
 };
 
+// Helper to render suit as a colored badge with full name
+const renderSuitBadge = (value: any) => {
+  if (!value)
+    return (
+      <span className="px-2 py-0.5 rounded border text-sm text-gray-500">
+        N/A
+      </span>
+    );
+  const sym = String(value).trim().toLowerCase();
+  const map: Record<string, { name: string; cls: string }> = {
+    s: { name: "SPADE", cls: "bg-gray-100 text-black border-gray-300" },
+    h: { name: "HEART", cls: "bg-red-100 text-red-700 border-red-300" },
+    d: { name: "DIAMOND", cls: "bg-blue-100 text-blue-700 border-blue-300" },
+    c: { name: "CLUB", cls: "bg-green-100 text-green-700 border-green-300" },
+  };
+  const info = map[sym];
+  if (!info)
+    return (
+      <span className="px-2 py-0.5 rounded border text-sm text-gray-500">
+        N/A
+      </span>
+    );
+  return (
+    <span
+      className={`px-2 py-0.5 rounded border text-sm font-medium ${info.cls}`}
+    >
+      {info.name}
+    </span>
+  );
+};
+
 export function TableDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -278,23 +309,11 @@ export function TableDetail() {
         </div>
         <div className="flex items-center gap-2">
           <span className="text-gray-600">Required Suit:</span>
-          <span
-            className={`px-2 py-1 rounded border font-medium text-sm ${getCardStyle(
-              safeRender(data.game_state?.round?.required_suit)
-            )}`}
-          >
-            {safeRender(data.game_state?.round?.required_suit)}
-          </span>
+          {renderSuitBadge(data.game_state?.round?.required_suit)}
         </div>
         <div className="flex items-center gap-2">
           <span className="text-gray-600">Trump Suit:</span>
-          <span
-            className={`px-2 py-1 rounded border font-medium text-sm ${getCardStyle(
-              safeRender(data.game_state?.round?.trump_suit)
-            )}`}
-          >
-            {safeRender(data.game_state?.round?.trump_suit)}
-          </span>
+          {renderSuitBadge(data.game_state?.round?.trump_suit)}
         </div>
         <div className="flex items-center gap-2">
           <span className="text-gray-600">Highest Bid:</span>
@@ -398,41 +417,160 @@ export function TableDetail() {
             </button>
           </div>
         )}
-        {data.game_state?.round?.cards_on_board &&
+        {(data.game_state?.round?.cards_on_board &&
           Object.values(data.game_state.round.cards_on_board).some(
             (card) => card !== null
-          ) && (
-            <div className="space-y-3">
-              <span className="text-gray-600 font-medium">Cards on Board:</span>
-              <div className="flex flex-wrap gap-3">
-                {Object.entries(data.game_state.round.cards_on_board)
-                  .filter(([_, card]) => card !== null)
-                  .map(([seat, card]) => {
-                    const player = data.players?.find(
-                      (p: any) => p.seat_number === parseInt(seat)
-                    );
-                    const playerName = player?.screen_name || `Seat ${seat}`;
-                    return (
-                      <div
-                        key={`${seat}-${card}`}
-                        className="flex flex-col items-center gap-1"
-                      >
-                        <span className="text-xs text-gray-500 font-medium">
-                          {playerName}
-                        </span>
+          )) ||
+        !!data.game_state?.round?.prev_trick ? (
+          <div className="flex gap-8 flex-wrap">
+            {data.game_state?.round?.cards_on_board &&
+              Object.values(data.game_state.round.cards_on_board).some(
+                (card) => card !== null
+              ) && (
+                <div className="space-y-3">
+                  <span className="text-gray-600 font-medium">
+                    Cards on Board:
+                  </span>
+                  <div className="flex flex-wrap gap-3">
+                    {Object.entries(data.game_state.round.cards_on_board)
+                      .filter(([_, card]) => card !== null)
+                      .map(([seat, card]) => {
+                        const player = data.players?.find(
+                          (p: any) => p.seat_number === parseInt(seat)
+                        );
+                        const playerName =
+                          player?.screen_name || `Seat ${seat}`;
+                        return (
+                          <div
+                            key={`${seat}-${card}`}
+                            className="flex flex-col items-center gap-1"
+                          >
+                            <span className="text-xs text-gray-500 font-medium">
+                              {playerName}
+                            </span>
+                            <div
+                              className={`w-8 h-12 border-2 rounded flex items-center justify-center text-sm font-bold shadow-sm ${getCardStyle(
+                                card
+                              )}`}
+                            >
+                              {card}
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
+              )}
+
+            {(() => {
+              const prevTrick: any = data.game_state?.round?.prev_trick;
+              if (!prevTrick) return null;
+
+              // Case 1: prev_trick has explicit structure { taken_by, cards }
+              if (
+                typeof prevTrick === "object" &&
+                Array.isArray(prevTrick.cards)
+              ) {
+                const takenBySeatRaw: number | undefined =
+                  typeof prevTrick.taken_by === "number"
+                    ? prevTrick.taken_by
+                    : undefined;
+                // Prefer +1 mapping if zero-based index appears to be used and a player exists at +1
+                const candidates = [
+                  takenBySeatRaw,
+                  takenBySeatRaw !== undefined ? takenBySeatRaw + 1 : undefined,
+                ].filter((v): v is number => typeof v === "number");
+                const takenByResolved = candidates.find((seatNum) =>
+                  Boolean(
+                    data.players?.some((p: any) => p.seat_number === seatNum)
+                  )
+                );
+                const takenByName = takenByResolved
+                  ? data.players?.find(
+                      (p: any) => p.seat_number === takenByResolved
+                    )?.screen_name || `Seat ${takenByResolved}`
+                  : undefined;
+                return (
+                  <div className="ml-auto w-48 space-y-2">
+                    <span className="text-gray-600 text-sm font-medium">
+                      Previous Trick
+                      {takenByName ? ` (Taken by: ${takenByName})` : ""}:
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      {prevTrick.cards.map((card: string, idx: number) => (
                         <div
-                          className={`w-8 h-12 border-2 rounded flex items-center justify-center text-sm font-bold shadow-sm ${getCardStyle(
+                          key={`prev-${idx}-${card}`}
+                          className={`w-6 h-9 border-2 rounded flex items-center justify-center text-xs font-bold shadow-sm ${getCardStyle(
                             card
                           )}`}
                         >
                           {card}
                         </div>
-                      </div>
-                    );
-                  })}
-              </div>
-            </div>
-          )}
+                      ))}
+                    </div>
+                  </div>
+                );
+              }
+
+              // Case 2: prev_trick is a seat->card mapping like cards_on_board
+              if (typeof prevTrick === "object") {
+                const allKeys = Object.keys(prevTrick);
+                const isZeroBased = allKeys.includes("0");
+                const entries = Object.entries(prevTrick).filter(
+                  ([_, card]) => card !== null
+                );
+                if (entries.length === 0) return null;
+                return (
+                  <div className="ml-auto w-48 space-y-2">
+                    <span className="text-gray-600 text-sm font-medium">
+                      Previous Trick:
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      {entries.map(([seat, card]) => {
+                        const seatRaw = parseInt(seat);
+                        const seatNumber = isZeroBased ? seatRaw + 1 : seatRaw;
+                        const player = data.players?.find(
+                          (p: any) => p.seat_number === seatNumber
+                        );
+                        const playerName =
+                          player?.screen_name || `Seat ${seatNumber}`;
+                        return (
+                          <div
+                            key={`prev-${seat}-${card}`}
+                            className="flex flex-col items-center gap-1"
+                          >
+                            <span className="text-[10px] text-gray-500 font-medium">
+                              {playerName}
+                            </span>
+                            <div
+                              className={`w-6 h-9 border-2 rounded flex items-center justify-center text-xs font-bold shadow-sm ${getCardStyle(
+                                card as string
+                              )}`}
+                            >
+                              {card as string}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              }
+
+              // Fallback: render safely
+              return (
+                <div className="ml-auto w-48 space-y-2">
+                  <span className="text-gray-600 text-sm font-medium">
+                    Previous Trick:
+                  </span>
+                  <div className="text-xs text-gray-700">
+                    {safeRender(prevTrick)}
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        ) : null}
       </div>
       {!data.game_state && (
         <div className="bg-white border rounded p-4">
