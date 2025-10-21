@@ -13,6 +13,7 @@ from ..registries.game_command_parsers import get_command_parser
 from ..registries.game_engines import get_game_engine
 from apps.users.models import User
 from game.bot_strategy_kind import BotStrategyKind
+from game.common.game_event import GameEvent
 from game.common.seat import SeatNumber
 from game.game_name import GameName
 from ..domain.game_table import GameTable
@@ -64,11 +65,16 @@ class GameTableManager:
         table_id = self._game_table_repository.create(table)
         return table_id
 
-    def remove_table(self, table_id: str, iniated_by: int) -> str:
+    def remove_table(self, table_id: str, iniated_by: int) -> None:
         table = self._get_table(table_id)
         self._validate_user_is_owner_of_table(table, iniated_by)
-        removed_table_id = self._game_table_repository.delete(table_id)
-        return removed_table_id
+        if table.status == TableStatus.NOT_STARTED:
+            _ = self._game_table_repository.delete_from_db(table_id)
+        else:
+            table.cancel_game()
+            self._game_table_repository.update_in_db(table)
+            _ = self._game_table_repository.delete_from_cache(table_id)
+        return None
 
     def get_tables(self) -> Sequence[GameTableSnapshot]:
         return self._game_table_repository.find_many()
@@ -125,16 +131,19 @@ class GameTableManager:
         table = self._get_table(table_id)
         command = get_command_parser(table.config.game_name).from_dict(raw_command)
         events = table.take_regular_turn(user_id=user_id, command=command)
-        if events:
-            _ = self._game_play_event_repository.append(table_id, events)
-        _ = self._game_table_repository.update_in_cache(table)  # TODO: what if returns FALSE?
-        return None
+        return self._complete_take_turn(table, events)
 
     def take_automatic_turn(self, table_id: str, iniated_by: int) -> None:
         table = self._get_table(table_id)
         self._validate_user_is_owner_of_table(table, iniated_by)
         events = table.take_automatic_turn()
+        return self._complete_take_turn(table, events)
+
+    def _complete_take_turn(self, table: GameTable, events: Sequence[GameEvent]) -> None:
         if events:
-            _ = self._game_play_event_repository.append(table_id, events)
-        _ = self._game_table_repository.update_in_cache(table)  # TODO: what if returns FALSE?
-        return None
+            _ = self._game_play_event_repository.append(table.id, events)
+        if table.status == TableStatus.IN_PROGRESS:
+            _ = self._game_table_repository.update_in_cache(table)  # TODO: what if returns FALSE?
+        else:
+            _ = self._game_table_repository.delete_from_cache(table.id)
+            _ = self._game_table_repository.update_in_db(table)

@@ -98,11 +98,12 @@ class GameTableRepository(IGameTableRepository):
         return None
 
     @override
-    def delete(self, id: str) -> str:
-        # Only delete not-started tables from db...
-        # Other tables should be marked as finished/cancelled/deleted/aborted and kept for history...
-        # Delete from cache always
-        return id
+    def delete_from_db(self, id: str) -> None:
+        _ = GameTableSnapshot.objects.filter(id=id).delete()
+
+    @override
+    def delete_from_cache(self, id: str) -> None:
+        _ = cache.delete(self._key(id))
 
     @override
     def find_by_id(self, id: str) -> FindByIdResult:

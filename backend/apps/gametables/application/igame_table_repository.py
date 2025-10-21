@@ -44,9 +44,10 @@ class IGameTableRepository(Protocol):
         """Update table in SQL only."""
         ...
 
-    def delete(self, id: str) -> str:
-        """Remove from Cache, Mark in SQL as cancelled.
-        Returns:
-            Table ID.
-        """
+    def delete_from_db(self, id: str) -> None:
+        """Remove from SQL."""
+        ...
+
+    def delete_from_cache(self, id: str) -> None:
+        """Remove from Cache."""
         ...

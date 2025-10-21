@@ -162,8 +162,10 @@ class GameTable:
         self._game_state = self._engine.init_game()
         self._status = TableStatus.JUST_STARTED
 
-    # this should be done by the owner of the table if all other player agrees...
-    # def cancel_game(self) -> None: ...
+    # can cancel only not-finished/aborted games
+    def cancel_game(self) -> None:
+        if self.status != TableStatus.FINISHED and self.status != TableStatus.ABORTED:
+            self._status = TableStatus.CANCELLED
 
     # this should mark game as aborted (because player left or was kicked by owner for some reason) and link the user_id who to blame for this
     # so that user's reputation can be affected etc... just a reminder for later when these features come in
