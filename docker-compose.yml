@@ -16,19 +16,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-  
-  redis:
-    image: redis:7-alpine
-    restart: unless-stopped
-    ports:
-      - "${REDIS_HOST_PORT:-6379}:6379"
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
   backend:
     build: ./backend
@@ -40,11 +27,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      redis:
-        condition: service_healthy
     volumes: # development only (for hot reloading)
       - ./backend:/app # 'bind mount' syncs changes from host to container
 
 volumes:
   postgres_data:
-  redis_data:

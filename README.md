@@ -16,7 +16,7 @@ Built to be game‑agnostic so new games are easy to add.
 
 - **Backend**: Python, Django, Django REST Framework
 - **Frontend**: TypeScript, React
-- **DB/Cache**: PostgreSQL (SQLite for dev), Redis
+- **DB**: PostgreSQL
 
 ## Project Status
 

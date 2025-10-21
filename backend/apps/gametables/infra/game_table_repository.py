@@ -1,7 +1,6 @@
-import json
-from typing import Any, override
+from typing import override
 from django.db import transaction
-from django.core.cache import cache
+from django.utils import timezone
 
 from ..models import (
     GameTableSnapshot,
@@ -9,24 +8,12 @@ from ..models import (
     TableConfig as TableConfigModel,
     GameConfig as GameConfigModel,
 )
-from ..application.igame_table_repository import FindByIdResult, IGameTableRepository
+from ..application.igame_table_repository import IGameTableRepository
 from ..domain.game_table import GameTable
 from .game_table_deserializer import GameTableDeserializer
 
 
 class GameTableRepository(IGameTableRepository):
-    """
-    Hybrid repository:
-    - SQL: authoritative metadata store (browse/filter, history).
-    - In-memory dict: acts as Redis-like cache for the full domain object JSON.
-    """
-
-    def __init__(self):
-        self._cache_timeout: int = 3600  # 1 hour TODO: make this configurable
-
-    def _key(self, table_id: str) -> str:
-        return f"game_table_{table_id}"
-
     @transaction.atomic
     @override
     def create(self, game_table: GameTable) -> str:
@@ -59,35 +46,21 @@ class GameTableRepository(IGameTableRepository):
 
         return game_table.id
 
-    @override
-    def update_in_cache(self, game_table: GameTable) -> bool:
-        try:
-            data = game_table.to_dict()
-            json_data = json.dumps(data)
-            cache.set(self._key(game_table.id), json_data, timeout=self._cache_timeout)
-            return True
-        except Exception as e:
-            print(f"Cache save failed: {e}")
-            _ = cache.delete(self._key(game_table.id))
-            return False
-
     @transaction.atomic
     @override
-    def update_in_db(self, game_table: GameTable) -> None:
-        game_table_snapshot, _ = GameTableSnapshot.objects.update_or_create(
-            id=game_table.id,
-            defaults={
-                "game_name": game_table.config.game_name.value,
-                "status": game_table.status.value,
-                "owner_id": game_table.owner_id,
-                "data": game_table.to_dict(),
-            },
+    def update(self, game_table: GameTable) -> None:
+        updated_rows = GameTableSnapshot.objects.filter(id=game_table.id).update(
+            game_name=game_table.config.game_name.value,
+            status=game_table.status.value,
+            owner_id=game_table.owner_id,
+            data=game_table.to_dict(),
+            updated_at=timezone.now(),
         )
         # deletes all players from the table and reinserts new ones
-        _ = GameTablePlayer.objects.filter(game_table=game_table_snapshot).delete()
+        _ = GameTablePlayer.objects.filter(game_table_id=game_table.id).delete()
         for player in game_table.players:
             _ = GameTablePlayer.objects.create(
-                game_table=game_table_snapshot,
+                game_table_id=game_table.id,
                 user_id=player.user_id,
                 screen_name=player.screen_name,
                 bot_strategy_kind=player.bot_strategy.kind.value if player.bot_strategy else None,
@@ -95,35 +68,33 @@ class GameTableRepository(IGameTableRepository):
 
         # configs do not change during the game_table's life cycle, so we do not need to update them
 
-        return None
+        if updated_rows < 1:
+            raise ValueError(f"Game table with id {game_table.id} not found")
 
     @override
-    def delete_from_db(self, id: str) -> None:
+    def update_status_and_data_only(self, game_table: GameTable) -> None:
+        updated_rows = GameTableSnapshot.objects.filter(id=game_table.id).update(
+            data=game_table.to_dict(),
+            status=game_table.status.value,
+            updated_at=timezone.now(),
+        )
+        if updated_rows < 1:
+            raise ValueError(f"Game table with id {game_table.id} not found")
+
+    @override
+    def delete(self, id: str) -> None:
         _ = GameTableSnapshot.objects.filter(id=id).delete()
 
     @override
-    def delete_from_cache(self, id: str) -> None:
-        _ = cache.delete(self._key(id))
-
-    @override
-    def find_by_id(self, id: str) -> FindByIdResult:
-        # Try cache
+    def find_by_id(self, id: str) -> GameTable:
         try:
-            cached = cache.get(self._key(id))
-            if cached is not None:
-                data: dict[str, Any] = json.loads(cached)
-                game_table = GameTableDeserializer.deserialize_table(data)
-                return FindByIdResult(game_table=game_table, from_cache=True)
-        except Exception as e:
-            print(f"Cache get failed: {e}")
-
-        # Fallback to SQL snapshot
-        try:
-            snapshot = GameTableSnapshot.objects.get(id=id)
+            game_table_snapshot = GameTableSnapshot.objects.get(id=id)
+            game_table = GameTableDeserializer.deserialize_table(game_table_snapshot.data)
+            return game_table
         except GameTableSnapshot.DoesNotExist:
             raise ValueError(f"Game table with id {id} not found")
-
-        return FindByIdResult(game_table=GameTableDeserializer.deserialize_table(snapshot.data), from_cache=False)
+        except Exception as e:
+            raise ValueError(f"Error deserializing game table: {e}")
 
     @override
     def find_many(self) -> list[GameTableSnapshot]:

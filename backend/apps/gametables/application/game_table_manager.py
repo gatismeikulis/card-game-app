@@ -1,6 +1,7 @@
 from collections.abc import Sequence
 from typing import Any, final
 import uuid
+from django.db import transaction
 
 from ..domain.table_status import TableStatus
 from .igame_play_event_repository import IGamePlayEventRepository
@@ -37,23 +38,6 @@ class GameTableManager:
         if table.owner_id != user_id:
             raise ValueError("Only table owner can perform this action")
 
-    def _get_table(self, table_id: str, update_if_not_in_cache: bool = False) -> GameTable:
-        result = self._game_table_repository.find_by_id(table_id)
-        game_table = result.game_table
-        if result.from_cache:
-            return game_table
-        elif result.game_table.status != TableStatus.JUST_STARTED:
-            return game_table
-        else:
-            # Rebuild game state only if table stored in cache is in JUST_STARTED status
-            # DB should not have tables with status IN_PROGRESS
-            # and for other statuses there is no need to rebuild game state
-            events = self._game_play_event_repository.find_many(table_id)
-            game_table.rebuild_game_state(events)
-            if update_if_not_in_cache:
-                _ = self._game_table_repository.update_in_cache(game_table)  # TODO: what if returns FALSE?
-            return game_table
-
     def add_table(self, raw_config: dict[str, Any], owner_id: int) -> str:
         table_id = self._generate_table_id()
         game_name = GameName.from_str(raw_config["game_name"])
@@ -66,36 +50,35 @@ class GameTableManager:
         return table_id
 
     def remove_table(self, table_id: str, iniated_by: int) -> None:
-        table = self._get_table(table_id)
+        table = self._game_table_repository.find_by_id(table_id)
         self._validate_user_is_owner_of_table(table, iniated_by)
         if table.status == TableStatus.NOT_STARTED:
-            _ = self._game_table_repository.delete_from_db(table_id)
+            _ = self._game_table_repository.delete(table_id)
         else:
             table.cancel_game()
-            self._game_table_repository.update_in_db(table)
-            _ = self._game_table_repository.delete_from_cache(table_id)
+            self._game_table_repository.update(table)
         return None
 
     def get_tables(self) -> Sequence[GameTableSnapshot]:
         return self._game_table_repository.find_many()
 
     def get_table(self, table_id: str) -> GameTable:
-        return self._get_table(table_id, update_if_not_in_cache=True)
+        return self._game_table_repository.find_by_id(table_id)
 
     def join_table(self, table_id: str, user: User, preferred_seat_number: SeatNumber | None = None) -> str:
-        table = self._get_table(table_id)
+        table = self._game_table_repository.find_by_id(table_id)
         table.add_player(
             user_id=user.pk,
             screen_name=user.screen_name,
             preferred_seat_number=preferred_seat_number,
         )
-        self._game_table_repository.update_in_db(table)
+        self._game_table_repository.update(table)
         return table_id
 
     def leave_table(self, table_id: str, user_id: int) -> None:
-        table = self._get_table(table_id)
+        table = self._game_table_repository.find_by_id(table_id)
         table.remove_player(user_id=user_id)
-        self._game_table_repository.update_in_db(table)
+        self._game_table_repository.update(table)
         return None
 
     def add_bot_player(
@@ -106,44 +89,43 @@ class GameTableManager:
     ) -> None:
         bot_strategy_kind = BotStrategyKind.from_str(options["bot_strategy_kind"])
         preferred_seat_number = options.get("preferred_seat", None)
-        table = self._get_table(table_id)
+        table = self._game_table_repository.find_by_id(table_id)
         self._validate_user_is_owner_of_table(table, iniated_by.pk)
         bot_strategy = get_bot_strategy(table.config.game_name, bot_strategy_kind)
         table.add_player(preferred_seat_number=preferred_seat_number, bot_strategy=bot_strategy)
-        self._game_table_repository.update_in_db(table)
+        self._game_table_repository.update(table)
         return None
 
     def remove_bot_player(self, table_id: str, iniated_by: int, seat_number_to_remove: SeatNumber) -> None:
-        table = self._get_table(table_id)
+        table = self._game_table_repository.find_by_id(table_id)
         self._validate_user_is_owner_of_table(table, iniated_by)
         table.remove_player(seat_number=seat_number_to_remove)
-        self._game_table_repository.update_in_db(table)
+        self._game_table_repository.update(table)
         return None
 
     def start_game(self, table_id: str, iniated_by: int) -> None:
-        table = self._get_table(table_id)
+        table = self._game_table_repository.find_by_id(table_id)
         self._validate_user_is_owner_of_table(table, iniated_by)
         table.start_game()
-        self._game_table_repository.update_in_db(table)
+        self._game_table_repository.update(table)
         return None
 
     def take_regular_turn(self, table_id: str, user_id: int, raw_command: dict[str, Any]) -> None:
-        table = self._get_table(table_id)
+        table = self._game_table_repository.find_by_id(table_id)
         command = get_command_parser(table.config.game_name).from_dict(raw_command)
         events = table.take_regular_turn(user_id=user_id, command=command)
         return self._complete_take_turn(table, events)
 
     def take_automatic_turn(self, table_id: str, iniated_by: int) -> None:
-        table = self._get_table(table_id)
+        table = self._game_table_repository.find_by_id(table_id)
         self._validate_user_is_owner_of_table(table, iniated_by)
         events = table.take_automatic_turn()
         return self._complete_take_turn(table, events)
 
+    @transaction.atomic
     def _complete_take_turn(self, table: GameTable, events: Sequence[GameEvent]) -> None:
         if events:
             _ = self._game_play_event_repository.append(table.id, events)
-        if table.status == TableStatus.IN_PROGRESS:
-            _ = self._game_table_repository.update_in_cache(table)  # TODO: what if returns FALSE?
-        else:
-            _ = self._game_table_repository.delete_from_cache(table.id)
-            _ = self._game_table_repository.update_in_db(table)
+
+        self._game_table_repository.update_status_and_data_only(table)
+        return None

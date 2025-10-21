@@ -1,53 +1,39 @@
-from dataclasses import dataclass
 from typing import Protocol
 
 from ..models import GameTableSnapshot
 from ..domain.game_table import GameTable
 
 
-@dataclass(frozen=True)
-class FindByIdResult:
-    game_table: GameTable
-    from_cache: bool
-
-
 class IGameTableRepository(Protocol):
     def find_many(self) -> list[GameTableSnapshot]:
-        """List/browse tables - SQL only.
+        """List/browse tables by important fields (configs, status, players, etc.)
         Returns:
-            Important data (id, name, player_count, status, some important config, etc.) of GameTableSnapshot
+            List of GameTableSnapshots
         """
         ...
 
-    def find_by_id(self, id: str) -> FindByIdResult:
-        """Get full table for manipulation - Cache first, then SQL if not in Cache.
+    def find_by_id(self, id: str) -> GameTable:
+        """Get full table instance for manipulation by ID.
         Returns:
-            GameTable with a flag indicating if it was found in Cache.
+            GameTable
         """
         ...
 
     def create(self, game_table: GameTable) -> str:
-        """Create a new table - write to Cache and SQL.
+        """Create a new GameTableSnapshot and all related models
         Returns:
             Table ID.
         """
         ...
 
-    def update_in_cache(self, game_table: GameTable) -> bool:
-        """Update table in Cache only.
-        Returns:
-            True if update was successful, False otherwise.
-        """
+    def update(self, game_table: GameTable) -> None:
+        """Update GameTableSnapshot and all related models"""
         ...
 
-    def update_in_db(self, game_table: GameTable) -> None:
-        """Update table in SQL only."""
+    def update_status_and_data_only(self, game_table: GameTable) -> None:
+        """Update only data field of GameTableSnapshot without updating related models (configs, players, etc.)"""
         ...
 
-    def delete_from_db(self, id: str) -> None:
-        """Remove from SQL."""
-        ...
-
-    def delete_from_cache(self, id: str) -> None:
-        """Remove from Cache."""
+    def delete(self, id: str) -> None:
+        """Remove GameTableSnapshot and all related models"""
         ...
