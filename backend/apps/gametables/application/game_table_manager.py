@@ -125,7 +125,7 @@ class GameTableManager:
     @transaction.atomic
     def _complete_take_turn(self, table: GameTable, events: Sequence[GameEvent]) -> None:
         if events:
-            _ = self._game_play_event_repository.append(table.id, events)
+            last_sequence_number = self._game_play_event_repository.append(table.id, events)
+            self._game_table_repository.update_after_turn(table, last_sequence_number)
 
-        self._game_table_repository.update_status_and_data_only(table)
         return None

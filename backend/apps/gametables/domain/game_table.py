@@ -171,16 +171,6 @@ class GameTable:
     # so that user's reputation can be affected etc... just a reminder for later when these features come in
     # def abort_game(self, caused_by_user_id: int) -> None: ...
 
-    def rebuild_game_state(self, events: Sequence[GameEvent]) -> None:
-        if len(events) == 0:
-            return
-        self._game_state = self._engine.rebuild_game_state(self.game_state, events)
-        print(f"Rebuilt game-state for table {self._id} from {len(events)} events")
-        if self.game_state.is_finished:
-            self._status = TableStatus.FINISHED
-        else:
-            self._status = TableStatus.IN_PROGRESS
-
     def to_dict(self) -> dict[str, Any]:
         """Serialize to JSON-compatible dict"""
         return {

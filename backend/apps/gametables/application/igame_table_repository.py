@@ -30,8 +30,8 @@ class IGameTableRepository(Protocol):
         """Update GameTableSnapshot and all related models"""
         ...
 
-    def update_status_and_data_only(self, game_table: GameTable) -> None:
-        """Update only data field of GameTableSnapshot without updating related models (configs, players, etc.)"""
+    def update_after_turn(self, game_table: GameTable, last_event_sequence_number: int) -> None:
+        """Update only data, status and last_event_sequence_number fields of GameTableSnapshot without updating related models (configs, players, etc.)"""
         ...
 
     def delete(self, id: str) -> None:

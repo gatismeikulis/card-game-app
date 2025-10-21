@@ -22,12 +22,9 @@ class GameTableSnapshot(Model):
     owner = ForeignKey(User, on_delete=SET_NULL, null=True)
     created_at = DateTimeField(auto_now_add=True)
     updated_at = DateTimeField(auto_now=True)
-    # TODO: add this field to track the last event sequence number, current design does not need this
-    # because snapshots are not created while game is in progress
+    last_event_sequence_number = IntegerField(default=0)
 
-    # last_event_sequence_number = IntegerField(default=0)
-
-    data = JSONField()  # serialized GameTable instance for rebuilding game state
+    data = JSONField()  # serialized GameTable instance for easier game_table instance retrieval
 
     class Meta:
         indexes = [Index(fields=["game_name", "status"], name="game_name_status_index")]

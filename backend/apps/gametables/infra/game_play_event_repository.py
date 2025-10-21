@@ -13,20 +13,19 @@ from game.common.game_event import GameEvent
 class GamePlayEventRepository(IGamePlayEventRepository):
     @transaction.atomic
     @override
-    def append(self, table_id: str, game_events: Sequence[GameEvent]) -> None:
-        if not game_events:
-            return None
-
+    def append(self, table_id: str, game_events: Sequence[GameEvent]) -> int:
         snapshot = GameTableSnapshot.objects.get(pk=table_id)
 
         max_seq = GamePlayEvent.objects.filter(game_table=snapshot).aggregate(max=Max("sequence_number"))["max"] or 0
 
         rows = []
+        last_sequence_number = max_seq
         for i, event in enumerate(game_events, start=max_seq + 1):
             _ = rows.append(GamePlayEvent(game_table=snapshot, sequence_number=i, data=event.to_dict()))
+            last_sequence_number = i
 
         _ = GamePlayEvent.objects.bulk_create(rows)
-        return None
+        return last_sequence_number
 
     @override
     def find_many(
