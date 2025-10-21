@@ -33,16 +33,19 @@ class IGameTableRepository(Protocol):
         """
         ...
 
-    def update(self, game_table: GameTable) -> str:
-        """Update table - always update Cache, update SQL only if status changed.
+    def update_in_cache(self, game_table: GameTable) -> bool:
+        """Update table in Cache only.
         Returns:
-            Table ID.
+            True if update was successful, False otherwise.
         """
         ...
 
+    def update_in_db(self, game_table: GameTable) -> None:
+        """Update table in SQL only."""
+        ...
+
     def delete(self, id: str) -> str:
-        """Remove table from active use. Remove from Cache only for now.
-        Not sure how to handle this in SQL for now...
+        """Remove from Cache, Mark in SQL as cancelled.
         Returns:
             Table ID.
         """

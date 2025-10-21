@@ -50,7 +50,7 @@ class GameTableManager:
             events = self._game_play_event_repository.find_many(table_id)
             game_table.rebuild_game_state(events)
             if update_if_not_in_cache:
-                _ = self._game_table_repository.update(game_table)
+                _ = self._game_table_repository.update_in_cache(game_table)  # TODO: what if returns FALSE?
             return game_table
 
     def add_table(self, raw_config: dict[str, Any], owner_id: int) -> str:
@@ -83,12 +83,13 @@ class GameTableManager:
             screen_name=user.screen_name,
             preferred_seat_number=preferred_seat_number,
         )
-        return self._game_table_repository.update(table)
+        self._game_table_repository.update_in_db(table)
+        return table_id
 
     def leave_table(self, table_id: str, user_id: int) -> None:
         table = self._get_table(table_id)
         table.remove_player(user_id=user_id)
-        _ = self._game_table_repository.update(table)
+        self._game_table_repository.update_in_db(table)
         return None
 
     def add_bot_player(
@@ -103,21 +104,21 @@ class GameTableManager:
         self._validate_user_is_owner_of_table(table, iniated_by.pk)
         bot_strategy = get_bot_strategy(table.config.game_name, bot_strategy_kind)
         table.add_player(preferred_seat_number=preferred_seat_number, bot_strategy=bot_strategy)
-        _ = self._game_table_repository.update(table)
+        self._game_table_repository.update_in_db(table)
         return None
 
     def remove_bot_player(self, table_id: str, iniated_by: int, seat_number_to_remove: SeatNumber) -> None:
         table = self._get_table(table_id)
         self._validate_user_is_owner_of_table(table, iniated_by)
         table.remove_player(seat_number=seat_number_to_remove)
-        _ = self._game_table_repository.update(table)
+        self._game_table_repository.update_in_db(table)
         return None
 
     def start_game(self, table_id: str, iniated_by: int) -> None:
         table = self._get_table(table_id)
         self._validate_user_is_owner_of_table(table, iniated_by)
         table.start_game()
-        _ = self._game_table_repository.update(table)
+        self._game_table_repository.update_in_db(table)
         return None
 
     def take_regular_turn(self, table_id: str, user_id: int, raw_command: dict[str, Any]) -> None:
@@ -126,7 +127,7 @@ class GameTableManager:
         events = table.take_regular_turn(user_id=user_id, command=command)
         if events:
             _ = self._game_play_event_repository.append(table_id, events)
-        _ = self._game_table_repository.update(table)
+        _ = self._game_table_repository.update_in_cache(table)  # TODO: what if returns FALSE?
         return None
 
     def take_automatic_turn(self, table_id: str, iniated_by: int) -> None:
@@ -135,5 +136,5 @@ class GameTableManager:
         events = table.take_automatic_turn()
         if events:
             _ = self._game_play_event_repository.append(table_id, events)
-        _ = self._game_table_repository.update(table)
+        _ = self._game_table_repository.update_in_cache(table)  # TODO: what if returns FALSE?
         return None
