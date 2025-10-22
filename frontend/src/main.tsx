@@ -1,6 +1,5 @@
-import { AppRouter } from './router';
+import { AppRouter } from "./router";
 import "./index.css";
-import App from "./App";
 import { createRoot } from "react-dom/client";
 import { StrictMode } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";

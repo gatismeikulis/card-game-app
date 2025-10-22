@@ -158,7 +158,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 CORS_ALLOW_ALL_ORIGINS = ENVIRONMENT != "production"
 
-# TODO: In prod, restrict your frontend/domain later:
-# CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
+if ENVIRONMENT == "production":
+    CORS_ALLOWED_ORIGINS = ["https://gm-card-games.up.railway.app"]
 
 CORS_ALLOW_CREDENTIALS = True

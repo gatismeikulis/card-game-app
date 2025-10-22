@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from "react-router-dom";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { apiFetch } from "../api";
 import { PlayerDetail } from "./PlayerDetail";
@@ -75,8 +75,8 @@ export function TableDetail() {
   const navigate = useNavigate();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [removeSeat, setRemoveSeat] = useState<string>("");
-  const [botStrategy, setBotStrategy] = useState("Random");
-  const [botSeat, setBotSeat] = useState<string>("");
+  const [botStrategy] = useState("Random");
+  const [botSeat] = useState<string>("");
   const [bidAmount, setBidAmount] = useState<string>("");
   const [selectedCards, setSelectedCards] = useState<{
     cardToNextSeat: string | null;
@@ -212,7 +212,7 @@ export function TableDetail() {
   const passCards = useMutation({
     mutationFn: (cards: {
       card_to_next_seat: string;
-      card_to_right_seat: string;
+      card_to_prev_seat: string;
     }) =>
       apiFetch(`/api/v1/tables/${id}/take-turn/`, {
         method: "POST",
@@ -222,7 +222,7 @@ export function TableDetail() {
         }),
       }),
     onSuccess: () => {
-      setSelectedCards({ cardToNextSeat: null, cardToRightSeat: null });
+      setSelectedCards({ cardToNextSeat: null, cardToPrevSeat: null });
       refetch();
       setErrorMessage(null);
     },
@@ -450,10 +450,10 @@ export function TableDetail() {
                             </span>
                             <div
                               className={`w-8 h-12 border-2 rounded flex items-center justify-center text-sm font-bold shadow-sm ${getCardStyle(
-                                card
+                                card as string
                               )}`}
                             >
-                              {card}
+                              {card as string}
                             </div>
                           </div>
                         );

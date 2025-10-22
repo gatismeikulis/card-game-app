@@ -1,10 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { apiFetch } from "../api";
 import { useState } from "react";
 
 export function Tables() {
-  const qc = useQueryClient();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const { data, isLoading, error, refetch } = useQuery({
