@@ -88,12 +88,11 @@ class GameTable:
         return self._take_turn(game_state, command)
 
     def _validate_game_status_for_taking_turn(self) -> None:
-        if self.status != TableStatus.JUST_STARTED and self.status != TableStatus.IN_PROGRESS:
-            raise ValueError("Game is not started or already finished")
+        if self.status != TableStatus.IN_PROGRESS:
+            raise ValueError("Game is not started or already ended")
 
     def _take_turn(self, game_state: GameState, command: GameCommand) -> Sequence[GameEvent]:
         game_state_updated, events = self._engine.process_command(game_state, command)
-        self._status = TableStatus.IN_PROGRESS
         if game_state_updated.is_finished:
             self._status = TableStatus.FINISHED
         self._game_state = game_state_updated
@@ -153,14 +152,16 @@ class GameTable:
         self._players.remove(to_remove)
         return None
 
-    def start_game(self) -> None:
+    def start_game(self) -> Sequence[GameEvent]:
         # TODO: maybe check if all players have agreed to start
         if self.status != TableStatus.NOT_STARTED:
-            raise ValueError("Game is already in progress or finished")
+            raise ValueError("Game is already in progress or ended")
         if len(self._players) < self._config.game_config.min_seats:
             raise ValueError("Not enough players to start the game")
-        self._game_state = self._engine.init_game()
-        self._status = TableStatus.JUST_STARTED
+        game_state, events = self._engine.init_game()
+        self._game_state = game_state
+        self._status = TableStatus.IN_PROGRESS
+        return events
 
     # can cancel only not-finished/aborted games
     def cancel_game(self) -> None:

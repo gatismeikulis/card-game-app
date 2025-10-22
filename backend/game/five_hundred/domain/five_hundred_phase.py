@@ -3,6 +3,7 @@ from typing import override
 
 
 class FiveHundredPhase(Enum):
+    INITIALIZING = "Initializing"
     BIDDING = "Bidding"
     FORMING_HANDS = "Forming Hands"
     PLAYING_CARDS = "Playing Cards"

@@ -106,26 +106,25 @@ class GameTableManager:
     def start_game(self, table_id: str, iniated_by: int) -> None:
         table = self._game_table_repository.find_by_id(table_id)
         self._validate_user_is_owner_of_table(table, iniated_by)
-        table.start_game()
-        self._game_table_repository.update(table)
-        return None
+        events = table.start_game()
+        return self._complete_game_action(table, events)
 
     def take_regular_turn(self, table_id: str, user_id: int, raw_command: dict[str, Any]) -> None:
         table = self._game_table_repository.find_by_id(table_id)
         command = get_command_parser(table.config.game_name).from_dict(raw_command)
         events = table.take_regular_turn(user_id=user_id, command=command)
-        return self._complete_take_turn(table, events)
+        return self._complete_game_action(table, events)
 
     def take_automatic_turn(self, table_id: str, iniated_by: int) -> None:
         table = self._game_table_repository.find_by_id(table_id)
         self._validate_user_is_owner_of_table(table, iniated_by)
         events = table.take_automatic_turn()
-        return self._complete_take_turn(table, events)
+        return self._complete_game_action(table, events)
 
     @transaction.atomic
-    def _complete_take_turn(self, table: GameTable, events: Sequence[GameEvent]) -> None:
+    def _complete_game_action(self, table: GameTable, events: Sequence[GameEvent]) -> None:
         if events:
             last_sequence_number = self._game_play_event_repository.append(table.id, events)
-            self._game_table_repository.update_after_turn(table, last_sequence_number)
+            self._game_table_repository.update_after_game_action(table, last_sequence_number)
 
         return None

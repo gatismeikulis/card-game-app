@@ -72,7 +72,7 @@ class GameTableRepository(IGameTableRepository):
             raise ValueError(f"Game table with id {game_table.id} not found")
 
     @override
-    def update_after_turn(self, game_table: GameTable, last_event_sequence_number: int) -> None:
+    def update_after_game_action(self, game_table: GameTable, last_event_sequence_number: int) -> None:
         updated_rows = GameTableSnapshot.objects.filter(id=game_table.id).update(
             data=game_table.to_dict(),
             status=game_table.status.value,

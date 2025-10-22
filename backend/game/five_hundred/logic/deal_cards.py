@@ -1,10 +1,10 @@
 from collections.abc import Mapping
 from dataclasses import replace
 
-
 from ...common.hand import Hand
 from ..domain.five_hundred_deck import FiveHundredDeck
 from ..domain.five_hundred_seat import FiveHundredSeat
+from ..domain.five_hundred_phase import FiveHundredPhase
 from ..domain.five_hundred_seat_info import FiveHundredSeatInfo
 from ..domain.constants import CARDS_IN_STARTING_HAND, CARDS_TO_TAKE
 from ..domain.five_hundred_game import FiveHundredGame
@@ -30,6 +30,8 @@ def deal_cards(game: FiveHundredGame, deck: FiveHundredDeck) -> FiveHundredGame:
         FiveHundredSeat(3): seat_three_updated,
     }
 
-    round_updated = replace(game.round, seat_infos=seat_infos_updated, cards_to_take=cards_to_take)
+    round_updated = replace(
+        game.round, seat_infos=seat_infos_updated, cards_to_take=cards_to_take, phase=FiveHundredPhase.BIDDING
+    )
 
     return replace(game, round=round_updated)

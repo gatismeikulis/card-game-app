@@ -6,6 +6,11 @@ from .five_hundred_card import FiveHundredCard
 
 
 @dataclass(frozen=True, slots=True)
+class StartGameCommand(GameCommand):
+    type: ClassVar[Literal["start_game"]] = "start_game"
+
+
+@dataclass(frozen=True, slots=True)
 class MakeBidCommand(GameCommand):
     type: ClassVar[Literal["make_bid"]] = "make_bid"
     bid: int
@@ -24,4 +29,4 @@ class PlayCardCommand(GameCommand):
     card: FiveHundredCard
 
 
-FiveHundredCommand = MakeBidCommand | PassCardsCommand | PlayCardCommand
+FiveHundredCommand = StartGameCommand | MakeBidCommand | PassCardsCommand | PlayCardCommand

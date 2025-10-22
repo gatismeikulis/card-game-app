@@ -64,7 +64,7 @@ class FiveHundredRound:
             required_suit=None,
             trump_suit=None,
             highest_bid=None,
-            phase=FiveHundredPhase.BIDDING,
+            phase=FiveHundredPhase.INITIALIZING,
             round_number=round_number,
             first_seat=first_seat,
             is_marriage_announced=False,

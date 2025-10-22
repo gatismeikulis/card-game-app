@@ -1,15 +1,18 @@
 from ..domain.constants import BID_STEP, MAX_BID, MIN_BID
+from ..domain.five_hundred_deck import FiveHundredDeck
 from ..domain.five_hundred_card import FiveHundredCard
 from ..domain.five_hundred_command import (
     FiveHundredCommand,
     MakeBidCommand,
     PassCardsCommand,
     PlayCardCommand,
+    StartGameCommand,
 )
 from ..domain.five_hundred_event import (
     BidMadeEvent,
     CardPlayedEvent,
     CardsPassedEvent,
+    DeckShuffledEvent,
     FiveHundredEvent,
 )
 from ..domain.five_hundred_game import FiveHundredGame
@@ -18,12 +21,19 @@ from ..domain.five_hundred_phase import FiveHundredPhase
 
 def handle_command(game: FiveHundredGame, cmd: FiveHundredCommand) -> FiveHundredEvent:
     match cmd:
+        case StartGameCommand():
+            return handle_start_game()
         case MakeBidCommand(bid=bid):
             return handle_make_bid(game, bid)
         case PassCardsCommand(card_to_next_seat=card_to_next_seat, card_to_prev_seat=card_to_prev_seat):
             return handle_pass_cards(game, card_to_next_seat, card_to_prev_seat)
         case PlayCardCommand(card=card):
             return handle_play_card(game, card)
+
+
+def handle_start_game() -> FiveHundredEvent:
+    deck = FiveHundredDeck.build()
+    return DeckShuffledEvent(deck=deck)
 
 
 def handle_make_bid(game: FiveHundredGame, bid: int) -> FiveHundredEvent:
