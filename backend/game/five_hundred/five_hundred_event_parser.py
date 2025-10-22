@@ -1,6 +1,7 @@
-from typing import Any
+from typing import Any, override
 
 from ..common.game_event import GameEvent
+from ..common.game_event_parser import GameEventParser
 from .domain.five_hundred_event import (
     BidMadeEvent,
     BiddingFinishedEvent,
@@ -15,7 +16,8 @@ from .domain.five_hundred_event import (
 )
 
 
-class FiveHundredEventParser:
+class FiveHundredEventParser(GameEventParser):
+    @override
     def from_dict(self, data: dict[str, Any]) -> GameEvent:
         event_type = data["type"]
 

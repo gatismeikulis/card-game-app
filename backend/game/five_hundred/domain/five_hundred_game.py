@@ -21,10 +21,10 @@ class FiveHundredGame(GameState):
     is_finished: bool
 
     @override
-    @staticmethod
-    def init() -> "FiveHundredGame":
+    @classmethod
+    def init(cls) -> Self:
         round = FiveHundredRound.create(1, FiveHundredSeat(1))
-        return FiveHundredGame(
+        return cls(
             active_seat=round.first_seat,
             round=round,
             results=[],
@@ -66,10 +66,10 @@ class FiveHundredGame(GameState):
         }
 
     @override
-    @staticmethod
-    def from_dict(data: dict[str, Any]) -> "FiveHundredGame":
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Self:
         """Reconstruct from JSON-compatible dict"""
-        return FiveHundredGame(
+        return cls(
             round=FiveHundredRound.from_dict(data["round"]),
             results=[FiveHundredRoundResults.from_dict(result) for result in data["results"]],
             summary={FiveHundredSeat.from_dict(int(seat)): points for seat, points in data["summary"].items()},

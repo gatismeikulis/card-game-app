@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Any, override
 
 from ...common.game_config import GameConfig
+from ...common.game_config_parser import GameConfigParser
 
 
 @dataclass(frozen=True, slots=True)
@@ -15,7 +16,8 @@ class FiveHundredGameConfig(GameConfig):
         return {"min_seats": self.min_seats, "max_seats": self.max_seats}
 
 
-class FiveHundredGameConfigParser:
+class FiveHundredGameConfigParser(GameConfigParser):
+    @override
     def from_dict(self, raw_config: dict[str, Any]) -> GameConfig:
         # TODO validate that max seats is not greater than min seats etc.
         min_seats = raw_config.get("min_seats", 3)

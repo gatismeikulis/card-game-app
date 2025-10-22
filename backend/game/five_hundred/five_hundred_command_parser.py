@@ -1,6 +1,8 @@
-from typing import Any
+from typing import Any, override
+
 
 from ..common.game_command import GameCommand
+from ..common.game_command_parser import GameCommandParser
 from .domain.five_hundred_card import FiveHundredCard
 from .domain.five_hundred_command import (
     MakeBidCommand,
@@ -9,7 +11,8 @@ from .domain.five_hundred_command import (
 )
 
 
-class FiveHundredCommandParser:
+class FiveHundredCommandParser(GameCommandParser):
+    @override
     def from_dict(self, raw_command: dict[str, Any]) -> GameCommand:
         def error(type: str) -> ValueError:
             return ValueError(f"Could not create five hundred {type} command from json data: {raw_command}")
