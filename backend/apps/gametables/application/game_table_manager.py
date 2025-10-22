@@ -128,3 +128,11 @@ class GameTableManager:
             self._game_table_repository.update_after_game_action(table, last_sequence_number)
 
         return None
+
+    def get_table_from_past(self, table_id: str, upto_event: int) -> GameTable:
+        table = self._game_table_repository.find_by_id(table_id)
+        events = self._game_play_event_repository.find_many(table_id, end_inclusive=upto_event)
+        if not events:
+            raise ValueError(f"No history for table {table_id} availble")
+        table.restore_game_state(events)
+        return table

@@ -12,6 +12,7 @@ from .serializers import (
     AddBotRequestSerializer,
     CreateGameTableRequestSerializer,
     GameTableWithRelationsSerializer,
+    HistoryRequestQuerySerializer,
     JoinGameTableRequestSerializer,
     RemoveBotRequestSerializer,
     TakeRegularTurnRequestSerializer,
@@ -33,7 +34,7 @@ _table_manager = GameTableManager(
 class GameTableViewSet(ViewSet):
     @override
     def get_permissions(self) -> list[BasePermission]:
-        if self.action in ["list", "retrieve", "game_state"]:
+        if self.action in ["list", "retrieve", "history"]:
             return [AllowAny()]
         else:
             return [IsAuthenticated()]
@@ -228,3 +229,19 @@ class GameTableViewSet(ViewSet):
             return Response(status=status.HTTP_400_BAD_REQUEST, data={"error": str(e)})
 
         return Response({}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=["get"], url_path="history")
+    def history(self, request: Request, pk: str) -> Response:
+        """
+        GET /{table_id}/history?event=100
+        """
+        serializer = HistoryRequestQuerySerializer(data=request.query_params)
+        _ = serializer.is_valid(raise_exception=True)
+
+        try:
+            table = _table_manager.get_table_from_past(table_id=pk, upto_event=serializer.validated_data["event"])
+            table_dict = table.to_dict()  # TODO: NOT SAFE during in-progress tables, because contains private info...
+        except Exception as e:
+            return Response(status=status.HTTP_400_BAD_REQUEST, data={"error": str(e)})
+
+        return Response(table_dict, status=status.HTTP_200_OK)

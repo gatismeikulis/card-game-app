@@ -158,7 +158,7 @@ class GameTable:
             raise ValueError("Game is already in progress or ended")
         if len(self._players) < self._config.game_config.min_seats:
             raise ValueError("Not enough players to start the game")
-        game_state, events = self._engine.init_game()
+        game_state, events = self._engine.start_game()
         self._game_state = game_state
         self._status = TableStatus.IN_PROGRESS
         return events
@@ -171,6 +171,11 @@ class GameTable:
     # this should mark game as aborted (because player left or was kicked by owner for some reason) and link the user_id who to blame for this
     # so that user's reputation can be affected etc... just a reminder for later when these features come in
     # def abort_game(self, caused_by_user_id: int) -> None: ...
+
+    def restore_game_state(self, events: Sequence[GameEvent]) -> None:
+        restored_game_state = self._engine.restore_game_state(events)
+        self._game_state = restored_game_state
+        return None
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize to JSON-compatible dict"""

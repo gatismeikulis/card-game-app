@@ -10,6 +10,9 @@ class GameState(ABC):
     active_seat: Seat
     is_finished: bool
 
+    @staticmethod
+    def init() -> "GameState": ...
+
     @abstractmethod
     def str_repr_for_table(self) -> str: ...
 

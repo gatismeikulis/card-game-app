@@ -1,6 +1,6 @@
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any, override
+from typing import Any, Self, override
 
 from ...common.seat import SeatNumber
 from ...common.game_state import GameState
@@ -20,8 +20,10 @@ class FiveHundredGame(GameState):
     active_seat: FiveHundredSeat
     is_finished: bool
 
+    @override
     @staticmethod
-    def create(round: FiveHundredRound) -> "FiveHundredGame":
+    def init() -> "FiveHundredGame":
+        round = FiveHundredRound.create(1, FiveHundredSeat(1))
         return FiveHundredGame(
             active_seat=round.first_seat,
             round=round,
@@ -52,6 +54,7 @@ class FiveHundredGame(GameState):
             case _:
                 return f"Game in progress, Round {self.round.round_number}, {self.round.phase}, Seat {self.active_seat} is taking turn, Current scores: {', '.join(f'{seat}: {self.summary[seat]}' for seat in self.summary.keys())}"
 
+    @override
     def to_dict(self) -> dict[str, Any]:
         """Serialize to JSON-compatible dict"""
         return {
@@ -62,6 +65,7 @@ class FiveHundredGame(GameState):
             "is_finished": self.is_finished,
         }
 
+    @override
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "FiveHundredGame":
         """Reconstruct from JSON-compatible dict"""
@@ -73,6 +77,7 @@ class FiveHundredGame(GameState):
             is_finished=data["is_finished"],
         )
 
+    @override
     def to_public_dict(self, seat_number: SeatNumber | None = None) -> dict[str, Any]:
         """Serialize to JSON-compatible dict, but exclude non-public information except specifics for given seat"""
         return {
