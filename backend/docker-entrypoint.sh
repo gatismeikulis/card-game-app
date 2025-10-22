@@ -5,6 +5,9 @@ set -e  # exit immediately on error
 echo "Running database migrations..."
 uv run python manage.py migrate
 
+echo "Collecting static files..."
+uv run python manage.py collectstatic --noinput
+
 # Create superuser only if environment variables are set and user does not already exist
 if [ -n "$SUPERUSER_USERNAME" ] && [ -n "$SUPERUSER_PASSWORD" ]; then
     uv run python manage.py shell -c "
@@ -21,5 +24,17 @@ else
     echo "Skipping superuser creation - credentials not provided"
 fi
 
-echo "Starting Django server..."
-exec uv run python manage.py runserver 0.0.0.0:8000
+echo "Starting server..."
+
+if [ "$ENVIRONMENT" = "production" ]; then
+    echo "Running Gunicorn for production..."
+    # 3 workers, bind to 0.0.0.0:8000
+    exec gunicorn config.wsgi:application \
+        --bind 0.0.0.0:8000 \
+        --workers 3 \
+        --threads 4 \
+        --timeout 120
+else
+    echo "Running Django development server (uv run)..."
+    exec uv run python manage.py runserver 0.0.0.0:8000
+fi

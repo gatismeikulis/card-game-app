@@ -18,21 +18,33 @@ from datetime import timedelta
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
+ENVIRONMENT = os.getenv("ENVIRONMENT", "development").lower()
+DEBUG = ENVIRONMENT == "development"
 
-SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-%bi-q*7=srl&$&p(xx&@-3gyh8$s0n_bgy$@%v+tltopr%*sa2")
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv("DEBUG", "true").lower() in ("true", "1", "yes")
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    # Safe fallback for local dev, but never commit a real key
+    SECRET_KEY = "django-insecure-%bi-q*7=srl&$&p(xx&@-3gyh8$s0n_bgy$@%v+tltopr%*sa2"
+    if ENVIRONMENT == "production":
+        raise ValueError("❌ SECRET_KEY must be set in production environment")
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+
+
+CSRF_COOKIE_SECURE = True if ENVIRONMENT == "production" else False
+SESSION_COOKIE_SECURE = True if ENVIRONMENT == "production" else False
+SECURE_SSL_REDIRECT = True if ENVIRONMENT == "production" else False
+SECURE_HSTS_SECONDS = 60 * 60 * 24 * 30  # 30 days
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True if ENVIRONMENT == "production" else False
+SECURE_HSTS_PRELOAD = True if ENVIRONMENT == "production" else False
+
 
 
 REST_FRAMEWORK = {"DEFAULT_AUTHENTICATION_CLASSES": ("rest_framework_simplejwt.authentication.JWTAuthentication",)}
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=120),  # TODO: change to 15 minutes or something
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=int(os.getenv("JWT_LIFETIME", 30))),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=14),
 }
 
@@ -54,6 +66,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -61,6 +74,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
 
 ROOT_URLCONF = "config.urls"
 
@@ -133,11 +147,18 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"   # where collectstatic writes files
+# only compress static files in production
+if ENVIRONMENT == "production":
+    STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
-# Default primary key field type
-# https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
+WHITENOISE_MAX_AGE = 31536000  # long cache for static files
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = ENVIRONMENT != "production"
+
+# TODO: In prod, restrict your frontend/domain later:
+# CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
+
 CORS_ALLOW_CREDENTIALS = True
