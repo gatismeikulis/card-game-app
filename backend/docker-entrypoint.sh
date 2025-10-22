@@ -29,7 +29,7 @@ echo "Starting server..."
 if [ "$ENVIRONMENT" = "production" ]; then
     echo "Running Gunicorn for production..."
     # 3 workers, bind to 0.0.0.0:8000
-    exec gunicorn config.wsgi:application \
+    exec uv run gunicorn config.wsgi:application \
         --bind 0.0.0.0:8000 \
         --workers 3 \
         --threads 4 \
