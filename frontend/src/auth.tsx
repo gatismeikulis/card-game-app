@@ -1,5 +1,8 @@
 import { useState } from "react";
 
+const API_BASE =
+  (import.meta as any).env?.VITE_API_BASE ?? "http://localhost:8000";
+
 let accessTokenMemory: string | null = null;
 const REFRESH_KEY = "refresh_token";
 
@@ -29,7 +32,7 @@ export async function refreshAccessToken(): Promise<boolean> {
   }
 
   try {
-    const res = await fetch("http://localhost:8000/api/v1/token/refresh/", {
+    const res = await fetch(`${API_BASE}/api/v1/token/refresh/`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ refresh: refreshToken }),
@@ -60,7 +63,7 @@ export function LoginForm({ onLoggedIn }: { onLoggedIn: () => void }) {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("http://localhost:8000/api/v1/token/", {
+      const res = await fetch(`${API_BASE}/api/v1/token/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
