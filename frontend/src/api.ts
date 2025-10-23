@@ -1,7 +1,7 @@
 import { getAccessToken, getRefreshToken, refreshAccessToken } from "./auth";
 
 const API_BASE =
-  (import.meta as any).env?.VITE_API_BASE ?? "http://localhost:8001";
+  (import.meta as any).env?.VITE_API_BASE ?? "http://localhost:8000";
 
 export async function apiFetch(path: string, init: RequestInit = {}) {
   const url = path.startsWith("http")

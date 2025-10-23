@@ -50,12 +50,6 @@ interface ParticleEffect {
   size: number;
 }
 
-interface BotNotification {
-  message: string;
-  startTime: number;
-  duration: number;
-}
-
 export interface GameCanvasProps {
   width?: number;
   height?: number;
@@ -70,11 +64,17 @@ export interface GameCanvasProps {
   currentPlayerName?: string;
   phase?: string;
   biddingWinnerSeat?: number | null;
+  biddingStatus?: Record<number, { bid?: number; passed?: boolean }>;
   players: Array<{
     seat_number: number;
     screen_name: string;
     hand_size?: number;
     bot_strategy_kind?: string;
+    tricks_taken?: number;
+    bid?: number;
+    running_points?: number;
+    marriage_points?: number[];
+    hand?: number | string[];
   }>;
 }
 
@@ -91,31 +91,31 @@ export function GameCanvas({
   currentPlayerName = "You",
   phase = "",
   biddingWinnerSeat = null,
+  biddingStatus = {},
   players = [],
 }: GameCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [animations, setAnimations] = useState<AnimatedCard[]>([]);
   const [particles, setParticles] = useState<ParticleEffect[]>([]);
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
-  const [botNotification, setBotNotification] = useState<BotNotification | null>(null);
+  const [showPrevTrick, setShowPrevTrick] = useState<{
+    cards: string[];
+    timestamp: number;
+  } | null>(null);
   const animationFrameRef = useRef<number | undefined>(undefined);
   const lastTimeRef = useRef<number>(0);
-  const lastActiveSeatRef = useRef<number | undefined>(undefined);
 
-  // Show bot notification when active seat changes to a bot
+  // Detect when board is empty and prev_trick has cards - show them for 2 seconds
   useEffect(() => {
-    if (activeSeat && activeSeat !== lastActiveSeatRef.current) {
-      const activePlayer = players.find(p => p.seat_number === activeSeat);
-      if (activePlayer?.bot_strategy_kind) {
-        setBotNotification({
-          message: `${activePlayer.screen_name} is thinking...`,
-          startTime: Date.now(),
-          duration: 2000,
-        });
-      }
-      lastActiveSeatRef.current = activeSeat;
+    const hasCardsOnBoard =
+      cardsOnBoard && Object.values(cardsOnBoard).some((card) => card !== null);
+    const hasPrevTrick = prevTrick && prevTrick.length > 0;
+
+    if (!hasCardsOnBoard && hasPrevTrick) {
+      setShowPrevTrick({ cards: prevTrick, timestamp: Date.now() });
+      setTimeout(() => setShowPrevTrick(null), 2000);
     }
-  }, [activeSeat, players]);
+  }, [cardsOnBoard, prevTrick]);
 
   // Calculate player positions in a circular layout
   // Current player is always at bottom, bots are distributed around the top
@@ -125,18 +125,20 @@ export function GameCanvas({
     const radius = Math.min(width, height) * 0.35;
 
     // Find bots for positioning
-    const bots = players.filter(p => p.bot_strategy_kind);
-    
+    const bots = players.filter((p) => p.bot_strategy_kind);
+
     // If this is the current player, position at bottom (already handled in hand rendering)
     if (!player.bot_strategy_kind) {
       return { x: centerX, y: height - 80 }; // Bottom position
     }
-    
+
     // Position bots around the top of the table
     // If 2 bots: left and right. If 1 bot: top center
-    const botIndex = bots.findIndex(b => b.seat_number === player.seat_number);
+    const botIndex = bots.findIndex(
+      (b) => b.seat_number === player.seat_number
+    );
     const botCount = bots.length;
-    
+
     if (botCount === 1) {
       // Single bot at top
       return { x: centerX, y: 100 };
@@ -148,7 +150,7 @@ export function GameCanvas({
         return { x: centerX + radius * 0.8, y: centerY - radius * 0.6 };
       }
     }
-    
+
     // Fallback to circular layout
     const angle = Math.PI + (botIndex / botCount) * Math.PI;
     return {
@@ -163,6 +165,67 @@ export function GameCanvas({
   };
 
   // Draw a single card
+  // Draw face-down cards for other players
+  const drawFaceDownCards = (
+    ctx: CanvasRenderingContext2D,
+    count: number,
+    x: number,
+    y: number,
+    scale: number = 0.6
+  ) => {
+    const cardW = CARD_WIDTH * scale;
+    const cardH = CARD_HEIGHT * scale;
+    const cardSpacing = cardW * 0.3;
+    const totalWidth = (count - 1) * cardSpacing;
+    const startX = x - totalWidth / 2;
+
+    for (let i = 0; i < count; i++) {
+      const cardX = startX + i * cardSpacing;
+      const cardY = y - cardH / 2;
+      const cardR = CARD_RADIUS * scale;
+
+      // Draw card back (blue with pattern)
+      ctx.save();
+      ctx.shadowColor = "rgba(0, 0, 0, 0.3)";
+      ctx.shadowBlur = 5;
+      ctx.shadowOffsetY = 3;
+
+      // Card background
+      ctx.fillStyle = "#1e40af";
+      ctx.beginPath();
+      ctx.moveTo(cardX + cardR, cardY);
+      ctx.lineTo(cardX + cardW - cardR, cardY);
+      ctx.quadraticCurveTo(cardX + cardW, cardY, cardX + cardW, cardY + cardR);
+      ctx.lineTo(cardX + cardW, cardY + cardH - cardR);
+      ctx.quadraticCurveTo(
+        cardX + cardW,
+        cardY + cardH,
+        cardX + cardW - cardR,
+        cardY + cardH
+      );
+      ctx.lineTo(cardX + cardR, cardY + cardH);
+      ctx.quadraticCurveTo(cardX, cardY + cardH, cardX, cardY + cardH - cardR);
+      ctx.lineTo(cardX, cardY + cardR);
+      ctx.quadraticCurveTo(cardX, cardY, cardX + cardR, cardY);
+      ctx.closePath();
+      ctx.fill();
+
+      // Card border
+      ctx.strokeStyle = "#1e3a8a";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // Draw pattern on card back
+      ctx.fillStyle = "#3b82f6";
+      ctx.font = `bold ${12 * scale}px sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("?", cardX + cardW / 2, cardY + cardH / 2);
+
+      ctx.restore();
+    }
+  };
+
   const drawCard = (
     ctx: CanvasRenderingContext2D,
     card: string,
@@ -203,8 +266,12 @@ export function GameCanvas({
     gradient.addColorStop(1, "#f3f4f6");
 
     ctx.fillStyle = gradient;
-    ctx.strokeStyle = isSelected ? "#a855f7" : (isHovered ? "#3b82f6" : "#d1d5db");
-    ctx.lineWidth = isSelected ? 4 : (isHovered ? 3 : 2);
+    ctx.strokeStyle = isSelected
+      ? "#a855f7"
+      : isHovered
+      ? "#3b82f6"
+      : "#d1d5db";
+    ctx.lineWidth = isSelected ? 4 : isHovered ? 3 : 2;
 
     // Draw rounded rectangle
     ctx.beginPath();
@@ -213,18 +280,23 @@ export function GameCanvas({
     const cardW = CARD_WIDTH;
     const cardH = CARD_HEIGHT;
     const cardR = CARD_RADIUS;
-    
+
     ctx.moveTo(cardX + cardR, cardY);
     ctx.lineTo(cardX + cardW - cardR, cardY);
     ctx.quadraticCurveTo(cardX + cardW, cardY, cardX + cardW, cardY + cardR);
     ctx.lineTo(cardX + cardW, cardY + cardH - cardR);
-    ctx.quadraticCurveTo(cardX + cardW, cardY + cardH, cardX + cardW - cardR, cardY + cardH);
+    ctx.quadraticCurveTo(
+      cardX + cardW,
+      cardY + cardH,
+      cardX + cardW - cardR,
+      cardY + cardH
+    );
     ctx.lineTo(cardX + cardR, cardY + cardH);
     ctx.quadraticCurveTo(cardX, cardY + cardH, cardX, cardY + cardH - cardR);
     ctx.lineTo(cardX, cardY + cardR);
     ctx.quadraticCurveTo(cardX, cardY, cardX + cardR, cardY);
     ctx.closePath();
-    
+
     ctx.fill();
     ctx.stroke();
 
@@ -243,7 +315,10 @@ export function GameCanvas({
   };
 
   // Draw particles
-  const drawParticle = (ctx: CanvasRenderingContext2D, particle: ParticleEffect) => {
+  const drawParticle = (
+    ctx: CanvasRenderingContext2D,
+    particle: ParticleEffect
+  ) => {
     ctx.save();
     ctx.globalAlpha = particle.life / particle.maxLife;
     ctx.fillStyle = particle.color;
@@ -312,39 +387,6 @@ export function GameCanvas({
       ctx.stroke();
       ctx.restore();
 
-      // Draw bot notification in center
-      if (botNotification) {
-        const elapsed = Date.now() - botNotification.startTime;
-        if (elapsed < botNotification.duration) {
-          const alpha = Math.min(1, 1 - elapsed / botNotification.duration);
-          ctx.save();
-          ctx.globalAlpha = alpha;
-          ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
-          ctx.strokeStyle = "#3b82f6";
-          ctx.lineWidth = 2;
-          const padding = 20;
-          const textWidth = ctx.measureText(botNotification.message).width;
-          const boxWidth = textWidth + padding * 2;
-          const boxHeight = 40;
-          const boxX = width / 2 - boxWidth / 2;
-          const boxY = height / 2 - 100;
-          
-          ctx.beginPath();
-          ctx.roundRect(boxX, boxY, boxWidth, boxHeight, 8);
-          ctx.fill();
-          ctx.stroke();
-          
-          ctx.fillStyle = "#ffffff";
-          ctx.font = "16px sans-serif";
-          ctx.textAlign = "center";
-          ctx.textBaseline = "middle";
-          ctx.fillText(botNotification.message, width / 2, boxY + boxHeight / 2);
-          ctx.restore();
-        } else {
-          setBotNotification(null);
-        }
-      }
-
       // Update and draw particles
       setParticles((prev) => {
         return prev
@@ -394,14 +436,14 @@ export function GameCanvas({
       players.forEach((player) => {
         // Skip current player - they're drawn at bottom with cards
         if (!player.bot_strategy_kind) return;
-        
+
         const pos = getPlayerPosition(player);
         const isActive = activeSeat === player.seat_number;
         const isBiddingWinner = biddingWinnerSeat === player.seat_number;
 
         // Draw player indicator
         ctx.save();
-        
+
         // Bidding winner gets golden highlight
         if (isBiddingWinner) {
           ctx.fillStyle = isActive ? "#f59e0b" : "#d97706";
@@ -424,63 +466,137 @@ export function GameCanvas({
         ctx.fill();
         ctx.stroke();
 
-        // Draw player name
+        // Draw player name - bigger and more visible
         ctx.shadowBlur = 0;
         ctx.fillStyle = "#ffffff";
-        ctx.font = "bold 14px sans-serif";
+        ctx.font = "bold 18px sans-serif";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.fillText(player.screen_name, pos.x, pos.y - 40);
-        
-        // Show "BIDDER" label for bidding winner
-        if (isBiddingWinner) {
-          ctx.fillStyle = "#fbbf24";
-          ctx.font = "bold 10px sans-serif";
-          ctx.fillText("BIDDER", pos.x, pos.y - 55);
+        ctx.fillText(player.screen_name, pos.x, pos.y - 50);
+
+        // Show bidding status only during bidding phase
+        if (phase === "Bidding") {
+          const playerBiddingStatus = biddingStatus[player.seat_number];
+          if (playerBiddingStatus) {
+            if (
+              playerBiddingStatus.passed ||
+              (playerBiddingStatus.bid !== undefined &&
+                playerBiddingStatus.bid < 0)
+            ) {
+              ctx.fillStyle = "#ef4444"; // Red for passed
+              ctx.font = "bold 14px sans-serif";
+              ctx.fillText("PASSED", pos.x, pos.y - 70);
+            } else if (
+              playerBiddingStatus.bid !== undefined &&
+              playerBiddingStatus.bid > 0
+            ) {
+              ctx.fillStyle = "#10b981"; // Green for bid
+              ctx.font = "bold 14px sans-serif";
+              ctx.fillText(`BID ${playerBiddingStatus.bid}`, pos.x, pos.y - 70);
+            } else {
+              ctx.fillStyle = "#6b7280"; // Gray for no bid yet
+              ctx.font = "bold 14px sans-serif";
+              ctx.fillText("NO BID YET", pos.x, pos.y - 70);
+            }
+          } else if (isBiddingWinner) {
+            ctx.fillStyle = "#d97706";
+            ctx.font = "bold 12px sans-serif";
+            ctx.fillText("DECLARER", pos.x, pos.y - 70);
+          }
+        } else if (isBiddingWinner) {
+          // Show DECLARER label even outside bidding phase
+          ctx.fillStyle = "#d97706";
+          ctx.font = "bold 12px sans-serif";
+          ctx.fillText("DECLARER", pos.x, pos.y - 70);
         }
 
-        // Draw card count
-        if (player.hand_size) {
-          ctx.fillStyle = "#9ca3af";
-          ctx.font = "12px sans-serif";
-          ctx.fillText(`${player.hand_size} cards`, pos.x, pos.y + 45);
+        // Draw player stats below the circle with better visibility
+        let statsY = pos.y + 45;
+
+        // Draw hand - either face-down cards or card count
+        if (player.hand_size !== undefined && player.hand_size > 0) {
+          if (typeof player.hand === "number") {
+            // Show face-down cards for other players
+            drawFaceDownCards(ctx, player.hand_size, pos.x, statsY + 20, 0.4);
+            statsY += 40;
+          } else {
+            // Show card count for main player or when hand is array
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 14px sans-serif";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "top";
+            ctx.strokeStyle = "#000000";
+            ctx.lineWidth = 2;
+            ctx.strokeText(`${player.hand_size} cards`, pos.x, statsY);
+            ctx.fillText(`${player.hand_size} cards`, pos.x, statsY);
+            statsY += 18;
+          }
+        }
+
+        // Tricks taken (if available) - more visible
+        if (player.tricks_taken !== undefined) {
+          ctx.fillStyle = "#10b981";
+          ctx.font = "bold 14px sans-serif";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "top";
+          ctx.strokeStyle = "#000000";
+          ctx.lineWidth = 2;
+          ctx.strokeText(`${player.tricks_taken} tricks`, pos.x, statsY);
+          ctx.fillText(`${player.tricks_taken} tricks`, pos.x, statsY);
+          statsY += 18;
+        }
+
+        // Show bid if this player is the declarer and has a positive bid
+        if (isBiddingWinner && player.bid !== undefined && player.bid > 0) {
+          ctx.fillStyle = "#f59e0b";
+          ctx.font = "bold 14px sans-serif";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "top";
+          ctx.strokeStyle = "#000000";
+          ctx.lineWidth = 2;
+          ctx.strokeText(`Bid: ${player.bid}`, pos.x, statsY);
+          ctx.fillText(`Bid: ${player.bid}`, pos.x, statsY);
         }
 
         ctx.restore();
       });
 
       // Draw cards on board - in a horizontal line with clear spacing
-      const cardsOnBoardEntries = Object.entries(cardsOnBoard).filter(([, card]) => card);
+      const cardsOnBoardEntries = Object.entries(cardsOnBoard).filter(
+        ([, card]) => card
+      );
       if (cardsOnBoardEntries.length > 0) {
         const centerX = width / 2;
         const centerY = height / 2 - 20; // Slightly above center for better visibility
         const cardSpacingOnBoard = 120; // Space between cards on board
-        
+
         // Sort by seat number to ensure consistent ordering
-        const sortedCards = cardsOnBoardEntries.sort(([a], [b]) => parseInt(a) - parseInt(b));
-        
+        const sortedCards = cardsOnBoardEntries.sort(
+          ([a], [b]) => parseInt(a) - parseInt(b)
+        );
+
         // Calculate starting X position to center the cards
         const totalWidth = (sortedCards.length - 1) * cardSpacingOnBoard;
         const startX = centerX - totalWidth / 2;
-        
+
         sortedCards.forEach(([seat, card], index) => {
           if (card) {
             const seatNum = parseInt(seat);
             const x = startX + index * cardSpacingOnBoard;
             const y = centerY;
-            
-            // Draw card with slight shadow for depth
+
+            // Draw card with slight shadow for depth - smaller than main player cards
             ctx.save();
             ctx.shadowColor = "rgba(0, 0, 0, 0.3)";
-            ctx.shadowBlur = 10;
-            ctx.shadowOffsetY = 5;
-            drawCard(ctx, card, x, y, 0, 1.2, 1); // Slightly larger for visibility
+            ctx.shadowBlur = 8;
+            ctx.shadowOffsetY = 4;
+            drawCard(ctx, card, x, y, 0, 0.8, 1); // Smaller than main player cards
             ctx.restore();
-            
+
             // Draw player label below card
-            const player = players.find(p => p.seat_number === seatNum);
+            const player = players.find((p) => p.seat_number === seatNum);
             const isBidder = biddingWinnerSeat === seatNum;
-            
+
             ctx.save();
             ctx.fillStyle = isBidder ? "#fbbf24" : "#9ca3af";
             ctx.font = "bold 12px sans-serif";
@@ -489,23 +605,100 @@ export function GameCanvas({
             ctx.fillText(
               player?.screen_name || `Seat ${seatNum}`,
               x,
-              y + CARD_HEIGHT * 1.2 / 2 + 10
+              y + (CARD_HEIGHT * 1.2) / 2 + 10
             );
             ctx.restore();
           }
         });
       }
 
+      // Draw face-down cards during bidding phase
+      if (phase === "Bidding") {
+        const centerX = width / 2;
+        const centerY = height / 2 - 80; // Higher up on the table
+        const cardSpacing = 60; // Closer together
+        const totalWidth = 2 * cardSpacing; // 3 cards with 2 gaps
+        const startX = centerX - totalWidth / 2;
+
+        // Draw 3 face-down cards
+        for (let i = 0; i < 3; i++) {
+          const x = startX + i * cardSpacing;
+          const y = centerY;
+
+          // Draw face-down card
+          ctx.save();
+          ctx.shadowColor = "rgba(0, 0, 0, 0.3)";
+          ctx.shadowBlur = 10;
+          ctx.shadowOffsetY = 5;
+
+          // Draw card back (blue with pattern) - smaller during bidding
+          const cardW = CARD_WIDTH * 0.6; // Even smaller size
+          const cardH = CARD_HEIGHT * 0.6; // Even smaller size
+          const cardX = x - cardW / 2;
+          const cardY = y - cardH / 2;
+          const cardR = CARD_RADIUS * 0.6;
+
+          // Card background
+          ctx.fillStyle = "#1e40af"; // Blue background
+          ctx.beginPath();
+          ctx.moveTo(cardX + cardR, cardY);
+          ctx.lineTo(cardX + cardW - cardR, cardY);
+          ctx.quadraticCurveTo(
+            cardX + cardW,
+            cardY,
+            cardX + cardW,
+            cardY + cardR
+          );
+          ctx.lineTo(cardX + cardW, cardY + cardH - cardR);
+          ctx.quadraticCurveTo(
+            cardX + cardW,
+            cardY + cardH,
+            cardX + cardW - cardR,
+            cardY + cardH
+          );
+          ctx.lineTo(cardX + cardR, cardY + cardH);
+          ctx.quadraticCurveTo(
+            cardX,
+            cardY + cardH,
+            cardX,
+            cardY + cardH - cardR
+          );
+          ctx.lineTo(cardX, cardY + cardR);
+          ctx.quadraticCurveTo(cardX, cardY, cardX + cardR, cardY);
+          ctx.closePath();
+          ctx.fill();
+
+          // Card border
+          ctx.strokeStyle = "#1e3a8a";
+          ctx.lineWidth = 1;
+          ctx.stroke();
+
+          // Draw pattern on card back
+          ctx.fillStyle = "#3b82f6";
+          ctx.font = "bold 18px sans-serif";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText("?", x, y);
+
+          ctx.restore();
+        }
+      }
+
       // Draw player hand at bottom with current player name
       const handY = height - 160; // Moved up to give space for action text below
       const handCenterX = width / 2;
-      const cardSpacing = Math.min(100, (width - 200) / Math.max(playerHand.length, 1));
+      const cardSpacing = Math.min(
+        100,
+        (width - 200) / Math.max(playerHand.length, 1)
+      );
 
       // Draw current player name above hand
       ctx.save();
-      const currentPlayerSeat = players.find(p => !p.bot_strategy_kind)?.seat_number;
+      const currentPlayerSeat = players.find(
+        (p) => !p.bot_strategy_kind
+      )?.seat_number;
       const isCurrentPlayerBidder = biddingWinnerSeat === currentPlayerSeat;
-      
+
       if (isCurrentPlayerBidder) {
         ctx.fillStyle = "#f59e0b";
         ctx.shadowColor = "#f59e0b";
@@ -517,19 +710,19 @@ export function GameCanvas({
           ctx.shadowBlur = 10;
         }
       }
-      
+
       ctx.font = "bold 18px sans-serif";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText(currentPlayerName, handCenterX, handY - 70);
-      
-      // Show "BIDDER" label for current player if they won bid
+
+      // Show "DECLARER" label for current player if they won bid
       if (isCurrentPlayerBidder) {
-        ctx.fillStyle = "#fbbf24";
-        ctx.font = "bold 12px sans-serif";
-        ctx.fillText("(BIDDER)", handCenterX, handY - 50);
+        ctx.fillStyle = "#d97706";
+        ctx.font = "bold 10px sans-serif";
+        ctx.fillText("(DECLARER)", handCenterX, handY - 50);
       }
-      
+
       // Draw phase info below name, above cards
       if (phase) {
         ctx.shadowBlur = 0;
@@ -537,14 +730,15 @@ export function GameCanvas({
         ctx.font = "12px sans-serif";
         ctx.fillText(phase, handCenterX, handY - 50);
       }
+
       ctx.restore();
 
       playerHand.forEach((card, index) => {
         const totalWidth = Math.max(0, (playerHand.length - 1) * cardSpacing);
         const x = handCenterX - totalWidth / 2 + index * cardSpacing;
-        const isHovered = hoveredCard === card;
+        const isHovered = hoveredCard === card && isMyTurn;
         const isSelected = selectedCards.includes(card);
-        
+
         // Lift selected cards higher than hovered cards
         let y = handY;
         if (isSelected) {
@@ -552,11 +746,51 @@ export function GameCanvas({
         } else if (isHovered) {
           y = handY - CARD_LIFT_HEIGHT / 2;
         }
-        
+
         const scale = isHovered && !isSelected ? 1.05 : 1;
 
         drawCard(ctx, card, x, y, 0, scale, 1, isHovered, isSelected);
       });
+
+      // Draw previous trick display when board is empty
+      if (showPrevTrick) {
+        const centerX = width / 2;
+        const centerY = height / 2 - 100;
+        const cardSpacing = 100;
+        const totalWidth = (showPrevTrick.cards.length - 1) * cardSpacing;
+        const startX = centerX - totalWidth / 2;
+
+        // Background for the 3rd card display
+        ctx.save();
+        ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
+        ctx.fillRect(centerX - 200, centerY - 80, 400, 160);
+        ctx.restore();
+
+        // Title
+        ctx.save();
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 18px sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "top";
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 2;
+        ctx.strokeText("Previous Trick", centerX, centerY - 60);
+        ctx.fillText("Previous Trick", centerX, centerY - 60);
+        ctx.restore();
+
+        // Draw the previous trick cards
+        showPrevTrick.cards.forEach((card: string, index: number) => {
+          const x = startX + index * cardSpacing;
+          const y = centerY;
+
+          ctx.save();
+          ctx.shadowColor = "rgba(0, 0, 0, 0.5)";
+          ctx.shadowBlur = 10;
+          ctx.shadowOffsetY = 5;
+          drawCard(ctx, card, x, y, 0, 1.0, 1);
+          ctx.restore();
+        });
+      }
 
       // Draw previous trick in corner if exists
       if (prevTrick && prevTrick.length > 0) {
@@ -603,7 +837,6 @@ export function GameCanvas({
     players,
     animations,
     particles,
-    botNotification,
   ]);
 
   // Handle card clicks
@@ -623,7 +856,10 @@ export function GameCanvas({
     // Check if click is on player hand
     const handY = height - 160;
     const handCenterX = width / 2;
-    const cardSpacing = Math.min(100, (width - 200) / Math.max(playerHand.length, 1));
+    const cardSpacing = Math.min(
+      100,
+      (width - 200) / Math.max(playerHand.length, 1)
+    );
 
     playerHand.forEach((card, index) => {
       const totalWidth = Math.max(0, (playerHand.length - 1) * cardSpacing);
@@ -634,12 +870,9 @@ export function GameCanvas({
       const dx = x - cardX;
       const dy = y - cardY;
 
-      if (
-        Math.abs(dx) < CARD_WIDTH / 2 &&
-        Math.abs(dy) < CARD_HEIGHT / 2
-      ) {
+      if (Math.abs(dx) < CARD_WIDTH / 2 && Math.abs(dy) < CARD_HEIGHT / 2) {
         onCardClick(card);
-        
+
         // Create particle effect on click
         createParticleBurst(cardX, cardY);
       }
@@ -661,7 +894,10 @@ export function GameCanvas({
     // Check if hovering over player hand
     const handY = height - 160;
     const handCenterX = width / 2;
-    const cardSpacing = Math.min(100, (width - 200) / Math.max(playerHand.length, 1));
+    const cardSpacing = Math.min(
+      100,
+      (width - 200) / Math.max(playerHand.length, 1)
+    );
 
     let newHoveredCard: string | null = null;
 
@@ -674,10 +910,7 @@ export function GameCanvas({
       const dx = x - cardX;
       const dy = y - cardY;
 
-      if (
-        Math.abs(dx) < CARD_WIDTH / 2 &&
-        Math.abs(dy) < CARD_HEIGHT / 2
-      ) {
+      if (Math.abs(dx) < CARD_WIDTH / 2 && Math.abs(dy) < CARD_HEIGHT / 2) {
         newHoveredCard = card;
       }
     });

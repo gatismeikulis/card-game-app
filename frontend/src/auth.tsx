@@ -15,7 +15,7 @@ import { useToast } from "./components/ui/toast";
 import { LogIn, Loader2, Gamepad2 } from "lucide-react";
 
 const API_BASE =
-  (import.meta as any).env?.VITE_API_BASE ?? "http://localhost:8001";
+  (import.meta as any).env?.VITE_API_BASE ?? "http://localhost:8000";
 
 let accessTokenMemory: string | null = null;
 const REFRESH_KEY = "refresh_token";

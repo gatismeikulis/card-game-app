@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import * as React from "react";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { Minus, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 
 interface BiddingPanelProps {
   onBid: (amount: number) => void;
@@ -12,26 +12,35 @@ interface BiddingPanelProps {
   hasMarriage?: boolean; // Has KQ of same suit
   currentHighestBid?: number; // Current highest bid in the round
   currentHighestBidder?: string; // Name of current highest bidder
+  biddingStatus?: Record<number, { bid?: number; passed?: boolean }>; // Bidding status for all players
+  currentPlayerSeat?: number; // Current player's seat number
 }
 
 export function BiddingPanel({
   onBid,
   isLoading = false,
   minBid = 60,
-  maxBid = 180,
+  maxBid = 200,
   hasMarriage = false,
   currentHighestBid = 0,
   currentHighestBidder,
+  biddingStatus = {},
+  currentPlayerSeat,
 }: BiddingPanelProps) {
-  const effectiveMaxBid = hasMarriage ? maxBid : 120;
+  const effectiveMaxBid = maxBid;
   // Minimum bid must be at least 5 points higher than current highest
-  const effectiveMinBid = currentHighestBid > 0 ? currentHighestBid + 5 : minBid;
-  
+  const effectiveMinBid =
+    currentHighestBid > 0 ? currentHighestBid + 5 : minBid;
+
   // Check if bidding is possible
   const canBid = effectiveMinBid <= effectiveMaxBid;
-  
-  const [bidAmount, setBidAmount] = useState(canBid ? effectiveMinBid : effectiveMaxBid);
-  const [displayBid, setDisplayBid] = useState(canBid ? effectiveMinBid : effectiveMaxBid);
+
+  const [bidAmount, setBidAmount] = useState(
+    canBid ? effectiveMinBid : effectiveMaxBid
+  );
+  const [displayBid, setDisplayBid] = useState(
+    canBid ? effectiveMinBid : effectiveMaxBid
+  );
 
   // Update bid amount when minimum changes
   React.useEffect(() => {
@@ -45,7 +54,7 @@ export function BiddingPanel({
     const step = (bidAmount - displayBid) / 10;
     if (Math.abs(step) > 0.1) {
       const timer = setTimeout(() => {
-        setDisplayBid(prev => {
+        setDisplayBid((prev) => {
           const newVal = prev + step;
           if (Math.abs(newVal - bidAmount) < 1) return bidAmount;
           return newVal;
@@ -58,11 +67,7 @@ export function BiddingPanel({
   }, [bidAmount, displayBid]);
 
   const handleIncrease = (amount: number) => {
-    setBidAmount(prev => Math.min(effectiveMaxBid, prev + amount));
-  };
-
-  const handleDecrease = (amount: number) => {
-    setBidAmount(prev => Math.max(effectiveMinBid, prev - amount));
+    setBidAmount((prev) => Math.min(effectiveMaxBid, prev + amount));
   };
 
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -73,14 +78,35 @@ export function BiddingPanel({
     onBid(bidAmount);
   };
 
+  // Check if current player has already bid and all others have passed
+  const currentPlayerStatus = currentPlayerSeat
+    ? biddingStatus[currentPlayerSeat]
+    : null;
+  const hasCurrentPlayerBid =
+    currentPlayerStatus?.bid !== undefined && currentPlayerStatus.bid > 0;
+  const allOthersPassed = Object.entries(biddingStatus).every(
+    ([seat, status]) => {
+      const seatNum = parseInt(seat);
+      return (
+        seatNum === currentPlayerSeat ||
+        status.passed === true ||
+        (status.bid !== undefined && status.bid < 0)
+      );
+    }
+  );
+  const shouldShowConfirm = hasCurrentPlayerBid && allOthersPassed;
+
   // If can't bid, show only pass option
   if (!canBid) {
     return (
       <Card className="card-glow border-destructive/50">
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg text-destructive">Cannot Bid Higher</CardTitle>
+          <CardTitle className="text-lg text-destructive">
+            Cannot Bid Higher
+          </CardTitle>
           <p className="text-xs text-muted-foreground">
-            Current: {currentHighestBid} {currentHighestBidder && `(${currentHighestBidder})`}
+            Current: {currentHighestBid}{" "}
+            {currentHighestBidder && `(${currentHighestBidder})`}
           </p>
           <p className="text-xs text-muted-foreground">
             Your max is {effectiveMaxBid} {!hasMarriage && "(no marriage)"}
@@ -105,15 +131,18 @@ export function BiddingPanel({
       <CardHeader className="pb-3">
         <CardTitle className="text-lg text-primary">Place Your Bid</CardTitle>
         {currentHighestBid > 0 ? (
-          <p className="text-xs text-muted-foreground">
-            Current: {currentHighestBid} {currentHighestBidder && `(${currentHighestBidder})`}
-          </p>
-        ) : (
-          !hasMarriage && (
-            <p className="text-xs text-muted-foreground">
-              Max 120 (no marriage in hand)
+          <div className="space-y-1">
+            <p className="text-sm font-semibold text-primary">
+              Current Highest: {currentHighestBid}
             </p>
-          )
+            {currentHighestBidder && (
+              <p className="text-xs text-muted-foreground">
+                by {currentHighestBidder}
+              </p>
+            )}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">Range: 60 - 200</p>
         )}
       </CardHeader>
       <CardContent className="space-y-4">
@@ -151,22 +180,11 @@ export function BiddingPanel({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => handleDecrease(10)}
-              disabled={bidAmount <= effectiveMinBid || isLoading}
+              onClick={() => handleIncrease(5)}
+              disabled={bidAmount >= effectiveMaxBid || isLoading}
               className="w-full"
             >
-              <Minus className="h-4 w-4 mr-1" />
-              -10
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleDecrease(5)}
-              disabled={bidAmount <= effectiveMinBid || isLoading}
-              className="w-full"
-            >
-              <Minus className="h-4 w-4 mr-1" />
-              -5
+              <Plus className="h-4 w-4 ml-1" />5
             </Button>
           </div>
           <div className="space-y-2">
@@ -177,43 +195,54 @@ export function BiddingPanel({
               disabled={bidAmount >= effectiveMaxBid || isLoading}
               className="w-full"
             >
-              +10
               <Plus className="h-4 w-4 ml-1" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleIncrease(5)}
-              disabled={bidAmount >= effectiveMaxBid || isLoading}
-              className="w-full"
-            >
-              +5
-              <Plus className="h-4 w-4 ml-1" />
+              10
             </Button>
           </div>
         </div>
 
         {/* Submit bid button */}
-        <Button
-          onClick={handleBid}
-          disabled={isLoading}
-          className="w-full h-12 text-lg font-bold"
-          size="lg"
-        >
-          {isLoading ? "Placing Bid..." : `Bid ${bidAmount}`}
-        </Button>
+        {shouldShowConfirm ? (
+          <Button
+            onClick={() => onBid(-1)}
+            disabled={isLoading}
+            className="w-full h-12 text-lg font-bold bg-green-600 hover:bg-green-700"
+            size="lg"
+          >
+            {isLoading ? "Confirming..." : `CONFIRM ${currentHighestBid}`}
+          </Button>
+        ) : (
+          <Button
+            onClick={handleBid}
+            disabled={isLoading}
+            className="w-full h-12 text-lg font-bold"
+            size="lg"
+          >
+            {isLoading ? "Placing Bid..." : `Bid ${bidAmount}`}
+          </Button>
+        )}
 
         {/* Pass button */}
-        <Button
-          variant="outline"
-          onClick={() => onBid(-1)}
-          disabled={isLoading}
-          className="w-full"
-        >
-          Pass
-        </Button>
+        {shouldShowConfirm ? (
+          <Button
+            variant="outline"
+            onClick={() => onBid(bidAmount)}
+            disabled={isLoading}
+            className="w-full h-10 text-sm"
+          >
+            Bid {bidAmount}
+          </Button>
+        ) : (
+          <Button
+            variant="outline"
+            onClick={() => onBid(-1)}
+            disabled={isLoading}
+            className="w-full"
+          >
+            Pass
+          </Button>
+        )}
       </CardContent>
     </Card>
   );
 }
-
