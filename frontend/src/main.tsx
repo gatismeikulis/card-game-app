@@ -5,12 +5,15 @@ import { StrictMode } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { queryClient } from "./queryClient";
+import { ToastProvider } from "./components/ui/toast";
 
 createRoot(document.getElementById("app")!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <AppRouter />
-      <ReactQueryDevtools initialIsOpen={false} />
+      <ToastProvider>
+        <AppRouter />
+        <ReactQueryDevtools initialIsOpen={false} />
+      </ToastProvider>
     </QueryClientProvider>
   </StrictMode>
 );
