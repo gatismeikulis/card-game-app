@@ -4,10 +4,12 @@ import { apiFetch } from "../api";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { useToast } from "../components/ui/toast";
+import { useGameDisplayName } from "../components/UserInfo";
 import { Plus, RefreshCw, Trash2, Users, ArrowRight, Loader2 } from "lucide-react";
 
 export function Tables() {
   const { addToast } = useToast();
+  const displayName = useGameDisplayName();
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["tables"],
@@ -83,7 +85,7 @@ export function Tables() {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="text-2xl">Game Tables</CardTitle>
-              <CardDescription>Create or join a game table to start playing</CardDescription>
+              <CardDescription>Welcome, {displayName}! Create or join a game table to start playing</CardDescription>
             </div>
             <div className="flex items-center gap-2">
               <Button

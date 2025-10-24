@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { refreshAccessToken, getAccessToken } from "./auth";
 import { Tables } from "./features/Tables";
 import { TableDetail } from "./features/TableDetail";
+import { UserProvider } from "./contexts/UserContext";
 import { Loader2 } from "lucide-react";
 
 export default function App() {
@@ -55,17 +56,27 @@ export default function App() {
 
   // Render the appropriate component based on the current path
   if (location.pathname.startsWith("/tables/")) {
-    return <TableDetail />;
+    return (
+      <UserProvider>
+        <TableDetail />
+      </UserProvider>
+    );
   } else if (location.pathname === "/tables") {
-    return <Tables />;
+    return (
+      <UserProvider>
+        <Tables />
+      </UserProvider>
+    );
   } else {
     return (
-      <div className="min-h-screen game-gradient">
-        <div className="max-w-7xl mx-auto p-6 space-y-6">
-          <h1 className="text-3xl font-bold text-center mb-8">Card Game Arena</h1>
-          <Tables />
+      <UserProvider>
+        <div className="min-h-screen game-gradient">
+          <div className="max-w-7xl mx-auto p-6 space-y-6">
+            <h1 className="text-3xl font-bold text-center mb-8">Card Game Arena</h1>
+            <Tables />
+          </div>
         </div>
-      </div>
+      </UserProvider>
     );
   }
 }
