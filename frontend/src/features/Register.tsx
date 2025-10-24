@@ -80,7 +80,9 @@ export function Register() {
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(
-          errorData.detail || JSON.stringify(errorData) || "Registration failed"
+          errorData.detail ||
+            JSON.stringify(errorData) ||
+            "Registration failed",
         );
       }
 
@@ -200,7 +202,9 @@ export function Register() {
                 type="password"
                 placeholder="••••••••"
                 value={formData.confirmPassword}
-                onChange={(e) => handleChange("confirmPassword", e.target.value)}
+                onChange={(e) =>
+                  handleChange("confirmPassword", e.target.value)
+                }
                 className={errors.confirmPassword ? "border-destructive" : ""}
                 disabled={loading}
               />
@@ -238,4 +242,3 @@ export function Register() {
     </div>
   );
 }
-

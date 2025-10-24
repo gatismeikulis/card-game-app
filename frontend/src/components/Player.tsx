@@ -53,8 +53,8 @@ export function Player({
               ? bid > 0
                 ? `Bid: ${bid}`
                 : bid < 0
-                ? "PASSED"
-                : "NOT BID YET"
+                  ? "PASSED"
+                  : "NOT BID YET"
               : "NOT BID YET"}
           </div>
         ) : (

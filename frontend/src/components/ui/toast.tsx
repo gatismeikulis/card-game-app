@@ -1,27 +1,27 @@
-import * as React from "react"
-import { cn } from "../../lib/utils"
-import { X } from "lucide-react"
+import * as React from "react";
+import { cn } from "../../lib/utils";
+import { X } from "lucide-react";
 
 export interface Toast {
-  id: string
-  title?: string
-  description?: string
-  variant?: "default" | "destructive"
+  id: string;
+  title?: string;
+  description?: string;
+  variant?: "default" | "destructive";
 }
 
 interface ToastProps extends React.HTMLAttributes<HTMLDivElement> {
-  toast: Toast
-  onClose: () => void
+  toast: Toast;
+  onClose: () => void;
 }
 
 const ToastComponent = React.forwardRef<HTMLDivElement, ToastProps>(
   ({ className, toast, onClose, ...props }, ref) => {
     React.useEffect(() => {
       const timer = setTimeout(() => {
-        onClose()
-      }, 5000)
-      return () => clearTimeout(timer)
-    }, [onClose])
+        onClose();
+      }, 5000);
+      return () => clearTimeout(timer);
+    }, [onClose]);
 
     return (
       <div
@@ -31,12 +31,14 @@ const ToastComponent = React.forwardRef<HTMLDivElement, ToastProps>(
           toast.variant === "destructive"
             ? "border-destructive bg-destructive text-destructive-foreground"
             : "border bg-background text-foreground",
-          className
+          className,
         )}
         {...props}
       >
         <div className="grid gap-1">
-          {toast.title && <div className="text-sm font-semibold">{toast.title}</div>}
+          {toast.title && (
+            <div className="text-sm font-semibold">{toast.title}</div>
+          )}
           {toast.description && (
             <div className="text-sm opacity-90">{toast.description}</div>
           )}
@@ -48,31 +50,31 @@ const ToastComponent = React.forwardRef<HTMLDivElement, ToastProps>(
           <X className="h-4 w-4" />
         </button>
       </div>
-    )
-  }
-)
-ToastComponent.displayName = "Toast"
+    );
+  },
+);
+ToastComponent.displayName = "Toast";
 
-export { ToastComponent }
+export { ToastComponent };
 
 // Toast provider and hook
 const ToastContext = React.createContext<{
-  toasts: Toast[]
-  addToast: (toast: Omit<Toast, "id">) => void
-  removeToast: (id: string) => void
-} | null>(null)
+  toasts: Toast[];
+  addToast: (toast: Omit<Toast, "id">) => void;
+  removeToast: (id: string) => void;
+} | null>(null);
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
-  const [toasts, setToasts] = React.useState<Toast[]>([])
+  const [toasts, setToasts] = React.useState<Toast[]>([]);
 
   const addToast = React.useCallback((toast: Omit<Toast, "id">) => {
-    const id = Math.random().toString(36).substr(2, 9)
-    setToasts((prev) => [...prev, { ...toast, id }])
-  }, [])
+    const id = Math.random().toString(36).substr(2, 9);
+    setToasts((prev) => [...prev, { ...toast, id }]);
+  }, []);
 
   const removeToast = React.useCallback((id: string) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id))
-  }, [])
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
 
   return (
     <ToastContext.Provider value={{ toasts, addToast, removeToast }}>
@@ -87,14 +89,13 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         ))}
       </div>
     </ToastContext.Provider>
-  )
+  );
 }
 
 export function useToast() {
-  const context = React.useContext(ToastContext)
+  const context = React.useContext(ToastContext);
   if (!context) {
-    throw new Error("useToast must be used within a ToastProvider")
+    throw new Error("useToast must be used within a ToastProvider");
   }
-  return context
+  return context;
 }
-

@@ -233,7 +233,7 @@ export function TableDetail() {
         `/api/v1/tables/${id}/take-automatic-turn/`,
         {
           method: "POST",
-        }
+        },
       );
       return result;
     },
@@ -250,7 +250,7 @@ export function TableDetail() {
 
   // Track when 3 cards were placed to ensure they stay visible for 1 second
   const [threeCardsPlacedAt, setThreeCardsPlacedAt] = useState<number | null>(
-    null
+    null,
   );
 
   // Detect when 3 cards are on board
@@ -259,7 +259,7 @@ export function TableDetail() {
 
     const cardsOnBoard = data.game_state.round.cards_on_board || {};
     const cardsPlayed = Object.values(cardsOnBoard).filter(
-      (card) => card !== null
+      (card) => card !== null,
     ).length;
 
     if (cardsPlayed === 3 && threeCardsPlacedAt === null) {
@@ -341,7 +341,7 @@ export function TableDetail() {
           } else if (info.passed === true) {
             status[seatNum] = { passed: true };
           }
-        }
+        },
       );
     }
 
@@ -404,7 +404,7 @@ export function TableDetail() {
                   onClick={() => join.mutate(null)}
                   disabled={
                     data.players?.length >= (data.max_players || 3) ||
-                    data.players?.some((p: any) => !p.bot_strategy_kind)
+                    data.players.some((p: any) => p.user_id === userId)
                   }
                 >
                   Join Table
@@ -455,16 +455,16 @@ export function TableDetail() {
                     ? Object.entries(data.game_state.summary)
                         .sort(
                           ([, a]: any, [, b]: any) =>
-                            (b as number) - (a as number)
+                            (b as number) - (a as number),
                         )
                         .map(([seat, points]: [string, any]) => {
                           const player = data.players?.find(
-                            (p: any) => p.seat_number === parseInt(seat)
+                            (p: any) => p.seat_number === parseInt(seat),
                           );
                           const playerName =
                             player?.screen_name || `Seat ${seat}`;
                           const allScores = Object.values(
-                            data.game_state.summary
+                            data.game_state.summary,
                           ) as number[];
                           const isWinner = points === Math.max(...allScores);
                           return (
@@ -641,7 +641,7 @@ export function TableDetail() {
                         ) {
                           const seatNumber = parseInt(bid["0"]);
                           const player = data.players?.find(
-                            (p: any) => p.seat_number === seatNumber
+                            (p: any) => p.seat_number === seatNumber,
                           );
                           return player?.screen_name;
                         }
@@ -666,7 +666,7 @@ export function TableDetail() {
                     const seatNumber = parseInt(bid["0"]);
                     const bidAmount = bid["1"];
                     const player = data.players?.find(
-                      (p: any) => p.seat_number === seatNumber
+                      (p: any) => p.seat_number === seatNumber,
                     );
                     const playerName =
                       player?.screen_name || `Seat ${seatNumber}`;
@@ -682,7 +682,7 @@ export function TableDetail() {
               {(() => {
                 const activeSeat = data.game_state?.active_seat;
                 const activePlayer = data.players?.find(
-                  (p: any) => p.seat_number === activeSeat
+                  (p: any) => p.seat_number === activeSeat,
                 );
                 const isBotTurn = activePlayer?.bot_strategy_kind;
 
@@ -760,7 +760,7 @@ export function TableDetail() {
                               const seatNumber = parseInt(bid["0"]);
                               const bidAmount = bid["1"];
                               const player = data.players?.find(
-                                (p: any) => p.seat_number === seatNumber
+                                (p: any) => p.seat_number === seatNumber,
                               );
                               const playerName =
                                 player?.screen_name || `Seat ${seatNumber}`;
@@ -807,7 +807,7 @@ export function TableDetail() {
                                       {cardStr}
                                     </span>
                                   );
-                                }
+                                },
                               )}
                             </div>
                           </div>
@@ -826,7 +826,7 @@ export function TableDetail() {
                       {(() => {
                         const activeSeat = data.game_state?.active_seat;
                         const activePlayer = data.players?.find(
-                          (p: any) => p.seat_number === activeSeat
+                          (p: any) => p.seat_number === activeSeat,
                         );
                         const isBotTurn = activePlayer?.bot_strategy_kind;
 
@@ -889,7 +889,7 @@ export function TableDetail() {
                   ? Object.entries(data.game_state.summary).map(
                       ([seat, points]) => {
                         const player = data.players?.find(
-                          (p: any) => p.seat_number === parseInt(seat)
+                          (p: any) => p.seat_number === parseInt(seat),
                         );
                         const playerName =
                           player?.screen_name || `Seat ${seat}`;
@@ -901,7 +901,7 @@ export function TableDetail() {
                             </span>
                           </div>
                         );
-                      }
+                      },
                     )
                   : "No scores yet"}
               </div>
@@ -942,7 +942,7 @@ export function TableDetail() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {[1, 2, 3].map((seatNum) => {
                   const player = data.players?.find(
-                    (p: any) => p.seat_number === seatNum
+                    (p: any) => p.seat_number === seatNum,
                   );
                   const isSeatTaken = !!player;
                   const isCurrentUser = player && !player.bot_strategy_kind;
@@ -950,7 +950,7 @@ export function TableDetail() {
                   const canJoin =
                     !isSeatTaken &&
                     data.players?.length < (data.max_players || 3) &&
-                    !data.players?.some((p: any) => !p.bot_strategy_kind);
+                    !data.players.some((p: any) => p.user_id === userId);
 
                   return (
                     <Card key={seatNum} className="card-hover">

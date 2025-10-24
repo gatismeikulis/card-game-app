@@ -27,7 +27,7 @@ export default function App() {
       const refreshed = await refreshAccessToken();
       setLoggedIn(refreshed);
       setLoading(false);
-      
+
       if (!refreshed) {
         navigate("/login");
       }
@@ -42,7 +42,9 @@ export default function App() {
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
           <div className="text-lg">Loading...</div>
-          <div className="text-sm text-muted-foreground">Checking authentication</div>
+          <div className="text-sm text-muted-foreground">
+            Checking authentication
+          </div>
         </div>
       </div>
     );
@@ -72,7 +74,9 @@ export default function App() {
       <UserProvider>
         <div className="min-h-screen game-gradient">
           <div className="max-w-7xl mx-auto p-6 space-y-6">
-            <h1 className="text-3xl font-bold text-center mb-8">Card Game Arena</h1>
+            <h1 className="text-3xl font-bold text-center mb-8">
+              Card Game Arena
+            </h1>
             <Tables />
           </div>
         </div>

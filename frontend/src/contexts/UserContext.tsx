@@ -1,6 +1,12 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { apiFetch } from '../api';
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  type ReactNode,
+} from "react";
+import { useQuery } from "@tanstack/react-query";
+import { apiFetch } from "../api";
 
 // User data interface
 export interface User {
@@ -32,9 +38,9 @@ export function UserProvider({ children }: UserProviderProps) {
 
   // Fetch user data
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['user', 'me'],
+    queryKey: ["user", "me"],
     queryFn: async () => {
-      const response = await apiFetch('/api/v1/users/me/');
+      const response = await apiFetch("/api/v1/users/me/");
       return response;
     },
     retry: 1,
@@ -57,9 +63,7 @@ export function UserProvider({ children }: UserProviderProps) {
   };
 
   return (
-    <UserContext.Provider value={contextValue}>
-      {children}
-    </UserContext.Provider>
+    <UserContext.Provider value={contextValue}>{children}</UserContext.Provider>
   );
 }
 
@@ -67,7 +71,7 @@ export function UserProvider({ children }: UserProviderProps) {
 export function useUser() {
   const context = useContext(UserContext);
   if (context === undefined) {
-    throw new Error('useUser must be used within a UserProvider');
+    throw new Error("useUser must be used within a UserProvider");
   }
   return context;
 }
@@ -75,7 +79,7 @@ export function useUser() {
 // Hook to get user data with loading state
 export function useUserData() {
   const { user, isLoading, error } = useUser();
-  
+
   return {
     user,
     isLoading,

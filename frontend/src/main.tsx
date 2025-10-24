@@ -15,5 +15,5 @@ createRoot(document.getElementById("app")!).render(
         <ReactQueryDevtools initialIsOpen={false} />
       </ToastProvider>
     </QueryClientProvider>
-  </StrictMode>
+  </StrictMode>,
 );

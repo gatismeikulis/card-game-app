@@ -85,7 +85,7 @@ export function GameBoard({
       if (seatNumber === currentUserSeat) return "bottom";
       // Position other players at 10 o'clock and 2 o'clock
       const otherSeats = players.filter(
-        (p) => p.seat_number !== currentUserSeat
+        (p) => p.seat_number !== currentUserSeat,
       );
       if (otherSeats.length >= 1 && seatNumber === otherSeats[0].seat_number)
         return "left";
@@ -115,7 +115,7 @@ export function GameBoard({
           {activeSeat &&
             (() => {
               const activePlayer = players.find(
-                (p) => p.seat_number === activeSeat
+                (p) => p.seat_number === activeSeat,
               );
               return (
                 <div className="text-sm text-green-200 mt-1">
@@ -214,7 +214,7 @@ export function GameBoard({
                       <div className="text-xs text-green-200 mb-1">
                         {(() => {
                           const player = players.find(
-                            (p) => p.seat_number === parseInt(seat)
+                            (p) => p.seat_number === parseInt(seat),
                           );
                           return (
                             (player as any)?.screen_name ||

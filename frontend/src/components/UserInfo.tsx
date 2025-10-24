@@ -1,6 +1,6 @@
-import { useUserData } from '../contexts/UserContext';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Loader2, User } from 'lucide-react';
+import { useUserData } from "../contexts/UserContext";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Loader2, User } from "lucide-react";
 
 export function UserInfo() {
   const { user, isLoading, error, screenName, username, email } = useUserData();
@@ -34,7 +34,9 @@ export function UserInfo() {
     return (
       <Card className="w-full max-w-sm">
         <CardContent className="p-4">
-          <div className="text-sm text-muted-foreground">No user data available</div>
+          <div className="text-sm text-muted-foreground">
+            No user data available
+          </div>
         </CardContent>
       </Card>
     );
@@ -54,20 +56,30 @@ export function UserInfo() {
           <span className="text-sm font-mono">{user.id}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-sm font-medium text-muted-foreground">Username:</span>
+          <span className="text-sm font-medium text-muted-foreground">
+            Username:
+          </span>
           <span className="text-sm">{username}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-sm font-medium text-muted-foreground">Screen Name:</span>
-          <span className="text-sm font-semibold text-primary">{screenName}</span>
+          <span className="text-sm font-medium text-muted-foreground">
+            Screen Name:
+          </span>
+          <span className="text-sm font-semibold text-primary">
+            {screenName}
+          </span>
         </div>
         <div className="flex justify-between">
-          <span className="text-sm font-medium text-muted-foreground">Email:</span>
+          <span className="text-sm font-medium text-muted-foreground">
+            Email:
+          </span>
           <span className="text-sm">{email}</span>
         </div>
         {user.description && (
           <div className="pt-2 border-t">
-            <div className="text-sm font-medium text-muted-foreground mb-1">Description:</div>
+            <div className="text-sm font-medium text-muted-foreground mb-1">
+              Description:
+            </div>
             <div className="text-sm">{user.description}</div>
           </div>
         )}
@@ -79,11 +91,11 @@ export function UserInfo() {
 // Simple hook usage example
 export function useUserDisplayName() {
   const { screenName, username } = useUserData();
-  return screenName || username || 'Unknown User';
+  return screenName || username || "Unknown User";
 }
 
 // Hook to get user's display name for game purposes
 export function useGameDisplayName() {
   const { screenName, username } = useUserData();
-  return screenName || username || 'Player';
+  return screenName || username || "Player";
 }

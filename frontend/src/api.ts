@@ -48,7 +48,7 @@ export async function apiFetch(path: string, init: RequestInit = {}) {
   } catch (error) {
     console.error(
       "Response headers:",
-      Object.fromEntries(res.headers.entries())
+      Object.fromEntries(res.headers.entries()),
     );
     console.error("Response text:", text);
     throw new Error("Invalid JSON response from server");

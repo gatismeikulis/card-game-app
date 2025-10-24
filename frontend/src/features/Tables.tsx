@@ -2,10 +2,23 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { apiFetch } from "../api";
 import { Button } from "../components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
 import { useToast } from "../components/ui/toast";
 import { useGameDisplayName } from "../components/UserInfo";
-import { Plus, RefreshCw, Trash2, Users, ArrowRight, Loader2 } from "lucide-react";
+import {
+  Plus,
+  RefreshCw,
+  Trash2,
+  Users,
+  ArrowRight,
+  Loader2,
+} from "lucide-react";
 
 export function Tables() {
   const { addToast } = useToast();
@@ -62,22 +75,24 @@ export function Tables() {
     },
   });
 
-  if (isLoading) return (
-    <div className="flex items-center justify-center min-h-[400px]">
-      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-    </div>
-  );
+  if (isLoading)
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
 
-  if (error) return (
-    <Card className="border-destructive">
-      <CardContent className="pt-6">
-        <p className="text-destructive">{String(error)}</p>
-      </CardContent>
-    </Card>
-  );
+  if (error)
+    return (
+      <Card className="border-destructive">
+        <CardContent className="pt-6">
+          <p className="text-destructive">{String(error)}</p>
+        </CardContent>
+      </Card>
+    );
 
   const tables = (data?.tables ?? []) as any[];
-  
+
   return (
     <div className="space-y-6">
       <Card className="card-glow">
@@ -85,14 +100,13 @@ export function Tables() {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="text-2xl">Game Tables</CardTitle>
-              <CardDescription>Welcome, {displayName}! Create or join a game table to start playing</CardDescription>
+              <CardDescription>
+                Welcome, {displayName}! Create or join a game table to start
+                playing
+              </CardDescription>
             </div>
             <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => refetch()}
-              >
+              <Button variant="outline" size="sm" onClick={() => refetch()}>
                 <RefreshCw className="mr-2 h-4 w-4" />
                 Refresh
               </Button>
@@ -140,8 +154,12 @@ export function Tables() {
                             {t.game_name.replace("_", " ")}
                           </div>
                           <div className="text-sm text-muted-foreground">
-                            Status: <span className="font-medium">{t.status}</span> • 
-                            Players: <span className="font-medium">{t.game_table_players.length}</span>
+                            Status:{" "}
+                            <span className="font-medium">{t.status}</span> •
+                            Players:{" "}
+                            <span className="font-medium">
+                              {t.game_table_players.length}
+                            </span>
                           </div>
                         </div>
                       </div>

@@ -85,7 +85,7 @@ export const PlayerDetail: FC<PlayerDetailProps> = ({
                 <button
                   key={i}
                   className={`w-6 h-8 border rounded flex items-center justify-center text-xs transition-colors ${getCardStyle(
-                    card
+                    card,
                   )} ${
                     isMyTurn && onCardClick
                       ? "hover:shadow-md hover:scale-105 cursor-pointer"

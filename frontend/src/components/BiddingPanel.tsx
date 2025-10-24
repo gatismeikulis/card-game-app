@@ -36,10 +36,10 @@ export function BiddingPanel({
   const canBid = effectiveMinBid <= effectiveMaxBid;
 
   const [bidAmount, setBidAmount] = useState(
-    canBid ? effectiveMinBid : effectiveMaxBid
+    canBid ? effectiveMinBid : effectiveMaxBid,
   );
   const [displayBid, setDisplayBid] = useState(
-    canBid ? effectiveMinBid : effectiveMaxBid
+    canBid ? effectiveMinBid : effectiveMaxBid,
   );
 
   // Update bid amount when minimum changes
@@ -92,7 +92,7 @@ export function BiddingPanel({
         status.passed === true ||
         (status.bid !== undefined && status.bid < 0)
       );
-    }
+    },
   );
   const shouldShowConfirm = hasCurrentPlayerBid && allOthersPassed;
 
