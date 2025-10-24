@@ -92,14 +92,6 @@ export const PlayerDetail: FC<PlayerDetailProps> = ({
                       : "cursor-not-allowed opacity-60"
                   }`}
                   onClick={() => {
-                    console.log(
-                      "PlayerDetail card clicked:",
-                      card,
-                      "isMyTurn:",
-                      isMyTurn,
-                      "onCardClick:",
-                      !!onCardClick
-                    );
                     if (isMyTurn && onCardClick) {
                       onCardClick(card);
                     }

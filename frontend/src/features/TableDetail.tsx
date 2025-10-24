@@ -647,11 +647,67 @@ export function TableDetail() {
                   ) : null
                 }
                 playerStats={currentPlayerSeatInfo}
+                requiredSuit={data.game_state?.round?.required_suit}
+                trumpSuit={data.game_state?.round?.trump_suit}
+                lastTrick={data.game_state?.round?.prev_trick}
+                highestBid={(() => {
+                  const bid = data.game_state?.round?.highest_bid;
+                  if (
+                    bid &&
+                    typeof bid === "object" &&
+                    bid["0"] !== undefined
+                  ) {
+                    const seatNumber = parseInt(bid["0"]);
+                    const bidAmount = bid["1"];
+                    const player = data.players?.find(
+                      (p: any) => p.seat_number === seatNumber
+                    );
+                    const playerName =
+                      player?.screen_name || `Seat ${seatNumber}`;
+                    return { bidder: playerName, amount: bidAmount };
+                  }
+                  return undefined;
+                })()}
               />
             </div>
 
+            {/* Mobile Bot Turn Button */}
+            <div className="lg:hidden">
+              {(() => {
+                const activeSeat = data.game_state?.active_seat;
+                const activePlayer = data.players?.find(
+                  (p: any) => p.seat_number === activeSeat
+                );
+                const isBotTurn = activePlayer?.bot_strategy_kind;
+
+                if (!isBotTurn) return null;
+
+                return (
+                  <Card>
+                    <CardContent className="pt-4">
+                      <div className="space-y-2">
+                        <div className="text-xs text-blue-600 font-medium">
+                          ⚡ Bot's turn - Click to advance
+                        </div>
+                        <Button
+                          onClick={() => takeAutomaticTurn.mutate()}
+                          disabled={takeAutomaticTurn.isPending}
+                          size="sm"
+                          className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                        >
+                          {takeAutomaticTurn.isPending
+                            ? "Processing..."
+                            : "🤖 Take Bot Turn"}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })()}
+            </div>
+
             {/* Right Side Panel - Current Move, Game Info and Bot Controls */}
-            <div className="w-full lg:w-64 space-y-4 flex-shrink-0">
+            <div className="hidden lg:block w-full lg:w-64 space-y-4 flex-shrink-0">
               {/* Game Phase Info */}
               <Card className="card-glow">
                 <CardHeader className="pb-3">

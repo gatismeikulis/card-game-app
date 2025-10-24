@@ -128,8 +128,10 @@ export function BiddingPanel({
 
   return (
     <Card className="card-glow border-primary/50">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg text-primary">Place Your Bid</CardTitle>
+      <CardHeader className="pb-2 sm:pb-3">
+        <CardTitle className="text-sm sm:text-lg text-primary">
+          Place Your Bid
+        </CardTitle>
         {currentHighestBid > 0 && (
           <div className="space-y-1">
             <p className="text-sm font-semibold text-primary">
@@ -143,36 +145,40 @@ export function BiddingPanel({
           </div>
         )}
       </CardHeader>
-      <CardContent className="space-y-2">
+      <CardContent className="space-y-1 sm:space-y-2">
         {/* Large animated bid display */}
         <div className="text-center">
-          <div className="text-4xl font-bold text-primary animate-pulse">
+          <div className="text-2xl sm:text-4xl font-bold text-primary animate-pulse">
             {Math.round(displayBid)}
           </div>
-          <div className="text-sm text-muted-foreground mt-1">
-            Range: {effectiveMinBid} - {effectiveMaxBid}
-          </div>
+          {!shouldShowConfirm && (
+            <div className="text-xs sm:text-sm text-muted-foreground mt-1">
+              Range: {effectiveMinBid} - {effectiveMaxBid}
+            </div>
+          )}
         </div>
 
-        {/* Slider */}
-        <div className="space-y-2">
-          <input
-            type="range"
-            min={effectiveMinBid}
-            max={effectiveMaxBid}
-            step="5"
-            value={bidAmount}
-            onChange={handleSliderChange}
-            className="w-full h-3 bg-muted rounded-lg appearance-none cursor-pointer slider-primary"
-            disabled={isLoading}
-          />
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>{effectiveMinBid}</span>
-            <span>{effectiveMaxBid}</span>
+        {/* Slider - Hide in CONFIRM phase */}
+        {!shouldShowConfirm && (
+          <div className="space-y-2">
+            <input
+              type="range"
+              min={effectiveMinBid}
+              max={effectiveMaxBid}
+              step="5"
+              value={bidAmount}
+              onChange={handleSliderChange}
+              className="w-full h-3 bg-muted rounded-lg appearance-none cursor-pointer slider-primary"
+              disabled={isLoading}
+            />
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>{effectiveMinBid}</span>
+              <span>{effectiveMaxBid}</span>
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Quick adjust buttons */}
+        {/* Quick adjust buttons - Show in both phases */}
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-2">
             <Button
@@ -204,8 +210,8 @@ export function BiddingPanel({
           <Button
             onClick={() => onBid(-1)}
             disabled={isLoading}
-            className="w-full h-12 text-lg font-bold bg-green-600 hover:bg-green-700"
-            size="lg"
+            className="w-full h-8 sm:h-12 text-sm sm:text-lg font-bold bg-green-600 hover:bg-green-700"
+            size="sm"
           >
             {isLoading ? "Confirming..." : `CONFIRM ${currentHighestBid}`}
           </Button>
@@ -213,8 +219,8 @@ export function BiddingPanel({
           <Button
             onClick={handleBid}
             disabled={isLoading}
-            className="w-full h-12 text-lg font-bold"
-            size="lg"
+            className="w-full h-8 sm:h-12 text-sm sm:text-lg font-bold"
+            size="sm"
           >
             {isLoading ? "Placing Bid..." : `Bid ${bidAmount}`}
           </Button>
@@ -226,7 +232,8 @@ export function BiddingPanel({
             variant="outline"
             onClick={() => onBid(bidAmount)}
             disabled={isLoading}
-            className="w-full h-10 text-sm"
+            className="w-full h-8 sm:h-10 text-xs sm:text-sm"
+            size="sm"
           >
             Bid {bidAmount}
           </Button>
@@ -235,7 +242,8 @@ export function BiddingPanel({
             variant="outline"
             onClick={() => onBid(-1)}
             disabled={isLoading}
-            className="w-full"
+            className="w-full h-8 sm:h-10"
+            size="sm"
           >
             Pass
           </Button>
