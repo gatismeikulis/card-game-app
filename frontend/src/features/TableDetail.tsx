@@ -97,6 +97,9 @@ export function TableDetail() {
   });
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
 
+  // Get current user data from context - MUST be called before any early returns
+  const { userId } = useUserData();
+
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ["table", id],
     queryFn: () => apiFetch(`/api/v1/tables/${id}/`),
@@ -310,9 +313,6 @@ export function TableDetail() {
   // Check if game is finished
   const isGameFinished =
     data?.status === "FINISHED" || data?.game_state?.is_finished;
-
-  // Get current user data from context
-  const { userId } = useUserData();
 
   // Extract player hand for current user
   const currentUser = data.players?.find((p: any) => p.user_id === userId);
