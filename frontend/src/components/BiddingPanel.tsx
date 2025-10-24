@@ -130,7 +130,7 @@ export function BiddingPanel({
     <Card className="card-glow border-primary/50">
       <CardHeader className="pb-3">
         <CardTitle className="text-lg text-primary">Place Your Bid</CardTitle>
-        {currentHighestBid > 0 ? (
+        {currentHighestBid > 0 && (
           <div className="space-y-1">
             <p className="text-sm font-semibold text-primary">
               Current Highest: {currentHighestBid}
@@ -141,14 +141,12 @@ export function BiddingPanel({
               </p>
             )}
           </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">Range: 60 - 200</p>
         )}
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-2">
         {/* Large animated bid display */}
         <div className="text-center">
-          <div className="text-6xl font-bold text-primary animate-pulse">
+          <div className="text-4xl font-bold text-primary animate-pulse">
             {Math.round(displayBid)}
           </div>
           <div className="text-sm text-muted-foreground mt-1">

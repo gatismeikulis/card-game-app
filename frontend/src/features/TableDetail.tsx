@@ -2,7 +2,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { apiFetch } from "../api";
-import { GameCanvas } from "./GameCanvas";
+import { GameBoard } from "../components/GameBoard";
 import { BiddingPanel } from "../components/BiddingPanel";
 import { Button } from "../components/ui/button";
 import {
@@ -86,6 +86,7 @@ export function TableDetail() {
     cardToNextSeat: null,
     cardToPrevSeat: null,
   });
+  const [hoveredCard, setHoveredCard] = useState<string | null>(null);
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["table", id],
@@ -301,13 +302,8 @@ export function TableDetail() {
   const currentPlayerSeatInfo =
     data.game_state?.round?.seat_infos?.[currentUserSeat];
   const playerHand = currentPlayerSeatInfo?.hand || [];
-  const currentPlayerName = currentUser?.screen_name || "You";
-
   // Prepare cards on board
   const cardsOnBoard = data.game_state?.round?.cards_on_board || {};
-
-  // Previous trick cards
-  const prevTrickCards = data.game_state?.round?.prev_trick?.cards || [];
 
   // Get current phase
   const currentPhase = data.game_state?.round?.phase || "";
@@ -494,105 +490,9 @@ export function TableDetail() {
 
         {/* Game Canvas and Info - Three column layout */}
         {data.game_state && (
-          <div className="flex flex-col lg:flex-row gap-4 items-start">
-            {/* Left Side Panel - Hand History & Bidding */}
-            <div className="w-full lg:w-64 space-y-4 flex-shrink-0">
-              {/* Last Trick */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg">Last Trick</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  {data.game_state?.round?.prev_trick &&
-                  Array.isArray(data.game_state.round.prev_trick) &&
-                  data.game_state.round.prev_trick.length > 0 ? (
-                    <div className="text-xs border rounded p-2 bg-muted/50">
-                      <div className="font-semibold mb-1">Previous Trick</div>
-                      <div className="mt-1 flex flex-wrap gap-1">
-                        {data.game_state.round.prev_trick.map(
-                          (card: any, idx: number) => {
-                            const cardStr = String(card);
-                            const suit = cardStr.slice(-1); // Get last character (suit)
-                            let cardColor =
-                              "bg-background text-foreground border";
-
-                            // Color code by suit
-                            if (suit === "h" || suit === "d") {
-                              cardColor =
-                                "bg-red-100 text-red-800 border-red-300"; // Hearts and Diamonds - red
-                            } else if (suit === "s" || suit === "c") {
-                              cardColor =
-                                "bg-gray-100 text-gray-800 border-gray-300"; // Spades and Clubs - black
-                            }
-
-                            return (
-                              <span
-                                key={idx}
-                                className={`text-sm px-2 py-1 rounded border font-bold ${cardColor}`}
-                              >
-                                {cardStr}
-                              </span>
-                            );
-                          }
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">
-                      No previous trick yet
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Bidding Panel - Only show during bidding phase and when it's player's turn */}
-              {data.game_state?.is_my_turn &&
-                data.game_state?.round?.phase === "Bidding" && (
-                  <BiddingPanel
-                    onBid={(amount) => {
-                      takeTurn.mutate({
-                        type: "make_bid",
-                        params: { bid: amount },
-                      });
-                    }}
-                    isLoading={takeTurn.isPending}
-                    minBid={60}
-                    maxBid={200}
-                    hasMarriage={checkForMarriage(playerHand)}
-                    currentHighestBid={(() => {
-                      const bid = data.game_state?.round?.highest_bid;
-                      if (
-                        typeof bid === "object" &&
-                        bid !== null &&
-                        bid["1"] !== undefined
-                      ) {
-                        return Number(bid["1"]);
-                      }
-                      return 0;
-                    })()}
-                    currentHighestBidder={(() => {
-                      const bid = data.game_state?.round?.highest_bid;
-                      if (
-                        typeof bid === "object" &&
-                        bid !== null &&
-                        bid["0"] !== undefined
-                      ) {
-                        const seatNumber = parseInt(bid["0"]);
-                        const player = data.players?.find(
-                          (p: any) => p.seat_number === seatNumber
-                        );
-                        return player?.screen_name;
-                      }
-                      return undefined;
-                    })()}
-                    biddingStatus={biddingStatus}
-                    currentPlayerSeat={currentUserSeat}
-                  />
-                )}
-            </div>
-
+          <div className="flex flex-col lg:flex-row gap-4 items-stretch w-full min-h-0">
             {/* Canvas - Main game area */}
-            <div className="flex-1 flex justify-center relative max-w-4xl">
+            <div className="flex-1 flex justify-center relative min-w-0 w-full lg:w-auto">
               {/* Pass Cards Button - Prominent overlay during Forming Hands phase */}
               {data.game_state?.is_my_turn &&
                 data.game_state?.round?.phase === "Forming Hands" &&
@@ -623,29 +523,32 @@ export function TableDetail() {
                   </div>
                 )}
 
-              <GameCanvas
-                width={800}
-                height={700}
-                playerHand={playerHand}
-                cardsOnBoard={cardsOnBoard}
-                prevTrick={prevTrickCards}
-                activeSeat={data.game_state.active_seat}
-                isMyTurn={data.game_state.is_my_turn}
-                currentPlayerName={currentPlayerName}
-                phase={currentPhase}
+              <GameBoard
+                players={processedPlayers}
+                currentUserSeat={
+                  data.game_state?.round?.seat_infos
+                    ? Object.keys(data.game_state.round.seat_infos).find(
+                        (seat) =>
+                          data.game_state.round.seat_infos[seat].hand &&
+                          Array.isArray(
+                            data.game_state.round.seat_infos[seat].hand
+                          )
+                      )
+                      ? parseInt(
+                          Object.keys(data.game_state.round.seat_infos).find(
+                            (seat) =>
+                              data.game_state.round.seat_infos[seat].hand &&
+                              Array.isArray(
+                                data.game_state.round.seat_infos[seat].hand
+                              )
+                          )!
+                        )
+                      : undefined
+                    : undefined
+                }
+                currentUserHand={playerHand}
                 selectedCards={selectedCardsList}
-                biddingWinnerSeat={(() => {
-                  const bid = data.game_state?.round?.highest_bid;
-                  if (
-                    bid &&
-                    typeof bid === "object" &&
-                    bid["0"] !== undefined
-                  ) {
-                    return parseInt(bid["0"]);
-                  }
-                  return null;
-                })()}
-                biddingStatus={biddingStatus}
+                hoveredCard={hoveredCard}
                 onCardClick={(card) => {
                   // Don't allow card clicks when it's not the player's turn
                   if (!data.game_state?.is_my_turn) {
@@ -694,61 +597,61 @@ export function TableDetail() {
                     });
                   }
                 }}
-                players={processedPlayers}
+                onCardHover={setHoveredCard}
+                activeSeat={data.game_state.active_seat}
+                phase={currentPhase}
+                cardsOnBoard={cardsOnBoard}
+                biddingPanel={
+                  data.game_state?.is_my_turn &&
+                  data.game_state?.round?.phase === "Bidding" ? (
+                    <BiddingPanel
+                      onBid={(amount) => {
+                        takeTurn.mutate({
+                          type: "make_bid",
+                          params: { bid: amount },
+                        });
+                      }}
+                      isLoading={takeTurn.isPending}
+                      minBid={60}
+                      maxBid={200}
+                      hasMarriage={checkForMarriage(playerHand)}
+                      currentHighestBid={(() => {
+                        const bid = data.game_state?.round?.highest_bid;
+                        if (
+                          typeof bid === "object" &&
+                          bid !== null &&
+                          bid["1"] !== undefined
+                        ) {
+                          return Number(bid["1"]);
+                        }
+                        return 0;
+                      })()}
+                      currentHighestBidder={(() => {
+                        const bid = data.game_state?.round?.highest_bid;
+                        if (
+                          typeof bid === "object" &&
+                          bid !== null &&
+                          bid["0"] !== undefined
+                        ) {
+                          const seatNumber = parseInt(bid["0"]);
+                          const player = data.players?.find(
+                            (p: any) => p.seat_number === seatNumber
+                          );
+                          return player?.screen_name;
+                        }
+                        return undefined;
+                      })()}
+                      biddingStatus={biddingStatus}
+                      currentPlayerSeat={currentUserSeat}
+                    />
+                  ) : null
+                }
+                playerStats={currentPlayerSeatInfo}
               />
             </div>
 
             {/* Right Side Panel - Current Move, Game Info and Bot Controls */}
-            <div className="w-full lg:w-72 space-y-4 flex-shrink-0">
-              {/* Current Move Info */}
-              {data.game_state?.round?.phase === "Playing Cards" && (
-                <Card className="border-primary/50 card-glow">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-lg text-primary">
-                      Current Move
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    {(() => {
-                      const activeSeat = data.game_state?.active_seat;
-                      const activePlayer = data.players?.find(
-                        (p: any) => p.seat_number === activeSeat
-                      );
-                      const biddingWinnerSeat = (() => {
-                        const bid = data.game_state?.round?.highest_bid;
-                        if (
-                          bid &&
-                          typeof bid === "object" &&
-                          bid["0"] !== undefined
-                        ) {
-                          return parseInt(bid["0"]);
-                        }
-                        return null;
-                      })();
-                      const isBidder = biddingWinnerSeat === activeSeat;
-
-                      return (
-                        <div className="space-y-2">
-                          <div className="text-sm">
-                            <span className="text-muted-foreground">
-                              Playing:
-                            </span>
-                            <div className="font-semibold text-lg flex items-center gap-2 mt-1">
-                              {activePlayer?.screen_name || "Unknown"}
-                              {isBidder && (
-                                <span className="text-xs px-2 py-0.5 bg-amber-500/20 text-amber-500 border border-amber-500/50 rounded">
-                                  DECLARER
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })()}
-                  </CardContent>
-                </Card>
-              )}
-
+            <div className="w-full lg:w-64 space-y-4 flex-shrink-0">
               {/* Game Phase Info */}
               <Card className="card-glow">
                 <CardHeader className="pb-3">
@@ -808,48 +711,47 @@ export function TableDetail() {
                     </div>
                   )}
 
-                  {/* Your Stats Panel */}
-                  {data.game_state && currentUserSeat && (
-                    <div className="pt-3 border-t">
-                      <div className="space-y-2">
-                        <h4 className="text-sm font-semibold text-primary">
-                          Your Stats
-                        </h4>
-                        <div className="space-y-1 text-xs">
-                          {currentPlayerSeatInfo?.points !== undefined && (
-                            <div className="flex justify-between">
-                              <span className="text-green-600">Points:</span>
-                              <span className="font-mono">
-                                {currentPlayerSeatInfo.points}
-                              </span>
+                  {/* Last Trick */}
+                  {data.game_state?.round?.prev_trick &&
+                    Array.isArray(data.game_state.round.prev_trick) &&
+                    data.game_state.round.prev_trick.length > 0 && (
+                      <div className="pt-3 border-t">
+                        <div className="space-y-2">
+                          <h4 className="text-sm font-semibold text-primary">
+                            Last Trick
+                          </h4>
+                          <div className="text-xs border rounded p-2 bg-muted/50">
+                            <div className="mt-1 flex flex-wrap gap-1">
+                              {data.game_state.round.prev_trick.map(
+                                (card: any, idx: number) => {
+                                  const cardStr = String(card);
+                                  const suit = cardStr.slice(-1);
+                                  let cardColor =
+                                    "bg-background text-foreground border";
+
+                                  if (suit === "h" || suit === "d") {
+                                    cardColor =
+                                      "bg-red-100 text-red-800 border-red-300";
+                                  } else if (suit === "s" || suit === "c") {
+                                    cardColor =
+                                      "bg-gray-100 text-gray-800 border-gray-300";
+                                  }
+
+                                  return (
+                                    <span
+                                      key={idx}
+                                      className={`text-sm px-2 py-1 rounded border font-bold ${cardColor}`}
+                                    >
+                                      {cardStr}
+                                    </span>
+                                  );
+                                }
+                              )}
                             </div>
-                          )}
-                          {currentPlayerSeatInfo?.marriage_points &&
-                            currentPlayerSeatInfo.marriage_points.length >
-                              0 && (
-                              <div className="flex justify-between">
-                                <span className="text-amber-600">
-                                  Marriage:
-                                </span>
-                                <span className="font-mono">
-                                  {currentPlayerSeatInfo.marriage_points.join(
-                                    ", "
-                                  )}
-                                </span>
-                              </div>
-                            )}
-                          {currentPlayerSeatInfo?.trick_count !== undefined && (
-                            <div className="flex justify-between">
-                              <span className="text-blue-600">Tricks:</span>
-                              <span className="font-mono">
-                                {currentPlayerSeatInfo.trick_count}
-                              </span>
-                            </div>
-                          )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
+                    )}
                 </CardContent>
               </Card>
 
