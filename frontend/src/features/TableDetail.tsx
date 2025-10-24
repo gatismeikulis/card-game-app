@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from "react-router-dom";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { apiFetch } from "../api";
 import { GameBoard } from "../components/GameBoard";
@@ -11,6 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "../components/ui/card";
+import { useUserData } from "../contexts/UserContext";
 import { RefreshCw, LogOut, Play } from "lucide-react";
 
 // Helper function to safely render any value
@@ -30,8 +31,15 @@ const safeRender = (value: any): string => {
 };
 
 // Check if hand has a marriage (KQ of same suit)
-const checkForMarriage = (hand: string[]): boolean => {
-  if (!hand || hand.length === 0) return false;
+const checkForMarriage = (hand: string[] | number): boolean => {
+  // If hand is a number (for other players), we can't check for marriage
+  if (
+    typeof hand === "number" ||
+    !hand ||
+    !Array.isArray(hand) ||
+    hand.length === 0
+  )
+    return false;
 
   const suits = ["h", "d", "s", "c"];
 
@@ -78,6 +86,7 @@ const renderSuitBadge = (value: any) => {
 export function TableDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [selectedCards, setSelectedCards] = useState<{
     cardToNextSeat: string | null;
@@ -88,17 +97,21 @@ export function TableDetail() {
   });
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
 
-  const { data, isLoading, error, refetch } = useQuery({
+  const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ["table", id],
     queryFn: () => apiFetch(`/api/v1/tables/${id}/`),
     enabled: !!id,
+    staleTime: 0, // Always consider data stale
+    gcTime: 0, // Don't cache data at all
+    refetchOnWindowFocus: true, // Refetch when window gains focus
+    refetchOnMount: true, // Always refetch on mount
     refetchInterval: (query) => {
       // Poll every 1 second during active games for real-time updates
       // Stop polling if game is finished or not started
       const gameData = query.state.data as any;
-      if (!gameData) return false;
+      if (!gameData) return 1000; // Poll every second while loading
 
-      const isActive = gameData.status === "IN_PROGRESS" && gameData.game_state;
+      const isActive = gameData.status === "in_progress" && gameData.game_state;
       const isFinished =
         gameData.status === "FINISHED" || gameData.game_state?.is_finished;
 
@@ -106,9 +119,9 @@ export function TableDetail() {
       if (isActive && !isFinished) return 2000;
 
       // Poll every 5 seconds while waiting for game to start
-      if (gameData.status === "NOT_STARTED") return 5000;
+      if (gameData.status === "not_started") return 5000;
 
-      // Don't poll if finished
+      // Stop polling for finished games
       return false;
     },
   });
@@ -206,6 +219,7 @@ export function TableDetail() {
       }),
     onSuccess: () => {
       refetch();
+      queryClient.invalidateQueries({ queryKey: ["table", id] });
       setErrorMessage(null);
     },
     onError: (error) => {
@@ -225,6 +239,7 @@ export function TableDetail() {
     },
     onSuccess: () => {
       refetch();
+      queryClient.invalidateQueries({ queryKey: ["table", id] });
       setErrorMessage(null);
     },
     onError: (error) => {
@@ -296,11 +311,15 @@ export function TableDetail() {
   const isGameFinished =
     data?.status === "FINISHED" || data?.game_state?.is_finished;
 
+  // Get current user data from context
+  const { userId } = useUserData();
+
   // Extract player hand for current user
-  const currentUser = data.players?.find((p: any) => !p.bot_strategy_kind);
-  const currentUserSeat = currentUser?.seat_number || 1;
-  const currentPlayerSeatInfo =
-    data.game_state?.round?.seat_infos?.[currentUserSeat];
+  const currentUser = data.players?.find((p: any) => p.user_id === userId);
+  const currentUserSeat = currentUser?.seat_number;
+  const currentPlayerSeatInfo = currentUserSeat
+    ? data.game_state?.round?.seat_infos?.[currentUserSeat]
+    : null;
   const playerHand = currentPlayerSeatInfo?.hand || [];
   // Prepare cards on board
   const cardsOnBoard = data.game_state?.round?.cards_on_board || {};
@@ -365,9 +384,16 @@ export function TableDetail() {
         {/* Header with navigation and actions */}
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => refresh()}>
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Refresh
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => refresh()}
+              disabled={isFetching}
+            >
+              <RefreshCw
+                className={`mr-2 h-4 w-4 ${isFetching ? "animate-spin" : ""}`}
+              />
+              {isFetching ? "Fetching..." : "Refresh"}
             </Button>
           </div>
           <div className="flex gap-2">
@@ -525,27 +551,7 @@ export function TableDetail() {
 
               <GameBoard
                 players={processedPlayers}
-                currentUserSeat={
-                  data.game_state?.round?.seat_infos
-                    ? Object.keys(data.game_state.round.seat_infos).find(
-                        (seat) =>
-                          data.game_state.round.seat_infos[seat].hand &&
-                          Array.isArray(
-                            data.game_state.round.seat_infos[seat].hand
-                          )
-                      )
-                      ? parseInt(
-                          Object.keys(data.game_state.round.seat_infos).find(
-                            (seat) =>
-                              data.game_state.round.seat_infos[seat].hand &&
-                              Array.isArray(
-                                data.game_state.round.seat_infos[seat].hand
-                              )
-                          )!
-                        )
-                      : undefined
-                    : undefined
-                }
+                currentUserSeat={currentUserSeat}
                 currentUserHand={playerHand}
                 selectedCards={selectedCardsList}
                 hoveredCard={hoveredCard}
