@@ -197,11 +197,11 @@ export function GameBoard({
       )}
 
       {/* Center area for cards on board and bidding panel */}
-      <div className="absolute inset-0 flex items-start justify-center z-10">
+      <div className="absolute inset-0 flex items-center justify-center z-10">
         <div className="text-center">
           {/* Bidding Panel */}
           {biddingPanel && (
-            <div className="mb-4 mt-8 pt-2">{biddingPanel}</div>
+            <div className="mb-24 pt-2">{biddingPanel}</div>
           )}
 
           {/* Cards on board during playing phase */}
@@ -211,7 +211,7 @@ export function GameBoard({
                 {Object.entries(cardsOnBoard).map(([seat, card]) => {
                   if (!card) return null;
                   return (
-                    <div key={seat} className="text-center">
+                    <div key={seat} className="text-center mb-24 sm:mb-2">
                       <div className="text-xs text-green-200 mb-1">
                         {(() => {
                           const player = players.find(
