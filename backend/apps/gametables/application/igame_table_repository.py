@@ -5,7 +5,7 @@ from ..domain.game_table import GameTable
 
 
 class IGameTableRepository(Protocol):
-    def find_many(self) -> list[GameTableSnapshot]:
+    def find_many(self, filters: dict[str, set[str]]) -> list[GameTableSnapshot]:
         """List/browse tables by important fields (configs, status, players, etc.)
         Returns:
             List of GameTableSnapshots

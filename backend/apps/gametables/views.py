@@ -15,6 +15,7 @@ from .serializers import (
     HistoryRequestQuerySerializer,
     JoinGameTableRequestSerializer,
     RemoveBotRequestSerializer,
+    TableListRequestQuerySerializer,
     TakeRegularTurnRequestSerializer,
 )
 from .application.game_table_manager import GameTableManager
@@ -41,20 +42,19 @@ class GameTableViewSet(ViewSet):
 
     def list(self, request: Request):
         """
-        GET /
+        GET /status=not_started,in_progress&game_name=five_hundred
         Query params:
-          - status: comma-separated list (e.g., status=not_started, in_progress, finished)
-          - game_name: exact match (e.g., game_name=five_hundred)
-          - has_player: player's screen name (case-insensitive)
-          - has_user_id: player's user id (pk)
-          - game_config_min_players: minimum players from GameConfig(config_key='min_players')
-          - table_config_automatic_start: true/false (from TableConfig)
+          - status: multiple choice (e.g., status=not_started, in_progress, finished)
+          - game_name: multiple choice (e.g., game_name=five_hundred, other_game_name)
         """
-        # TODO extract query params and create filter to pass further to the repository...
-        tables = _table_manager.get_tables()
-        serializer = GameTableWithRelationsSerializer(tables, many=True)
 
-        return Response({"tables": serializer.data}, status=status.HTTP_200_OK)
+        request_serializer = TableListRequestQuerySerializer(data=request.query_params)
+        _ = request_serializer.is_valid(raise_exception=True)
+
+        tables = _table_manager.get_tables(filters=request_serializer.validated_data)
+        response_serializer = GameTableWithRelationsSerializer(tables, many=True)
+
+        return Response({"tables": response_serializer.data}, status=status.HTTP_200_OK)
 
     def create(self, request: Request):
         """

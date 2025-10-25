@@ -39,7 +39,7 @@ SECURE_HSTS_INCLUDE_SUBDOMAINS = True if ENVIRONMENT == "production" else False
 SECURE_HSTS_PRELOAD = True if ENVIRONMENT == "production" else False
 
 USE_X_FORWARDED_HOST = True
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 SECURE_SSL_REDIRECT = ENVIRONMENT == "production"
 SECURE_BROWSER_XSS_FILTER = True
@@ -156,7 +156,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = "static/"
-STATIC_ROOT = BASE_DIR / "staticfiles"   # where collectstatic writes files
+STATIC_ROOT = BASE_DIR / "staticfiles"  # where collectstatic writes files
 # only compress static files in production
 if ENVIRONMENT == "production":
     STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
@@ -168,6 +168,6 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 CORS_ALLOW_ALL_ORIGINS = ENVIRONMENT != "production"
 
 if ENVIRONMENT == "production":
-    CORS_ALLOWED_ORIGINS = [os.getenv("CORS_ALLOWED_ORIGINS","https://gm-card-games.up.railway.app")]
+    CORS_ALLOWED_ORIGINS = [os.getenv("CORS_ALLOWED_ORIGINS", "https://gm-card-games.up.railway.app")]
 
 CORS_ALLOW_CREDENTIALS = True

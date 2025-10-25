@@ -1,10 +1,18 @@
 from typing import Any, override
-from rest_framework.fields import CharField, ChoiceField, DictField, IntegerField, SerializerMethodField
+from rest_framework.fields import (
+    CharField,
+    ChoiceField,
+    DictField,
+    IntegerField,
+    SerializerMethodField,
+    MultipleChoiceField,
+)
 from rest_framework.serializers import ModelSerializer, Serializer
 
 from game.bot_strategy_kind import BotStrategyKind
 from game.game_name import GameName
 from .models import GameTablePlayer, GameTableSnapshot
+from .domain.table_status import TableStatus
 
 
 class GameTablePlayerSerializer(ModelSerializer[GameTablePlayer]):
@@ -79,3 +87,18 @@ class TakeRegularTurnRequestSerializer(Serializer[dict[str, Any]]):
 
 class HistoryRequestQuerySerializer(Serializer[dict[str, int]]):
     event = IntegerField(required=False, min_value=0, default=0)
+
+
+class CommaSeparatedMultipleChoiceField(MultipleChoiceField):
+    """MultipleChoiceField that accepts comma-separated values"""
+
+    def to_internal_value(self, data):
+        if not data or data == [""]:
+            return []
+        split_data = [item.strip() for item in data[0].split(",")]
+        return super().to_internal_value(split_data)
+
+
+class TableListRequestQuerySerializer(Serializer[dict[str, Any]]):
+    status = CommaSeparatedMultipleChoiceField(required=False, default=None, choices=[s.value for s in TableStatus])
+    game_name = CommaSeparatedMultipleChoiceField(required=False, default=None, choices=[g.value for g in GameName])

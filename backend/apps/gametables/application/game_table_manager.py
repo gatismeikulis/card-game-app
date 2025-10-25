@@ -59,8 +59,8 @@ class GameTableManager:
             self._game_table_repository.update(table)
         return None
 
-    def get_tables(self) -> Sequence[GameTableSnapshot]:
-        return self._game_table_repository.find_many()
+    def get_tables(self, filters: dict[str, set[str]]) -> Sequence[GameTableSnapshot]:
+        return self._game_table_repository.find_many(filters)
 
     def get_table(self, table_id: str) -> GameTable:
         return self._game_table_repository.find_by_id(table_id)
