@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import Any, override
+from typing import override
 from django.db import transaction
 from django.db.models import Max
 

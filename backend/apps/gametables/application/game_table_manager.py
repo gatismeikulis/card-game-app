@@ -6,7 +6,6 @@ from django.db import transaction
 from ..domain.table_status import TableStatus
 from .igame_play_event_repository import IGamePlayEventRepository
 from .igame_table_repository import IGameTableRepository
-from ..models import GameTableSnapshot
 from ..registries.table_config_parsers import get_table_config_parser
 from ..registries.game_config_parsers import get_game_config_parser
 from ..registries.bot_strategies import get_bot_strategy
@@ -58,9 +57,6 @@ class GameTableManager:
             table.cancel_game()
             self._game_table_repository.update(table)
         return None
-
-    def get_tables(self, filters: dict[str, set[str]]) -> Sequence[GameTableSnapshot]:
-        return self._game_table_repository.find_many(filters)
 
     def get_table(self, table_id: str) -> GameTable:
         return self._game_table_repository.find_by_id(table_id)

@@ -1,5 +1,6 @@
 from typing import override
 from django.db import transaction
+from django.db.models import QuerySet
 from django.utils import timezone
 
 from ..models import (
@@ -98,7 +99,7 @@ class GameTableRepository(IGameTableRepository):
             raise ValueError(f"Error deserializing game table: {e}")
 
     @override
-    def find_many(self, filters: dict[str, set[str]]) -> list[GameTableSnapshot]:
+    def find_many(self, filters: dict[str, set[str]]) -> QuerySet[GameTableSnapshot]:
         query_set = (
             GameTableSnapshot.objects.select_related("owner")
             .prefetch_related("game_table_players", "game_configs", "table_configs")
@@ -111,4 +112,4 @@ class GameTableRepository(IGameTableRepository):
         if "game_name" in filters and filters["game_name"]:
             query_set = query_set.filter(game_name__in=filters["game_name"])
 
-        return list(query_set.all())
+        return query_set.all()

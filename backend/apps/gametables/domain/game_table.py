@@ -112,7 +112,7 @@ class GameTable:
         bot_strategy: BotStrategy | None = None,
     ) -> None:
         if self.status != TableStatus.NOT_STARTED:
-            raise ValueError(f"Game is already started/finished, can not add player")
+            raise ValueError("Game is already started/finished, can not add player")
         if len(self._players) >= self._config.game_config.max_seats:
             raise ValueError(f"Table {self._id} is full")
         if user_id is not None and user_id in [player.user_id for player in self._players]:
@@ -137,7 +137,7 @@ class GameTable:
 
     def remove_player(self, user_id: int | None = None, seat_number: SeatNumber | None = None) -> None:
         if self.status != TableStatus.NOT_STARTED:
-            raise ValueError(f"Game is already started/finished, can not remove player")
+            raise ValueError("Game is already started/finished, can not remove player")
         if user_id is not None:
             to_remove = next((player for player in self._players if player.user_id == user_id), None)
         elif seat_number is not None:

@@ -5,6 +5,7 @@ from rest_framework.viewsets import ViewSet
 from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework.permissions import AllowAny, BasePermission, IsAuthenticated
+from rest_framework.pagination import LimitOffsetPagination
 
 from .infra.game_play_event_repository import GamePlayEventRepository
 from .infra.game_table_repository import GameTableRepository
@@ -51,10 +52,12 @@ class GameTableViewSet(ViewSet):
         request_serializer = TableListRequestQuerySerializer(data=request.query_params)
         _ = request_serializer.is_valid(raise_exception=True)
 
-        tables = _table_manager.get_tables(filters=request_serializer.validated_data)
-        response_serializer = GameTableWithRelationsSerializer(tables, many=True)
+        tables = _game_table_repository.find_many(filters=request_serializer.validated_data)
 
-        return Response({"tables": response_serializer.data}, status=status.HTTP_200_OK)
+        paginator = LimitOffsetPagination()
+        page = paginator.paginate_queryset(tables, request)
+        response_serializer = GameTableWithRelationsSerializer(page, many=True)
+        return paginator.get_paginated_response(response_serializer.data)
 
     def create(self, request: Request):
         """

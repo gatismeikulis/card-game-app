@@ -1,14 +1,15 @@
 from typing import Protocol
+from django.db.models import QuerySet
 
 from ..models import GameTableSnapshot
 from ..domain.game_table import GameTable
 
 
 class IGameTableRepository(Protocol):
-    def find_many(self, filters: dict[str, set[str]]) -> list[GameTableSnapshot]:
+    def find_many(self, filters: dict[str, set[str]]) -> QuerySet[GameTableSnapshot]:
         """List/browse tables by important fields (configs, status, players, etc.)
         Returns:
-            List of GameTableSnapshots
+            QuerySet of GameTableSnapshots
         """
         ...
 

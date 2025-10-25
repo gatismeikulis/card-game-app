@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from collections.abc import Sequence
 from dataclasses import dataclass, field
 from random import shuffle
 from typing import Generic, Self, TypeVar, override

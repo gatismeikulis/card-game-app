@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import Protocol, Any
+from typing import Protocol
 
 from game.common.game_event import GameEvent
 
