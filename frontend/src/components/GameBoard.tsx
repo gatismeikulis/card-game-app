@@ -79,19 +79,21 @@ export function GameBoard({
   className = "",
 }: GameBoardProps) {
   // Calculate player positions around the table
-  const getPlayerPosition = (seatNumber: number, totalPlayers: number) => {
-    if (totalPlayers === 3) {
-      // For 3 players: current user at bottom (6 o'clock), others at 10 and 2 o'clock
-      if (seatNumber === currentUserSeat) return "bottom";
-      // Position other players at 10 o'clock and 2 o'clock
-      const otherSeats = players.filter(
-        (p) => p.seat_number !== currentUserSeat,
-      );
-      if (otherSeats.length >= 1 && seatNumber === otherSeats[0].seat_number)
-        return "left";
-      if (otherSeats.length >= 2 && seatNumber === otherSeats[1].seat_number)
-        return "right";
-    }
+  const getPlayerPosition = (seatNumber: number) => {
+    if (seatNumber === currentUserSeat) return "bottom";
+    // for spectators view
+    if(!currentUserSeat && seatNumber === 1) return "bottom";
+    if(!currentUserSeat && seatNumber === 2) return "left";
+    if(!currentUserSeat && seatNumber === 3) return "right";
+
+    // for non current players
+    if(currentUserSeat === 1 && seatNumber === 2) return "left";
+    if(currentUserSeat === 1 && seatNumber === 3) return "right";
+    if(currentUserSeat === 2 && seatNumber === 1) return "right";
+    if(currentUserSeat === 2 && seatNumber === 3) return "left";
+    if(currentUserSeat === 3 && seatNumber === 1) return "left";
+    if(currentUserSeat === 3 && seatNumber === 2) return "right";
+
     // Default fallback
     return "top";
   };
@@ -107,44 +109,43 @@ export function GameBoard({
       <div className="absolute inset-4 bg-green-600 rounded-full opacity-30 z-0"></div>
 
       {/* Top area for current player info */}
-      <div className="absolute top-2 left-1/2 transform -translate-x-1/2 z-10">
+      <div className="absolute top-1 left-1/2 transform -translate-x-1/2 z-10 px-2">
         <div className="text-center">
-          <div className="text-lg font-semibold text-white">
-            {phase || "Game in Progress"}
-          </div>
-          {activeSeat &&
-            (() => {
-              const activePlayer = players.find(
-                (p) => p.seat_number === activeSeat,
-              );
-              return (
-                <div className="text-sm text-green-200 mt-1">
-                  {(activePlayer as any)?.screen_name ||
-                    activePlayer?.name ||
-                    `Player ${activeSeat}`}
-                  's turn
-                </div>
-              );
-            })()}
+          {phase && activeSeat && (
+            <div className="text-xs sm:text-sm md:text-base text-white whitespace-nowrap">
+              <span className="font-semibold">{phase}</span>
+              {(() => {
+                const activePlayer = players.find(
+                  (p) => p.seat_number === activeSeat
+                );
+                return (
+                  <span className="text-green-200 ml-2">
+                    •{" "}
+                    {(activePlayer as any)?.screen_name ||
+                      activePlayer?.name ||
+                      `Player ${activeSeat}`}
+                    's turn
+                  </span>
+                );
+              })()}
+            </div>
+          )}
+          {!activeSeat && (
+            <div className="text-xs sm:text-sm md:text-base font-semibold text-white">
+              {phase || "Game in Progress"}
+            </div>
+          )}
         </div>
       </div>
 
       {/* Mobile Game Info - Top Left Corner */}
       {phase === "Playing Cards" && (
-        <div className="absolute top-2 left-2 z-10 lg:hidden">
+        <div className="absolute top-8 left-2 z-10 lg:hidden">
           <div className="bg-black/20 rounded-lg p-2 text-white text-xs">
-            <div className="space-y-2">
-              <div className="flex flex-col gap-2">
-                <div className="mt-1">
-                  {renderSuitBadge(requiredSuit)}{" "}
-                  <span className="text-green-300">REQUIRED</span>
-                </div>
-                <div className="mt-1">
+          <div className="font-semibold mb-1">TRUMP</div>
+           
                   {renderSuitBadge(trumpSuit)}
-                  <span className="text-green-300">IS TRUMP</span>
-                </div>
-              </div>
-            </div>
+
           </div>
         </div>
       )}
@@ -184,7 +185,7 @@ export function GameBoard({
 
       {/* Mobile Highest Bid - Right Side */}
       {highestBid && (
-        <div className="absolute top-2 right-2 z-10 lg:hidden">
+        <div className="absolute top-8 right-2 z-10 lg:hidden">
           <div className="bg-black/20 rounded-lg p-2 text-white text-xs">
             <div className="font-semibold mb-1">HIGHEST BIDDER</div>
             <div>
@@ -196,11 +197,11 @@ export function GameBoard({
       )}
 
       {/* Center area for cards on board and bidding panel */}
-      <div className="absolute inset-0 flex items-center justify-center z-10">
+      <div className="absolute inset-0 flex items-start justify-center z-10">
         <div className="text-center">
           {/* Bidding Panel */}
           {biddingPanel && (
-            <div className="mb-4 -mt-2 sm:-mt-4 lg:-mt-8">{biddingPanel}</div>
+            <div className="mb-4 mt-8 pt-2">{biddingPanel}</div>
           )}
 
           {/* Cards on board during playing phase */}
@@ -214,7 +215,7 @@ export function GameBoard({
                       <div className="text-xs text-green-200 mb-1">
                         {(() => {
                           const player = players.find(
-                            (p) => p.seat_number === parseInt(seat),
+                            (p) => p.seat_number === parseInt(seat)
                           );
                           return (
                             (player as any)?.screen_name ||
@@ -238,7 +239,7 @@ export function GameBoard({
 
       {/* Other players positioned around the table */}
       {otherPlayers.map((player) => {
-        const position = getPlayerPosition(player.seat_number, players.length);
+        const position = getPlayerPosition(player.seat_number);
         return (
           <Player
             key={player.seat_number}
