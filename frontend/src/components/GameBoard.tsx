@@ -72,7 +72,6 @@ export function GameBoard({
   cardsOnBoard = {},
   biddingPanel,
   playerStats,
-  requiredSuit,
   trumpSuit,
   lastTrick,
   highestBid,
