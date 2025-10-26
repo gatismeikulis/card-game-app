@@ -1,5 +1,6 @@
 from typing import Any, override
 
+from ..common.game_exception import GameParsingException
 from ..common.game_event import GameEvent
 from ..common.game_event_parser import GameEventParser
 from .domain.five_hundred_event import (
@@ -43,4 +44,7 @@ class FiveHundredEventParser(GameEventParser):
             case "game_finished":
                 return GameFinishedEvent.from_dict(data)
             case _:
-                raise ValueError(f"Unknown event type: {event_type}")
+                raise GameParsingException(
+                    reason="game_event_parsing_error",
+                    message=f"Could not parse five hundred game event from input: {data}",
+                )

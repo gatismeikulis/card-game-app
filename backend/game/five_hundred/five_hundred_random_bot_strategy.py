@@ -1,7 +1,7 @@
 import random
 from typing import override
 
-
+from ..common.game_exception import GameEngineException
 from ..bot_strategy_kind import BotStrategyKind
 from ..common.bot_strategy import BotStrategy
 from ..common.game_command import GameCommand
@@ -22,7 +22,9 @@ class FiveHundredRandomBotStrategy(BotStrategy):
     @override
     def create_command(self, game_state: GameState) -> GameCommand:
         if not isinstance(game_state, FiveHundredGame):
-            raise TypeError(f"FiveHundredRandomBotStrategy expects FiveHundredGame, got {type(game_state).__name__}")
+            raise GameEngineException(
+                message=f"Could not create bot strategy command: expected FiveHundredGame, got {type(game_state).__name__}"
+            )
         match game_state.round.phase:
             case FiveHundredPhase.BIDDING:
                 highest_bid = game_state.round.highest_bid[1] if game_state.round.highest_bid else MIN_BID
@@ -49,4 +51,6 @@ class FiveHundredRandomBotStrategy(BotStrategy):
                 return PlayCardCommand(card=card_to_play)
 
             case _:
-                raise ValueError(f"Invalid phase: {game_state.round.phase}")
+                raise GameEngineException(
+                    message=f"Could not create bot strategy command: invalid phase: {game_state.round.phase}"
+                )

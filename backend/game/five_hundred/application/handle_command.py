@@ -1,4 +1,12 @@
-from ..domain.constants import BID_STEP, MAX_BID, MIN_BID
+from ...common.game_exception import GameRulesException
+from ..domain.constants import (
+    BID_STEP,
+    CARDS_IN_STARTING_HAND,
+    CARDS_TO_TAKE,
+    MAX_BID,
+    MIN_BID,
+    NOT_ALLOWED_TO_BID_THRESHOLD,
+)
 from ..domain.five_hundred_deck import FiveHundredDeck
 from ..domain.five_hundred_card import FiveHundredCard
 from ..domain.five_hundred_command import (
@@ -38,22 +46,21 @@ def handle_start_game() -> FiveHundredEvent:
 
 def handle_make_bid(game: FiveHundredGame, bid: int) -> FiveHundredEvent:
     if game.round.phase != FiveHundredPhase.BIDDING:
-        raise ValueError("Cannot make bid. Not bidding phase.")
+        raise GameRulesException(message="Could not make bid: not 'bidding' phase")
 
     active_seats_match_points = game.summary[game.active_seat]
-    if active_seats_match_points >= 1000 and bid >= 0:
-        raise ValueError(
-            "Cannot make a bid. Player has reached more than 1000 points are not allowed to make non-passing bid."
-        )
-
+    if active_seats_match_points >= NOT_ALLOWED_TO_BID_THRESHOLD and bid >= 0:
+        raise GameRulesException(message="Could not make bid: too many points to bid")
     if bid >= 0 and bid % BID_STEP != 0:
-        raise ValueError(f"Invalid bid. Bid must be with a step of {BID_STEP}")
+        raise GameRulesException(message=f"Could not make bid: bid must be with a step of {BID_STEP}")
     elif bid >= 0 and bid < MIN_BID:
-        raise ValueError(f"Bid must be greater or equal to {MIN_BID}")
+        raise GameRulesException(message=f"Could not make bid: bid must be greater or equal to {MIN_BID}")
     elif bid > MAX_BID:
-        raise ValueError(f"Bid is too high. Maximum bid is {MAX_BID}")
+        raise GameRulesException(message=f"Could not make bid: bid is too high. Maximum bid is {MAX_BID}")
     elif bid >= 0 and game.round.highest_bid and bid <= game.round.highest_bid[1]:
-        raise ValueError(f"Bid must be greater than bid form previous bidder ({game.round.highest_bid[1]})")
+        raise GameRulesException(
+            message=f"Could not make bid: bid must be greater than current highest bid ({game.round.highest_bid[1]})"
+        )
 
     return BidMadeEvent(bid=bid, made_by=game.active_seat)
 
@@ -64,15 +71,15 @@ def handle_pass_cards(
     card_to_prev_seat: FiveHundredCard,
 ) -> FiveHundredEvent:
     if game.round.phase != FiveHundredPhase.FORMING_HANDS:
-        raise ValueError("Cannot pass cards. Not 'forming hands' phase.")
+        raise GameRulesException(message="Could not pass cards: not 'forming hands' phase")
 
     active_seats_cards = game.active_seats_info.hand.cards
 
-    if len(active_seats_cards) != 10:
-        raise ValueError("Cannot pass cards. Bidding winner have not taken hidden cards yet.")
+    if len(active_seats_cards) != CARDS_IN_STARTING_HAND + CARDS_TO_TAKE:
+        raise GameRulesException(message="Could not pass cards: bidding winner has not taken hidden cards yet")
 
     if card_to_next_seat not in active_seats_cards or card_to_prev_seat not in active_seats_cards:
-        raise ValueError("Cannot pass cards. Active seat do not have one or both of the passed cards.")
+        raise GameRulesException(message="Could not pass cards: selected cards are not in the hand")
 
     return CardsPassedEvent(
         card_to_next_seat=card_to_next_seat,
@@ -82,18 +89,18 @@ def handle_pass_cards(
 
 def handle_play_card(game: FiveHundredGame, card: FiveHundredCard) -> FiveHundredEvent:
     if game.round.phase != FiveHundredPhase.PLAYING_CARDS:
-        raise ValueError("Cannot play card. Not 'playing cards' phase.")
+        raise GameRulesException(message="Could not play card: not 'playing cards' phase")
 
     active_seats_cards = game.active_seats_info.hand.cards
 
     if card not in active_seats_cards:
-        raise ValueError("Cannot play card. Active seat does not have the card.")
+        raise GameRulesException(message="Could not play card: selected card is not in the hand")
 
     cards_allowed_to_play = game.active_seats_info.cards_allowed_to_play(
         game.round.required_suit, game.round.trump_suit
     )
 
     if card not in cards_allowed_to_play:
-        raise ValueError("Cannot play card. Card is not allowed to play.")
+        raise GameRulesException(message="Could not play card: selected card is not allowed to play")
 
     return CardPlayedEvent(card=card, played_by=game.active_seat)

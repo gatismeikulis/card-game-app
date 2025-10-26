@@ -1,5 +1,7 @@
 from enum import Enum
 
+from .common.game_exception import GameParsingException
+
 
 class BotStrategyKind(Enum):
     RANDOM = "RANDOM"
@@ -10,4 +12,7 @@ class BotStrategyKind(Enum):
             case "RANDOM":
                 return BotStrategyKind.RANDOM
             case _:
-                raise ValueError(f"Invalid bot strategy kind: {s}")
+                raise GameParsingException(
+                    reason="bot_strategy_kind_parsing_error",
+                    message=f"Could not parse bot strategy kind from input: {s}",
+                )

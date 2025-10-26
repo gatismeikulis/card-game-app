@@ -3,6 +3,8 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Self, override
 
+from .game_exception import GameParsingException
+
 
 class Suit(Enum):
     HEART = ("Heart", "h")
@@ -26,7 +28,9 @@ class Suit(Enum):
             case "S":
                 return Suit.SPADE
             case _:
-                raise ValueError(f"Invalid suit symbol: {symbol}")
+                raise GameParsingException(
+                    reason="card_suit_parsing_error", message=f"Could not parse card's suit from input: {symbol}"
+                )
 
     @override
     def __str__(self) -> str:
@@ -86,7 +90,9 @@ class Rank(Enum):
             case "K":
                 return Rank.KING
             case _:
-                raise ValueError(f"Invalid rank symbol: {symbol}")
+                raise GameParsingException(
+                    reason="card_rank_parsing_error", message=f"Could not parse card's rank from input: {symbol}"
+                )
 
 
 class Strength(Enum):

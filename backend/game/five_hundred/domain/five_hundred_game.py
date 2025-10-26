@@ -2,6 +2,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any, Self, override
 
+from ...common.game_exception import GameEngineException
 from ...common.seat import SeatNumber
 from ...common.game_state import GameState
 from .constants import GAME_STARTING_POINTS
@@ -39,7 +40,7 @@ class FiveHundredGame(GameState):
     @property
     def winners(self) -> Sequence[FiveHundredSeat]:
         if self.round.phase != FiveHundredPhase.GAME_FINISHED:
-            raise ValueError("Game is not finished")
+            raise GameEngineException(message="Could not get winners: game has not ended yet")
         return [seat for seat, points in self.summary.items() if points <= 0]
 
     @property

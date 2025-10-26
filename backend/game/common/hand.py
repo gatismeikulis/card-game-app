@@ -3,6 +3,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Generic, Self, TypeVar, override
 
+from .game_exception import GameEngineException
 from .card import Card
 
 TCard = TypeVar("TCard", bound=Card)
@@ -23,7 +24,10 @@ class Hand(ABC, Generic[TCard]):
     def without_cards(self, cards: Sequence[TCard]) -> Self:
         for c in cards:
             if c not in self.cards:
-                raise ValueError(f"Card {c} is not in the hand {self.cards}")
+                raise GameEngineException(
+                    reason="card_not_in_hand",
+                    message=f"Could not remove card from hand: card {c} is not in the hand {self.cards}",
+                )
         result: list[TCard] = []
         for c in self.cards:
             if c not in cards:

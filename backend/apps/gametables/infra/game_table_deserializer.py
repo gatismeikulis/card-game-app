@@ -15,7 +15,7 @@ from game.bot_strategy_kind import BotStrategyKind
 
 class GameTableDeserializer:
     @staticmethod
-    def deserialize_player(data: dict[str, Any], game_name: GameName) -> Player:
+    def _deserialize_player(data: dict[str, Any], game_name: GameName) -> Player:
         bot_strategy = None
         if data["bot_strategy_kind"]:
             kind = BotStrategyKind(data["bot_strategy_kind"])
@@ -30,7 +30,7 @@ class GameTableDeserializer:
         )
 
     @staticmethod
-    def deserialize_config(data: dict[str, Any]) -> GameTableConfig:
+    def _deserialize_config(data: dict[str, Any]) -> GameTableConfig:
         game_config = get_game_config_parser(GameName(data["game_name"])).from_dict(data["game_config"])
         table_config = get_table_config_parser(GameName(data["game_name"])).from_dict(data["table_config"])
         return GameTableConfig(GameName(data["game_name"]), game_config, table_config)
@@ -38,7 +38,7 @@ class GameTableDeserializer:
     @staticmethod
     def deserialize_table(data: dict[str, Any]) -> GameTable:
         """Reconstruct from JSON-compatible dict"""
-        config = GameTableDeserializer.deserialize_config(data["config"])
+        config = GameTableDeserializer._deserialize_config(data["config"])
 
         engine = get_game_engine(config.game_name)
 
@@ -54,7 +54,7 @@ class GameTableDeserializer:
             table._game_state = get_game_class(config.game_name).from_dict(data["game_state"])
 
         for pdata in data["players"]:
-            player = GameTableDeserializer.deserialize_player(pdata, config.game_name)
+            player = GameTableDeserializer._deserialize_player(pdata, config.game_name)
             table._players.append(player)
 
         return table

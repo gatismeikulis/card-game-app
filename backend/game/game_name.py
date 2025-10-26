@@ -1,5 +1,7 @@
 from enum import Enum
 
+from .common.game_exception import GameParsingException
+
 
 class GameName(Enum):
     FIVE_HUNDRED = "five_hundred"
@@ -10,4 +12,6 @@ class GameName(Enum):
             case "FIVE_HUNDRED":
                 return GameName.FIVE_HUNDRED
             case _:
-                raise ValueError(f"Invalid game name: {s}")
+                raise GameParsingException(
+                    reason="game_name_parsing_error", message=f"Could not parse game name from input: {s}"
+                )
