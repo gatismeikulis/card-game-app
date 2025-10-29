@@ -46,5 +46,5 @@ class FiveHundredEventParser(GameEventParser):
             case _:
                 raise GameParsingException(
                     reason="game_event_parsing_error",
-                    message=f"Could not parse five hundred game event from input: {data}",
+                    detail=f"Could not parse five hundred game event from input: {data}",
                 )

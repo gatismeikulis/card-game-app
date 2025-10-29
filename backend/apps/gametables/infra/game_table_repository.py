@@ -48,7 +48,7 @@ class GameTableRepository(IGameTableRepository):
         # No GameTablePlayers creation, because there is no players at the moment when table is created
 
         except Exception as e:
-            raise InfrastructureException(message=f"Could not create game table: {e}") from e
+            raise InfrastructureException(detail=f"Could not create game table: {e}") from e
 
         return game_table.id
 
@@ -79,7 +79,7 @@ class GameTableRepository(IGameTableRepository):
                 raise NotExistException(reason="game_table_not_exist")
 
         except Exception as e:
-            raise InfrastructureException(message=f"Could not update game table: {e}") from e
+            raise InfrastructureException(detail=f"Could not update game table: {e}") from e
 
     @override
     def update_after_game_action(self, game_table: GameTable, last_event_sequence_number: int) -> None:
@@ -93,7 +93,7 @@ class GameTableRepository(IGameTableRepository):
             if updated_rows != 1:
                 raise NotExistException(reason="game_table_not_exist")
         except Exception as e:
-            raise InfrastructureException(message=f"Could not update game table after game action: {e}") from e
+            raise InfrastructureException(detail=f"Could not update game table after game action: {e}") from e
 
     @override
     def delete(self, id: str) -> None:
@@ -103,7 +103,7 @@ class GameTableRepository(IGameTableRepository):
             # table already deleted
             return None
         except Exception as e:
-            raise InfrastructureException(message=f"Could not delete game table: {e}") from e
+            raise InfrastructureException(detail=f"Could not delete game table: {e}") from e
 
     @override
     def find_by_id(self, id: str) -> GameTable:
@@ -112,7 +112,7 @@ class GameTableRepository(IGameTableRepository):
         except GameTableSnapshot.DoesNotExist:
             raise NotExistException(reason="game_table_not_exist")
         except Exception as e:
-            raise InfrastructureException(message=f"Could not find game table by id: {e}") from e
+            raise InfrastructureException(detail=f"Could not find game table by id: {e}") from e
         return GameTableDeserializer.deserialize_table(game_table_snapshot.data)
 
     @override
@@ -131,4 +131,4 @@ class GameTableRepository(IGameTableRepository):
                 query_set = query_set.filter(game_name__in=filters["game_name"])
             return query_set.all()
         except Exception as e:
-            raise InfrastructureException(message=f"Could not find game tables by filters: {e}") from e
+            raise InfrastructureException(detail=f"Could not find game tables by filters: {e}") from e

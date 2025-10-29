@@ -14,5 +14,5 @@ class BotStrategyKind(Enum):
             case _:
                 raise GameParsingException(
                     reason="bot_strategy_kind_parsing_error",
-                    message=f"Could not parse bot strategy kind from input: {s}",
+                    detail=f"Could not parse bot strategy kind from input: {s}",
                 )

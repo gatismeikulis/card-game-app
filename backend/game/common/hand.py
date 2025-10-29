@@ -26,7 +26,7 @@ class Hand(ABC, Generic[TCard]):
             if c not in self.cards:
                 raise GameEngineException(
                     reason="card_not_in_hand",
-                    message=f"Could not remove card from hand: card {c} is not in the hand {self.cards}",
+                    detail=f"Could not remove card from hand: card {c} is not in the hand {self.cards}",
                 )
         result: list[TCard] = []
         for c in self.cards:

@@ -38,7 +38,7 @@ class GameTableManager:
     def _validate_user_is_owner_of_table(self, table: GameTable, user_id: int) -> None:
         if table.owner_id != user_id:
             raise GameTableRulesException(
-                reason="not_table_owner", message="Could not perform an action: not the table owner"
+                reason="not_table_owner", detail="Could not perform an action: not the table owner"
             )
 
     def add_table(self, raw_config: dict[str, Any], owner_id: int) -> str:
@@ -164,7 +164,7 @@ class GameTableManager:
             table = self._game_table_repository.find_by_id(table_id)
             events = self._game_play_event_repository.find_many(table_id, end_inclusive=upto_event)
             if not events:
-                raise GameTableInternalException(message="Could not get table from past: no history availble")
+                raise GameTableInternalException(detail="Could not get table from past: no history availble")
             table.restore_game_state(events)
             return table
         except AppException as e:

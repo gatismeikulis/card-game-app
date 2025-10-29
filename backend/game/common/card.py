@@ -29,7 +29,7 @@ class Suit(Enum):
                 return Suit.SPADE
             case _:
                 raise GameParsingException(
-                    reason="card_suit_parsing_error", message=f"Could not parse card's suit from input: {symbol}"
+                    reason="card_suit_parsing_error", detail=f"Could not parse card's suit from input: {symbol}"
                 )
 
     @override
@@ -91,7 +91,7 @@ class Rank(Enum):
                 return Rank.KING
             case _:
                 raise GameParsingException(
-                    reason="card_rank_parsing_error", message=f"Could not parse card's rank from input: {symbol}"
+                    reason="card_rank_parsing_error", detail=f"Could not parse card's rank from input: {symbol}"
                 )
 
 

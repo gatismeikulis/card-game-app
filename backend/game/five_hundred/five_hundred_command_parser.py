@@ -16,7 +16,7 @@ class FiveHundredCommandParser(GameCommandParser):
     def from_dict(self, raw_command: dict[str, Any]) -> GameCommand:
         def error(type: str = "") -> GameParsingException:
             return GameParsingException(
-                reason="command_parsing_error", message=f"Could not create '{type}' command from input: {raw_command}"
+                reason="command_parsing_error", detail=f"Could not create '{type}' command from input: {raw_command}"
             )
 
         match raw_command["type"]:

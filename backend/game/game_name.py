@@ -13,5 +13,5 @@ class GameName(Enum):
                 return GameName.FIVE_HUNDRED
             case _:
                 raise GameParsingException(
-                    reason="game_name_parsing_error", message=f"Could not parse game name from input: {s}"
+                    reason="game_name_parsing_error", detail=f"Could not parse game name from input: {s}"
                 )

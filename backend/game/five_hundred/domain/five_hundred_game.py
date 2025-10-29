@@ -40,7 +40,7 @@ class FiveHundredGame(GameState):
     @property
     def winners(self) -> Sequence[FiveHundredSeat]:
         if self.round.phase != FiveHundredPhase.GAME_FINISHED:
-            raise GameEngineException(message="Could not get winners: game has not ended yet")
+            raise GameEngineException(detail="Could not get winners: game has not ended yet")
         return [seat for seat, points in self.summary.items() if points <= 0]
 
     @property

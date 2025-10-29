@@ -34,7 +34,7 @@ class GamePlayEventRepository(IGamePlayEventRepository):
         except GameTableSnapshot.DoesNotExist:
             raise NotExistException(reason="game_table_not_exist")
         except Exception as e:
-            raise InfrastructureException(message=f"Could not append game events: {e}") from e
+            raise InfrastructureException(detail=f"Could not append game events: {e}") from e
 
     @override
     def find_many(
@@ -55,7 +55,7 @@ class GamePlayEventRepository(IGamePlayEventRepository):
         except GameTableSnapshot.DoesNotExist:
             raise NotExistException(reason="game_table_not_exist")
         except Exception as e:
-            raise InfrastructureException(message=f"Could not find game events: {e}") from e
+            raise InfrastructureException(detail=f"Could not find game events: {e}") from e
 
         game_name = GameName.from_str(snapshot.game_name)
         parser = get_game_event_parser(game_name)

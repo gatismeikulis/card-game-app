@@ -19,11 +19,11 @@ class FiveHundredGameEngine(GameEngine):
         # Validate and narrow types to Five Hundred specifics
         if not isinstance(game_state, FiveHundredGame):
             raise GameEngineException(
-                message=f"Could not process command: expected FiveHundredGame, got {type(game_state).__name__}"
+                detail=f"Could not process command: expected FiveHundredGame, got {type(game_state).__name__}"
             )
         if not isinstance(command, FiveHundredCommand):
             raise GameEngineException(
-                message=f"Could not process command: expected FiveHundredCommand, got {type(command).__name__}"
+                detail=f"Could not process command: expected FiveHundredCommand, got {type(command).__name__}"
             )
         game_state_updated, events = process_command(game_state, command)
         return game_state_updated, events
@@ -42,7 +42,7 @@ class FiveHundredGameEngine(GameEngine):
             # Validate and narrow event type to Five Hundred specifics
             if not isinstance(event, FiveHundredEvent):
                 raise GameEngineException(
-                    message=f"Could not restore game state: expected FiveHundredEvent, got {type(event).__name__}"
+                    detail=f"Could not restore game state: expected FiveHundredEvent, got {type(event).__name__}"
                 )
             restored_game_state = apply_event(restored_game_state, event)
 

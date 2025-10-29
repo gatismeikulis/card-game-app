@@ -23,7 +23,7 @@ class FiveHundredRandomBotStrategy(BotStrategy):
     def create_command(self, game_state: GameState) -> GameCommand:
         if not isinstance(game_state, FiveHundredGame):
             raise GameEngineException(
-                message=f"Could not create bot strategy command: expected FiveHundredGame, got {type(game_state).__name__}"
+                detail=f"Could not create bot strategy command: expected FiveHundredGame, got {type(game_state).__name__}"
             )
         match game_state.round.phase:
             case FiveHundredPhase.BIDDING:
@@ -52,5 +52,5 @@ class FiveHundredRandomBotStrategy(BotStrategy):
 
             case _:
                 raise GameEngineException(
-                    message=f"Could not create bot strategy command: invalid phase: {game_state.round.phase}"
+                    detail=f"Could not create bot strategy command: invalid phase: {game_state.round.phase}"
                 )
