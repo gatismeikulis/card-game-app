@@ -32,8 +32,8 @@ def sample_seat_info(sample_hand: Hand[FiveHundredCard]) -> FiveHundredSeatInfo:
 
 
 @pytest.mark.parametrize(
-    "required_suit, trump_suit, expected_cards",
-    [
+    argnames="required_suit, trump_suit, expected_cards",
+    argvalues=[
         (None, None, {Ah, Kh, Ts, Js, Qs}),
         (None, Suit.CLUB, {Ah, Kh, Ts, Js, Qs}),
         (Suit.SPADE, Suit.SPADE, {Ts, Js, Qs}),

@@ -20,8 +20,8 @@ import pytest
 
 
 @pytest.mark.parametrize(
-    "event_class, kwargs",
-    [
+    argnames="event_class, kwargs",
+    argvalues=[
         (DeckShuffledEvent, {"deck": FiveHundredDeck.from_card_strings(["9H", "JH", "QH", "KH", "TH", "AH"])}),
         (BidMadeEvent, {"bid": 100, "made_by": Seat(1)}),
         (BiddingFinishedEvent, {"bid": None, "made_by": None}),

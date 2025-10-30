@@ -6,16 +6,22 @@ from ..game_exception import GameParsingException
 
 
 @pytest.mark.parametrize(
-    "symbol,expected",
-    [
+    argnames="symbol,expected_suit",
+    argvalues=[
         ("c", Suit.CLUB),
         ("D", Suit.DIAMOND),
         ("h", Suit.HEART),
         ("S", Suit.SPADE),
     ],
+    ids=[
+        "club",
+        "diamond",
+        "heart",
+        "spade",
+    ],
 )
-def test_suit_from_string_valid(symbol: str, expected: Suit):
-    assert Suit.from_string(symbol) == expected
+def test_suit_from_string_valid(symbol: str, expected_suit: Suit):
+    assert Suit.from_string(symbol) == expected_suit
 
 
 def test_suit_from_string_invalid():
@@ -25,16 +31,16 @@ def test_suit_from_string_invalid():
 
 
 @pytest.mark.parametrize(
-    "symbol,expected",
-    [
+    argnames="symbol,expected_rank",
+    argvalues=[
         ("A", Rank.ACE),
         ("2", Rank.TWO),
         ("T", Rank.TEN),
         ("k", Rank.KING),
     ],
 )
-def test_rank_from_string_valid(symbol: str, expected: Rank):
-    assert Rank.from_string(symbol) == expected
+def test_rank_from_string_valid(symbol: str, expected_rank: Rank):
+    assert Rank.from_string(symbol) == expected_rank
 
 
 def test_rank_from_string_invalid():

@@ -18,8 +18,8 @@ def test_from_dict_with_missing_values_uses_defaults():
 
 
 @pytest.mark.parametrize(
-    "data,expected_exception",
-    [
+    argnames="data,expected_exception",
+    argvalues=[
         pytest.param({"max_rounds": -10}, GameRulesException, id="max_rounds_too_low"),
         pytest.param({"max_rounds": 600}, GameRulesException, id="max_rounds_too_high"),
         pytest.param({"max_bid_no_marriage": 100}, GameRulesException, id="max_bid_no_marriage_too_low"),
