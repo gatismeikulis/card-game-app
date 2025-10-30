@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from random import shuffle
-from typing import Generic, Self, TypeVar, override
+from typing import Callable, Generic, Self, TypeVar, override
 
 from .card import Card
 
@@ -11,12 +11,13 @@ TCard = TypeVar("TCard", bound=Card)
 @dataclass(frozen=True, slots=True)
 class Deck(ABC, Generic[TCard]):
     _cards: list[TCard]
+    shuffle_fn: Callable[[list[TCard]], None] = shuffle
     shuffle_on_init: bool = True  # if True, the deck is shuffled when it is initialized
     _undealed_deck: list[TCard] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         if self.shuffle_on_init:
-            shuffle(self._cards)
+            self.shuffle_fn(self._cards)
         object.__setattr__(self, "_undealed_deck", self._cards.copy())
 
     def draw_one(self) -> TCard:
