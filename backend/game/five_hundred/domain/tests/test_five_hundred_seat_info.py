@@ -21,7 +21,7 @@ def sample_hand() -> Hand[FiveHundredCard]:
 
 
 @pytest.fixture
-def seat_info(sample_hand: Hand[FiveHundredCard]) -> FiveHundredSeatInfo:
+def sample_seat_info(sample_hand: Hand[FiveHundredCard]) -> FiveHundredSeatInfo:
     return FiveHundredSeatInfo(
         hand=sample_hand,
         bid=120,
@@ -51,24 +51,24 @@ def seat_info(sample_hand: Hand[FiveHundredCard]) -> FiveHundredSeatInfo:
     ],
 )
 def test_cards_allowed_to_play_no_required_or_trump(
-    seat_info: FiveHundredSeatInfo,
+    sample_seat_info: FiveHundredSeatInfo,
     required_suit: Suit | None,
     trump_suit: Suit | None,
     expected_cards: set[FiveHundredCard],
 ):
-    cards_allowed_to_play = seat_info.cards_allowed_to_play(required_suit, trump_suit)
+    cards_allowed_to_play = sample_seat_info.cards_allowed_to_play(required_suit, trump_suit)
     assert set(cards_allowed_to_play) == expected_cards
 
 
-def test_to_dict_and_from_dict_roundtrip(seat_info: FiveHundredSeatInfo):
-    data = seat_info.to_dict()
+def test_to_dict_and_from_dict_roundtrip(sample_seat_info: FiveHundredSeatInfo):
+    data = sample_seat_info.to_dict()
     restored = FiveHundredSeatInfo.from_dict(data)
-    assert restored == seat_info
+    assert restored == sample_seat_info
 
 
-def test_to_public_dict_hides_private_info(seat_info: FiveHundredSeatInfo):
-    public_data = seat_info.to_public_dict()
-    assert public_data["hand"] == len(seat_info.hand.cards)
+def test_to_public_dict_hides_private_info(sample_seat_info: FiveHundredSeatInfo):
+    public_data = sample_seat_info.to_public_dict()
+    assert public_data["hand"] == len(sample_seat_info.hand.cards)
     assert public_data["points"] is None
     assert public_data["marriage_points"] is None
     assert public_data["bid"] == 120
