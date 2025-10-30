@@ -5,6 +5,11 @@ from ....common.seat import Seat
 from ....common.hand import Hand
 from ...domain.five_hundred_card import FiveHundredCard
 from ...domain.five_hundred_seat_info import FiveHundredSeatInfo
+from ...domain.five_hundred_round import FiveHundredRound
+from ...domain.five_hundred_phase import FiveHundredPhase
+from ...domain.five_hundred_game import FiveHundredGame
+from ...domain.five_hundred_game_config import FiveHundredGameConfig
+from ...domain.constants import GAME_STARTING_POINTS
 
 
 @pytest.fixture
@@ -37,4 +42,41 @@ def sample_hand() -> Hand[FiveHundredCard]:
             FiveHundredCard(Suit.CLUB, Rank.JACK),
             FiveHundredCard(Suit.CLUB, Rank.QUEEN),
         )
+    )
+
+
+@pytest.fixture
+def sample_round(sample_seats: frozenset[Seat]) -> FiveHundredRound:
+    return FiveHundredRound(
+        seat_infos={
+            seat: FiveHundredSeatInfo(hand=Hand(tuple()), bid=0, points=0, trick_count=0, marriage_points=[])
+            for seat in sample_seats
+        },
+        cards_on_board={Seat(1): FiveHundredCard(Suit.CLUB, Rank.ACE), Seat(2): None, Seat(3): None},
+        prev_trick=[
+            FiveHundredCard(Suit.CLUB, Rank.ACE),
+            FiveHundredCard(Suit.CLUB, Rank.KING),
+            FiveHundredCard(Suit.CLUB, Rank.QUEEN),
+        ],
+        cards_to_take=[],
+        required_suit=Suit.CLUB,
+        trump_suit=Suit.SPADE,
+        highest_bid=(Seat(1), 100),
+        phase=FiveHundredPhase.PLAYING_CARDS,
+        round_number=1,
+        first_seat=Seat(1),
+        is_marriage_announced=False,
+    )
+
+
+@pytest.fixture
+def sample_game(sample_seats: frozenset[Seat], sample_round: FiveHundredRound) -> FiveHundredGame:
+    return FiveHundredGame(
+        round=sample_round,
+        results=[],
+        summary={seat: GAME_STARTING_POINTS for seat in sample_seats},
+        active_seat=sample_round.first_seat,
+        is_finished=False,
+        game_config=FiveHundredGameConfig(max_rounds=100, max_bid_no_marriage=120, min_bid=60),
+        taken_seats=sample_seats,
     )
