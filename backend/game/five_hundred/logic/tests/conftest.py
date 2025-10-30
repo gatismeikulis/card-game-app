@@ -49,15 +49,11 @@ def sample_hand() -> Hand[FiveHundredCard]:
 def sample_round(sample_seat_infos: dict[Seat, FiveHundredSeatInfo]) -> FiveHundredRound:
     return FiveHundredRound(
         seat_infos=sample_seat_infos,
-        cards_on_board={Seat(1): FiveHundredCard(Suit.CLUB, Rank.ACE), Seat(2): None, Seat(3): None},
-        prev_trick=[
-            FiveHundredCard(Suit.CLUB, Rank.ACE),
-            FiveHundredCard(Suit.CLUB, Rank.KING),
-            FiveHundredCard(Suit.HEART, Rank.QUEEN),
-        ],
+        cards_on_board={Seat(1): None, Seat(2): None, Seat(3): None},
+        prev_trick=[],
         cards_to_take=[],
-        required_suit=Suit.CLUB,
-        trump_suit=Suit.SPADE,
+        required_suit=None,
+        trump_suit=None,
         highest_bid=(Seat(1), 100),
         phase=FiveHundredPhase.PLAYING_CARDS,
         round_number=1,

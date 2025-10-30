@@ -30,7 +30,7 @@ def play_card(game: FiveHundredGame, card: FiveHundredCard) -> FiveHundredGame:
             trump_suit=trump_suit_updated,
         )
 
-        return replace(game, round=round_updated, active_seat=active_seat.next(game.round.seat_infos.keys()))
+        return replace(game, round=round_updated, active_seat=active_seat.next(game.taken_seats))
 
     # 2nd or 3rd card played for this trick
     else:
@@ -42,4 +42,4 @@ def play_card(game: FiveHundredGame, card: FiveHundredCard) -> FiveHundredGame:
             seat_infos=seat_infos_updated,
         )
 
-        return replace(game, round=round_updated, active_seat=active_seat.next(game.round.seat_infos.keys()))
+        return replace(game, round=round_updated, active_seat=active_seat.next(game.taken_seats))

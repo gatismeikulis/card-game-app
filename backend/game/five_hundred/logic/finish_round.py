@@ -20,7 +20,7 @@ def finish_round(game: FiveHundredGame) -> FiveHundredGame:
             points_rounded = points - diff_of_five + 5 if diff_of_five > 2 else points - diff_of_five
             return points_rounded if seats_game_points >= MUST_BID_THRESHOLD else 0
 
-    seat_points = {seat: -get_round_points_for_seat(seat, game.summary[seat]) for seat in game.round.seat_infos.keys()}
+    seat_points = {seat: -get_round_points_for_seat(seat, game.summary[seat]) for seat in game.taken_seats}
 
     round_results = FiveHundredRoundResults(
         round_number=game.round.round_number,
