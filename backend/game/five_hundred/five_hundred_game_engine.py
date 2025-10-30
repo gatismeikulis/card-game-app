@@ -59,7 +59,6 @@ class FiveHundredGameEngine(GameEngine):
                 raise GameEngineException(
                     detail=f"Could not restore game state: expected FiveHundredEvent, got {type(event).__name__}"
                 )
-            print(event)
             restored_game_state = apply_event(restored_game_state, event)
 
         return restored_game_state
