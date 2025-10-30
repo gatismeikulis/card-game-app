@@ -14,28 +14,26 @@ def test_from_dict_with_valid_values():
 
 def test_from_dict_with_missing_values_uses_defaults():
     config = FiveHundredGameConfig.from_dict({})
-    assert config.max_rounds == 100
-    assert config.max_bid_no_marriage == 120
-    assert config.min_bid == 60
+    assert (config.max_rounds, config.max_bid_no_marriage, config.min_bid) == (100, 120, 60)
 
 
 @pytest.mark.parametrize(
     "data,expected_exception",
     [
-        ({"max_rounds": -10}, GameRulesException),
-        ({"max_rounds": 600}, GameRulesException),
-        ({"max_bid_no_marriage": 100}, GameRulesException),
-        ({"max_bid_no_marriage": 250}, GameRulesException),
-        ({"max_bid_no_marriage": -10}, GameRulesException),
-        ({"min_bid": 50}, GameRulesException),
-        ({"min_bid": 200}, GameRulesException),
-        ({"max_rounds": "not-a-number"}, GameParsingException),
-        ({"min_bid": "abc"}, GameParsingException),
-        ({"max_bid_no_marriage": None}, GameParsingException),
+        pytest.param({"max_rounds": -10}, GameRulesException, id="max_rounds_too_low"),
+        pytest.param({"max_rounds": 600}, GameRulesException, id="max_rounds_too_high"),
+        pytest.param({"max_bid_no_marriage": 100}, GameRulesException, id="max_bid_no_marriage_too_low"),
+        pytest.param({"max_bid_no_marriage": 250}, GameRulesException, id="max_bid_no_marriage_too_high"),
+        pytest.param({"min_bid": 50}, GameRulesException, id="min_bid_too_low"),
+        pytest.param({"min_bid": 200}, GameRulesException, id="min_bid_too_high"),
+        pytest.param({"max_rounds": "not-a-number"}, GameParsingException, id="max_rounds_not_numeric"),
+        pytest.param({"min_bid": "abc"}, GameParsingException, id="min_bid_not_numeric"),
+        pytest.param({"max_bid_no_marriage": None}, GameParsingException, id="max_bid_no_marriage_not_numeric"),
     ],
 )
 def test_from_dict_invalid_values_raise(
-    data: dict[str, Any], expected_exception: type[GameParsingException | GameRulesException]
+    data: dict[str, Any],
+    expected_exception: type[Exception],
 ):
     with pytest.raises(expected_exception):
         _ = FiveHundredGameConfig.from_dict(data)

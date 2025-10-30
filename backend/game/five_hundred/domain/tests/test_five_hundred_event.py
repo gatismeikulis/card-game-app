@@ -46,6 +46,19 @@ import pytest
         (RoundFinishedEvent, {"round_number": 1}),
         (GameFinishedEvent, {}),
     ],
+    ids=[
+        "deck_shuffled",
+        "bid_made",
+        "bidding_finished_no_bids",
+        "bidding_finished_with_bid",
+        "hidden_cards_taken",
+        "cards_passed",
+        "card_played",
+        "marriage_points_added",
+        "trick_taken",
+        "round_finished",
+        "game_finished",
+    ],
 )
 def test_event_to_dict_from_dict_roundtrip(event_class: type[FiveHundredEvent], kwargs: dict[str, Any]):
     event = event_class(**kwargs)

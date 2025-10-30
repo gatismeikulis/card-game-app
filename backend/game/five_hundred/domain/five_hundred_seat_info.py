@@ -34,7 +34,7 @@ class FiveHundredSeatInfo:
     def to_dict(self) -> dict[str, Any]:
         """Serialize to JSON-compatible dict"""
         return {
-            "hand": self.hand.to_dict(),  # Uses Hand.to_dict() → list[str]
+            "hand": self.hand.to_dict(),
             "bid": self.bid,
             "points": self.points,
             "trick_count": self.trick_count,
@@ -45,7 +45,7 @@ class FiveHundredSeatInfo:
     def from_dict(data: dict[str, Any]) -> "FiveHundredSeatInfo":
         """Reconstruct from JSON-compatible dict"""
         return FiveHundredSeatInfo(
-            hand=Hand.from_dict(data["hand"], FiveHundredCard),  # Pass card class
+            hand=Hand.from_dict(data["hand"], FiveHundredCard),
             bid=data["bid"],
             points=data["points"],
             trick_count=data["trick_count"],
