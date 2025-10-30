@@ -66,7 +66,7 @@ class BiddingFinishedEvent(GameEvent):
     def from_dict(cls, data: dict[str, Any]) -> Self:
         return cls(
             bid=data["bid"],
-            made_by=Seat.from_dict(data["made_by"]),
+            made_by=Seat.from_dict(data["made_by"]) if data["made_by"] else None,
         )
 
 
