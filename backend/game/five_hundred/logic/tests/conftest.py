@@ -46,17 +46,14 @@ def sample_hand() -> Hand[FiveHundredCard]:
 
 
 @pytest.fixture
-def sample_round(sample_seats: frozenset[Seat]) -> FiveHundredRound:
+def sample_round(sample_seat_infos: dict[Seat, FiveHundredSeatInfo]) -> FiveHundredRound:
     return FiveHundredRound(
-        seat_infos={
-            seat: FiveHundredSeatInfo(hand=Hand(tuple()), bid=0, points=0, trick_count=0, marriage_points=[])
-            for seat in sample_seats
-        },
+        seat_infos=sample_seat_infos,
         cards_on_board={Seat(1): FiveHundredCard(Suit.CLUB, Rank.ACE), Seat(2): None, Seat(3): None},
         prev_trick=[
             FiveHundredCard(Suit.CLUB, Rank.ACE),
             FiveHundredCard(Suit.CLUB, Rank.KING),
-            FiveHundredCard(Suit.CLUB, Rank.QUEEN),
+            FiveHundredCard(Suit.HEART, Rank.QUEEN),
         ],
         cards_to_take=[],
         required_suit=Suit.CLUB,
