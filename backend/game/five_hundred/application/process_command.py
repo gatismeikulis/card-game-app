@@ -109,6 +109,8 @@ def check_for_additional_events(game: FiveHundredGame, last_event: FiveHundredEv
                 return GameFinishedEvent()
             if all(points >= NOT_ALLOWED_TO_BID_THRESHOLD for points in game.summary.values()):
                 return GameFinishedEvent()
+            if game.round.round_number >= game.game_config.max_rounds:
+                return GameFinishedEvent()
             deck = FiveHundredDeck.build()
             return DeckShuffledEvent(deck=deck)
 

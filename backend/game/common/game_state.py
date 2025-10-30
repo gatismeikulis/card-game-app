@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any, Self
 
+from .game_config import GameConfig
 from .seat import Seat, SeatNumber
 
 
@@ -9,10 +10,12 @@ from .seat import Seat, SeatNumber
 class GameState(ABC):
     active_seat: Seat
     is_finished: bool
+    game_config: GameConfig
+    taken_seats: frozenset[Seat]
 
     @classmethod
     @abstractmethod
-    def init(cls) -> Self: ...
+    def init(cls, game_config: GameConfig, taken_seat_numbers: frozenset[SeatNumber]) -> Self: ...
 
     @abstractmethod
     def str_repr_for_table(self) -> str: ...

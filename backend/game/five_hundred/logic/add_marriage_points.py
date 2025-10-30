@@ -1,10 +1,10 @@
 from dataclasses import replace
 
 from ..domain.five_hundred_game import FiveHundredGame
-from ..domain.five_hundred_seat import FiveHundredSeat
+from ...common.seat import Seat
 
 
-def add_marriage_points(game: FiveHundredGame, points: int, add_to: FiveHundredSeat) -> FiveHundredGame:
+def add_marriage_points(game: FiveHundredGame, points: int, add_to: Seat) -> FiveHundredGame:
     seat_info = game.round.seat_infos[add_to]
 
     marriage_points_updated = list(seat_info.marriage_points) + [points]

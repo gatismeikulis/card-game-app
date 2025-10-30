@@ -1,22 +1,23 @@
 from collections.abc import Mapping, Sequence
 
+from ...common.hand import Hand
 from ...common.card import Rank, Suit
+from ...common.seat import Seat
 from ..domain.five_hundred_card import FiveHundredCard
-from ..domain.five_hundred_seat import FiveHundredSeat
 from ..domain.five_hundred_seat_info import FiveHundredSeatInfo
 
 
 def get_next_seat_to_bid(
-    active_seat: FiveHundredSeat,
-    seat_infos: Mapping[FiveHundredSeat, FiveHundredSeatInfo],
-) -> FiveHundredSeat | None:
-    next_seat = active_seat.next()
-    prev_seat = active_seat.prev()
+    active_seat: Seat,
+    seat_infos: Mapping[Seat, FiveHundredSeatInfo],
+) -> Seat | None:
+    next_seat = active_seat.next(seat_infos.keys())
+    prev_seat = active_seat.prev(seat_infos.keys())
 
     next_seats_latest_bid = seat_infos[next_seat].bid
     prev_seats_latest_bid = seat_infos[prev_seat].bid
 
-    next_seat_to_bid: FiveHundredSeat | None = None
+    next_seat_to_bid: Seat | None = None
 
     if next_seats_latest_bid >= 0:
         next_seat_to_bid = next_seat
@@ -26,6 +27,26 @@ def get_next_seat_to_bid(
         next_seat_to_bid = None
 
     return next_seat_to_bid
+
+
+def has_marriage_in_hand(hand: Hand[FiveHundredCard]) -> bool:
+    suits: dict[Suit, dict[Rank, bool]] = {}
+
+    for card in hand.cards:
+        suit, rank = card.suit, card.rank
+
+        if suit not in suits:
+            suits[suit] = {Rank.KING: False, Rank.QUEEN: False}
+
+        if rank == Rank.KING:
+            suits[suit][Rank.KING] = True
+        elif rank == Rank.QUEEN:
+            suits[suit][Rank.QUEEN] = True
+
+        if suits[suit][Rank.KING] and suits[suit][Rank.QUEEN]:
+            return True
+
+    return False
 
 
 def is_played_card_part_of_marriage(

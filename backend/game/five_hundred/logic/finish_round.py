@@ -1,16 +1,16 @@
 from dataclasses import replace
 
+from ...common.seat import Seat
 from ..domain.constants import MUST_BID_THRESHOLD
 from ..domain.five_hundred_game import FiveHundredGame
 from ..domain.five_hundred_round import FiveHundredRound
 from ..domain.five_hundred_round_results import FiveHundredRoundResults
-from ..domain.five_hundred_seat import FiveHundredSeat
 
 
 def finish_round(game: FiveHundredGame) -> FiveHundredGame:
     bidding_winning_seat = game.round.highest_bid[0] if game.round.highest_bid else None
 
-    def get_round_points_for_seat(seat: FiveHundredSeat, seats_game_points: int) -> int:
+    def get_round_points_for_seat(seat: Seat, seats_game_points: int) -> int:
         points = game.round.seat_infos[seat].points
         if bidding_winning_seat == seat:
             winning_bid = game.round.highest_bid[1] if game.round.highest_bid else 0
@@ -30,9 +30,9 @@ def finish_round(game: FiveHundredGame) -> FiveHundredGame:
 
     game_summary_updated = {seat: game.summary[seat] + seat_points[seat] for seat in seat_points.keys()}
 
-    first_seat_updated = game.round.first_seat.next()
+    first_seat_updated = game.round.first_seat.next(game.taken_seats)
 
-    round_updated = FiveHundredRound.create(game.round.round_number + 1, first_seat_updated)
+    round_updated = FiveHundredRound.create(game.round.round_number + 1, first_seat_updated, game.taken_seats)
 
     return replace(
         game,

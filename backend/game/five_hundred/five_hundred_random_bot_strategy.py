@@ -6,7 +6,8 @@ from ..bot_strategy_kind import BotStrategyKind
 from ..common.bot_strategy import BotStrategy
 from ..common.game_command import GameCommand
 from ..common.game_state import GameState
-from .domain.constants import BID_STEP, MAX_BID, MIN_BID, NOT_ALLOWED_TO_BID_THRESHOLD
+from .logic.helpers import has_marriage_in_hand
+from .domain.constants import BID_STEP, MAX_BID, NOT_ALLOWED_TO_BID_THRESHOLD
 from .domain.five_hundred_command import (
     MakeBidCommand,
     PassCardsCommand,
@@ -27,14 +28,21 @@ class FiveHundredRandomBotStrategy(BotStrategy):
             )
         match game_state.round.phase:
             case FiveHundredPhase.BIDDING:
-                highest_bid = game_state.round.highest_bid[1] if game_state.round.highest_bid else MIN_BID
+                highest_bid = (
+                    game_state.round.highest_bid[1] if game_state.round.highest_bid else game_state.game_config.min_bid
+                )
                 passing_probability = highest_bid / MAX_BID + 0.3
 
                 if game_state.summary[game_state.active_seat] >= NOT_ALLOWED_TO_BID_THRESHOLD:
                     return MakeBidCommand(bid=-1)
                 if random.random() < passing_probability:
                     return MakeBidCommand(bid=-1)
-                return MakeBidCommand(bid=random.choice(range(highest_bid, MAX_BID + 1, BID_STEP)))
+                bid = random.choice(range(highest_bid, MAX_BID + 1, BID_STEP))
+                if bid > game_state.game_config.max_bid_no_marriage and not has_marriage_in_hand(
+                    game_state.active_seats_info.hand
+                ):
+                    return MakeBidCommand(bid=-1)
+                return MakeBidCommand(bid=bid)
 
             case FiveHundredPhase.FORMING_HANDS:
                 active_seats_cards = list(game_state.active_seats_info.hand.cards)

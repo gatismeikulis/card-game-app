@@ -3,9 +3,9 @@ from dataclasses import dataclass
 from typing import ClassVar, Literal, Any, Self, override
 
 from ...common.game_event import GameEvent
+from ...common.seat import Seat
 from .five_hundred_deck import FiveHundredDeck
 from .five_hundred_card import FiveHundredCard
-from .five_hundred_seat import FiveHundredSeat
 
 
 @dataclass(frozen=True, slots=True)
@@ -32,7 +32,7 @@ class DeckShuffledEvent(GameEvent):
 class BidMadeEvent(GameEvent):
     type: ClassVar[Literal["bid_made"]] = "bid_made"
     bid: int
-    made_by: FiveHundredSeat
+    made_by: Seat
 
     @override
     def to_dict(self) -> dict[str, Any]:
@@ -47,7 +47,7 @@ class BidMadeEvent(GameEvent):
     def from_dict(cls, data: dict[str, Any]) -> Self:
         return cls(
             bid=data["bid"],
-            made_by=FiveHundredSeat.from_dict(data["made_by"]),
+            made_by=Seat.from_dict(data["made_by"]),
         )
 
 
@@ -55,7 +55,7 @@ class BidMadeEvent(GameEvent):
 class BiddingFinishedEvent(GameEvent):
     type: ClassVar[Literal["bidding_finished"]] = "bidding_finished"
     bid: int | None
-    made_by: FiveHundredSeat | None
+    made_by: Seat | None
 
     @override
     def to_dict(self) -> dict[str, Any]:
@@ -66,7 +66,7 @@ class BiddingFinishedEvent(GameEvent):
     def from_dict(cls, data: dict[str, Any]) -> Self:
         return cls(
             bid=data["bid"],
-            made_by=FiveHundredSeat.from_dict(data["made_by"]),
+            made_by=Seat.from_dict(data["made_by"]),
         )
 
 
@@ -111,7 +111,7 @@ class CardsPassedEvent(GameEvent):
 class CardPlayedEvent(GameEvent):
     type: ClassVar[Literal["card_played"]] = "card_played"
     card: FiveHundredCard
-    played_by: FiveHundredSeat
+    played_by: Seat
 
     @override
     def to_dict(self) -> dict[str, Any]:
@@ -126,7 +126,7 @@ class CardPlayedEvent(GameEvent):
     def from_dict(cls, data: dict[str, Any]) -> Self:
         return cls(
             card=FiveHundredCard.from_dict(data["card"]),
-            played_by=FiveHundredSeat.from_dict(data["played_by"]),
+            played_by=Seat.from_dict(data["played_by"]),
         )
 
 
@@ -134,7 +134,7 @@ class CardPlayedEvent(GameEvent):
 class MarriagePointsAddedEvent(GameEvent):
     type: ClassVar[Literal["marriage_points_added"]] = "marriage_points_added"
     points: int
-    added_to: FiveHundredSeat
+    added_to: Seat
 
     @override
     def to_dict(self) -> dict[str, Any]:
@@ -149,14 +149,14 @@ class MarriagePointsAddedEvent(GameEvent):
     def from_dict(cls, data: dict[str, Any]) -> Self:
         return cls(
             points=data["points"],
-            added_to=FiveHundredSeat.from_dict(data["added_to"]),
+            added_to=Seat.from_dict(data["added_to"]),
         )
 
 
 @dataclass(frozen=True, slots=True)
 class TrickTakenEvent(GameEvent):
     type: ClassVar[Literal["trick_taken"]] = "trick_taken"
-    taken_by: FiveHundredSeat
+    taken_by: Seat
     cards: Sequence[FiveHundredCard]
 
     @override
@@ -171,7 +171,7 @@ class TrickTakenEvent(GameEvent):
     @override
     def from_dict(cls, data: dict[str, Any]) -> Self:
         return cls(
-            taken_by=FiveHundredSeat.from_dict(data["taken_by"]),
+            taken_by=Seat.from_dict(data["taken_by"]),
             cards=[FiveHundredCard.from_dict(card_data) for card_data in data["cards"]],
         )
 

@@ -31,8 +31,8 @@ class GameTableDeserializer:
 
     @staticmethod
     def _deserialize_config(data: dict[str, Any]) -> GameTableConfig:
-        game_config = get_game_config_parser(GameName(data["game_name"])).from_dict(data["game_config"])
-        table_config = get_table_config_parser(GameName(data["game_name"])).from_dict(data["table_config"])
+        game_config = get_game_config_parser(GameName(data["game_name"]))(data["game_config"])
+        table_config = get_table_config_parser(GameName(data["game_name"]))(data["table_config"])
         return GameTableConfig(GameName(data["game_name"]), game_config, table_config)
 
     @staticmethod

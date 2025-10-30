@@ -69,6 +69,10 @@ class GameTable:
     def status(self) -> TableStatus:
         return self._status
 
+    @property
+    def taken_seat_numbers(self) -> frozenset[SeatNumber]:
+        return frozenset({player.seat_number for player in self._players})
+
     # regular turn is a turn taken by a human player by providing a command
     def take_regular_turn(self, user_id: int, command: GameCommand) -> Sequence[GameEvent]:
         self._validate_game_status_for_taking_turn()
@@ -123,7 +127,7 @@ class GameTable:
             raise GameTableRulesException(
                 reason="invalid_table_status", detail="Could not add player: game is already started/ended"
             )
-        if len(self._players) >= self._config.game_config.max_seats:
+        if len(self._players) >= self._config.table_config.max_seats:
             raise GameTableRulesException(reason="table_full", detail="Could not add player: table is full")
         if user_id is not None and user_id in [player.user_id for player in self._players]:
             raise GameTableRulesException(
@@ -180,11 +184,11 @@ class GameTable:
             raise GameTableRulesException(
                 reason="invalid_table_status", detail="Could not start game: game is already started/ended"
             )
-        if len(self._players) < self._config.game_config.min_seats:
+        if len(self._players) < self._config.table_config.min_seats:
             raise GameTableRulesException(
                 reason="not_enough_players", detail="Could not start game: not enough players to start the game"
             )
-        game_state, events = self._engine.start_game()
+        game_state, events = self._engine.start_game(self._config.game_config, self.taken_seat_numbers)
         self._game_state = game_state
         self._status = TableStatus.IN_PROGRESS
         return events
@@ -199,7 +203,7 @@ class GameTable:
     # def abort_game(self, caused_by_user_id: int) -> None: ...
 
     def restore_game_state(self, events: Sequence[GameEvent]) -> None:
-        restored_game_state = self._engine.restore_game_state(events)
+        restored_game_state = self._engine.restore_game_state(events, self._config.game_config, self.taken_seat_numbers)
         self._game_state = restored_game_state
         return None
 

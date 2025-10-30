@@ -23,8 +23,8 @@ class TestGameTableSerialization(TestCase):
         # Arrange - Create and start game
         config = GameTableConfig(
             game_name=GameName.FIVE_HUNDRED,
-            game_config=FiveHundredGameConfig(max_seats=3, min_seats=3),
-            table_config=FiveHundredTableConfig(automatic_start=True, bots_allowed=True),
+            game_config=FiveHundredGameConfig(max_rounds=100, max_bid_no_marriage=120, min_bid=60),
+            table_config=FiveHundredTableConfig(automatic_start=True, bots_allowed=True, min_seats=3, max_seats=3),
         )
         engine = get_game_engine(GameName.FIVE_HUNDRED)
         original_table = GameTable(table_id="test-table-id", config=config, engine=engine, owner_id=1)

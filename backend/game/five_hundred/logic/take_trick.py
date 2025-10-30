@@ -1,11 +1,11 @@
 from dataclasses import replace
 
+from ...common.seat import Seat
 from ..domain.five_hundred_card import FiveHundredCard
 from ..domain.five_hundred_game import FiveHundredGame
-from ..domain.five_hundred_seat import FiveHundredSeat
 
 
-def take_trick(game: FiveHundredGame, taken_by: FiveHundredSeat) -> FiveHundredGame:
+def take_trick(game: FiveHundredGame, taken_by: Seat) -> FiveHundredGame:
     trick_cards = [card for card in game.round.cards_on_board.values() if card is not None]
     trick_points = sum([card.points.value for card in trick_cards])
 
@@ -19,9 +19,7 @@ def take_trick(game: FiveHundredGame, taken_by: FiveHundredSeat) -> FiveHundredG
         trick_count=trick_count_updated,
     )
 
-    cards_on_board_updated: dict[FiveHundredSeat, FiveHundredCard | None] = dict.fromkeys(
-        game.round.cards_on_board, None
-    )
+    cards_on_board_updated: dict[Seat, FiveHundredCard | None] = dict.fromkeys(game.round.cards_on_board, None)
 
     seat_infos_updated = dict(game.round.seat_infos) | {taken_by: trick_winning_seats_info_updated}
 

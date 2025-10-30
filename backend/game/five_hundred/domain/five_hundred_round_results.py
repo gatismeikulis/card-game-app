@@ -2,14 +2,14 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
-from .five_hundred_seat import FiveHundredSeat
+from ...common.seat import Seat
 
 
 @dataclass(frozen=True, slots=True)
 class FiveHundredRoundResults:
     round_number: int
-    bidding_results: tuple[FiveHundredSeat, int] | None
-    seat_points: Mapping[FiveHundredSeat, int]
+    bidding_results: tuple[Seat, int] | None
+    seat_points: Mapping[Seat, int]
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize to JSON-compatible dict"""
@@ -31,14 +31,12 @@ class FiveHundredRoundResults:
         bidding_results = None
         if data["bidding_results"]:
             bidding_results = (
-                FiveHundredSeat.from_dict(data["bidding_results"][0]),
+                Seat.from_dict(data["bidding_results"][0]),
                 data["bidding_results"][1],
             )
 
         return FiveHundredRoundResults(
             round_number=data["round_number"],
             bidding_results=bidding_results,
-            seat_points={
-                FiveHundredSeat.from_dict(int(seat_num)): points for seat_num, points in data["seat_points"].items()
-            },
+            seat_points={Seat.from_dict(int(seat_num)): points for seat_num, points in data["seat_points"].items()},
         )

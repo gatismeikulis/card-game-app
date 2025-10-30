@@ -16,7 +16,7 @@ class GameTableConfig:
 
     @property
     def possible_seat_numbers(self) -> Set[SeatNumber]:
-        return frozenset(range(1, self.game_config.max_seats + 1))
+        return frozenset(range(1, self.table_config.max_seats + 1))
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize to JSON-compatible dict"""

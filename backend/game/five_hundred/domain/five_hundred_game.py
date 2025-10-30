@@ -2,14 +2,16 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any, Self, override
 
+from ...common.game_config import GameConfig
+from ...common.seat import Seat
 from ...common.game_exception import GameEngineException
 from ...common.seat import SeatNumber
 from ...common.game_state import GameState
 from .constants import GAME_STARTING_POINTS
+from .five_hundred_game_config import FiveHundredGameConfig
 from .five_hundred_phase import FiveHundredPhase
 from .five_hundred_round import FiveHundredRound
 from .five_hundred_round_results import FiveHundredRoundResults
-from .five_hundred_seat import FiveHundredSeat
 from .five_hundred_seat_info import FiveHundredSeatInfo
 
 
@@ -17,28 +19,34 @@ from .five_hundred_seat_info import FiveHundredSeatInfo
 class FiveHundredGame(GameState):
     round: FiveHundredRound  # current round
     results: Sequence[FiveHundredRoundResults]  # round-by-round results
-    summary: Mapping[FiveHundredSeat, int]  # running game-points
-    active_seat: FiveHundredSeat
+    summary: Mapping[Seat, int]  # running game-points
+    active_seat: Seat
     is_finished: bool
+    game_config: FiveHundredGameConfig
+    taken_seats: frozenset[Seat]
 
     @override
     @classmethod
-    def init(cls) -> Self:
-        round = FiveHundredRound.create(1, FiveHundredSeat(1))
+    def init(cls, game_config: GameConfig, taken_seat_numbers: frozenset[SeatNumber]) -> Self:
+        if not isinstance(game_config, FiveHundredGameConfig):
+            raise GameEngineException(
+                detail=f"Could not start the game: expected FiveHundredGameConfig, got {type(game_config).__name__}"
+            )
+        taken_seats: frozenset[Seat] = frozenset(Seat(number) for number in taken_seat_numbers)
+
+        round = FiveHundredRound.create(1, Seat(min(taken_seat_numbers)), taken_seats)
         return cls(
             active_seat=round.first_seat,
             round=round,
             results=[],
-            summary={
-                FiveHundredSeat(1): GAME_STARTING_POINTS,
-                FiveHundredSeat(2): GAME_STARTING_POINTS,
-                FiveHundredSeat(3): GAME_STARTING_POINTS,
-            },
+            summary={seat: GAME_STARTING_POINTS for seat in taken_seats},
             is_finished=False,
+            game_config=game_config,
+            taken_seats=taken_seats,
         )
 
     @property
-    def winners(self) -> Sequence[FiveHundredSeat]:
+    def winners(self) -> Sequence[Seat]:
         if self.round.phase != FiveHundredPhase.GAME_FINISHED:
             raise GameEngineException(detail="Could not get winners: game has not ended yet")
         return [seat for seat, points in self.summary.items() if points <= 0]
@@ -64,6 +72,8 @@ class FiveHundredGame(GameState):
             "summary": {seat.to_dict(): points for seat, points in self.summary.items()},
             "active_seat": self.active_seat.to_dict(),
             "is_finished": self.is_finished,
+            "game_config": self.game_config.to_dict(),
+            "taken_seats": [seat.to_dict() for seat in self.taken_seats],
         }
 
     @override
@@ -73,9 +83,11 @@ class FiveHundredGame(GameState):
         return cls(
             round=FiveHundredRound.from_dict(data["round"]),
             results=[FiveHundredRoundResults.from_dict(result) for result in data["results"]],
-            summary={FiveHundredSeat.from_dict(int(seat)): points for seat, points in data["summary"].items()},
-            active_seat=FiveHundredSeat.from_dict(data["active_seat"]),
+            summary={Seat.from_dict(int(seat)): points for seat, points in data["summary"].items()},
+            active_seat=Seat.from_dict(data["active_seat"]),
             is_finished=data["is_finished"],
+            game_config=FiveHundredGameConfig.from_dict(data["game_config"]),
+            taken_seats=frozenset(Seat.from_dict(int(seat)) for seat in data["taken_seats"]),
         )
 
     @override
@@ -105,7 +117,6 @@ class FiveHundredGame(GameState):
                     for seat, info in self.round.seat_infos.items()
                 },
             },
-            "results": [result.to_dict() for result in self.results],
             "summary": {seat.to_dict(): points for seat, points in self.summary.items()},
             "active_seat": self.active_seat.to_dict(),
             "is_my_turn": self.active_seat.number == seat_number,

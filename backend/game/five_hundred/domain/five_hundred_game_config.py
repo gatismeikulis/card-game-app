@@ -1,25 +1,45 @@
 from dataclasses import dataclass
-from typing import Any, override
+from typing import Any, Self, override
 
+from ...common.game_exception import GameParsingException, GameRulesException
 from ...common.game_config import GameConfig
-from ...common.game_config_parser import GameConfigParser
 
 
 @dataclass(frozen=True, slots=True)
 class FiveHundredGameConfig(GameConfig):
-    min_seats: int
-    max_seats: int
+    max_rounds: int  # default = 100 (range: 20 - 500)
+    max_bid_no_marriage: int  # default = 120 (range: 120 - 200)
+    min_bid: int  # default = 60 (range: 60 - 120)
 
     @override
     def to_dict(self) -> dict[str, Any]:
         """Serialize to JSON-compatible dict"""
-        return {"min_seats": self.min_seats, "max_seats": self.max_seats}
+        return {
+            "max_rounds": self.max_rounds,
+            "max_bid_no_marriage": self.max_bid_no_marriage,
+            "min_bid": self.min_bid,
+        }
 
-
-class FiveHundredGameConfigParser(GameConfigParser):
     @override
-    def from_dict(self, raw_config: dict[str, Any]) -> GameConfig:
-        # TODO validate that max seats is not greater than min seats etc.
-        min_seats = raw_config.get("min_seats", 3)
-        max_seats = raw_config.get("max_seats", 3)
-        return FiveHundredGameConfig(min_seats=min_seats, max_seats=max_seats)
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Self:
+        try:
+            max_rounds = int(data.get("max_rounds", 100))
+            max_bid_no_marriage = int(data.get("max_bid_no_marriage", 120))
+            min_bid = int(data.get("min_bid", 60))
+        except Exception:
+            raise GameParsingException(
+                reason="config_parsing_error", detail=f"Could not create FiveHundredGameConfig from input: {data}"
+            )
+
+        if max_rounds < 20 or max_rounds > 500:
+            raise GameRulesException(detail="max_rounds setting must be between 20 and 500")
+        if max_bid_no_marriage < 120 or max_bid_no_marriage > 200:
+            raise GameRulesException(detail="max_bid_no_marriage setting must be between 120 and 200")
+        if min_bid < 60 or min_bid > 120:
+            raise GameRulesException(detail="min_bid setting must be between 60 and 120")
+        return cls(
+            max_rounds=max_rounds,
+            max_bid_no_marriage=max_bid_no_marriage,
+            min_bid=min_bid,
+        )

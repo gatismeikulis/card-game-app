@@ -2,59 +2,42 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
+from ...common.seat import Seat
 from ...common.card import Suit
 from ...common.hand import Hand
 from .five_hundred_card import FiveHundredCard
 from .five_hundred_phase import FiveHundredPhase
-from .five_hundred_seat import FiveHundredSeat
 from .five_hundred_seat_info import FiveHundredSeatInfo
 
 
 @dataclass(frozen=True, slots=True)
 class FiveHundredRound:
-    seat_infos: Mapping[FiveHundredSeat, FiveHundredSeatInfo]
-    cards_on_board: Mapping[FiveHundredSeat, FiveHundredCard | None]
+    seat_infos: Mapping[Seat, FiveHundredSeatInfo]
+    cards_on_board: Mapping[Seat, FiveHundredCard | None]
     prev_trick: Sequence[FiveHundredCard]  # just for UI
     cards_to_take: Sequence[FiveHundredCard]
     required_suit: Suit | None
     trump_suit: Suit | None
-    highest_bid: tuple[FiveHundredSeat, int] | None
+    highest_bid: tuple[Seat, int] | None
     phase: FiveHundredPhase
     round_number: int
-    first_seat: FiveHundredSeat  # seat which started this round
+    first_seat: Seat  # seat which started this round
     is_marriage_announced: bool
 
     @staticmethod
-    def create(round_number: int, first_seat: FiveHundredSeat) -> "FiveHundredRound":
-        seat_infos: Mapping[FiveHundredSeat, FiveHundredSeatInfo] = {
-            FiveHundredSeat(1): FiveHundredSeatInfo(
+    def create(round_number: int, first_seat: Seat, taken_seats: frozenset[Seat]) -> "FiveHundredRound":
+        seat_infos: Mapping[Seat, FiveHundredSeatInfo] = {
+            seat: FiveHundredSeatInfo(
                 hand=Hand(tuple()),
                 bid=0,
                 points=0,
                 trick_count=0,
                 marriage_points=[],
-            ),
-            FiveHundredSeat(2): FiveHundredSeatInfo(
-                hand=Hand(tuple()),
-                bid=0,
-                points=0,
-                trick_count=0,
-                marriage_points=[],
-            ),
-            FiveHundredSeat(3): FiveHundredSeatInfo(
-                hand=Hand(tuple()),
-                bid=0,
-                points=0,
-                trick_count=0,
-                marriage_points=[],
-            ),
+            )
+            for seat in taken_seats
         }
 
-        cards_on_board: Mapping[FiveHundredSeat, FiveHundredCard | None] = {
-            FiveHundredSeat(1): None,
-            FiveHundredSeat(2): None,
-            FiveHundredSeat(3): None,
-        }
+        cards_on_board: Mapping[Seat, FiveHundredCard | None] = {seat: None for seat in taken_seats}
 
         return FiveHundredRound(
             seat_infos=seat_infos,
@@ -97,11 +80,11 @@ class FiveHundredRound:
         """Reconstruct from JSON-compatible dict"""
         return FiveHundredRound(
             seat_infos={
-                FiveHundredSeat.from_dict(int(seat_num)): FiveHundredSeatInfo.from_dict(info)
+                Seat.from_dict(int(seat_num)): FiveHundredSeatInfo.from_dict(info)
                 for seat_num, info in data["seat_infos"].items()
             },
             cards_on_board={
-                FiveHundredSeat.from_dict(int(seat_num)): FiveHundredCard.from_dict(card) if card else None
+                Seat.from_dict(int(seat_num)): FiveHundredCard.from_dict(card) if card else None
                 for seat_num, card in data["cards_on_board"].items()
             },
             cards_to_take=[FiveHundredCard.from_dict(card) for card in data["cards_to_take"]],
@@ -109,13 +92,13 @@ class FiveHundredRound:
             required_suit=Suit.from_string(data["required_suit"]) if data["required_suit"] else None,
             trump_suit=Suit.from_string(data["trump_suit"]) if data["trump_suit"] else None,
             highest_bid=(
-                FiveHundredSeat.from_dict(data["highest_bid"][0]),
+                Seat.from_dict(data["highest_bid"][0]),
                 data["highest_bid"][1],
             )
             if data["highest_bid"]
             else None,
             phase=FiveHundredPhase(data["phase"]),
             round_number=data["round_number"],
-            first_seat=FiveHundredSeat.from_dict(data["first_seat"]),
+            first_seat=Seat.from_dict(data["first_seat"]),
             is_marriage_announced=data["is_marriage_announced"],
         )

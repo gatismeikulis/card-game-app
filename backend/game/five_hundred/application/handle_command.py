@@ -1,10 +1,10 @@
+from ..logic.helpers import has_marriage_in_hand
 from ...common.game_exception import GameRulesException
 from ..domain.constants import (
     BID_STEP,
     CARDS_IN_STARTING_HAND,
     CARDS_TO_TAKE,
     MAX_BID,
-    MIN_BID,
     NOT_ALLOWED_TO_BID_THRESHOLD,
 )
 from ..domain.five_hundred_deck import FiveHundredDeck
@@ -53,14 +53,19 @@ def handle_make_bid(game: FiveHundredGame, bid: int) -> FiveHundredEvent:
         raise GameRulesException(detail="Could not make bid: too many points to bid")
     if bid >= 0 and bid % BID_STEP != 0:
         raise GameRulesException(detail=f"Could not make bid: bid must be with a step of {BID_STEP}")
-    elif bid >= 0 and bid < MIN_BID:
-        raise GameRulesException(detail=f"Could not make bid: bid must be greater or equal to {MIN_BID}")
+    elif bid >= 0 and bid < game.game_config.min_bid:
+        raise GameRulesException(
+            detail=f"Could not make bid: bid must be greater or equal to {game.game_config.min_bid}"
+        )
     elif bid > MAX_BID:
         raise GameRulesException(detail=f"Could not make bid: bid is too high. Maximum bid is {MAX_BID}")
     elif bid >= 0 and game.round.highest_bid and bid <= game.round.highest_bid[1]:
         raise GameRulesException(
             detail=f"Could not make bid: bid must be greater than current highest bid ({game.round.highest_bid[1]})"
         )
+    elif bid >= 0 and bid > game.game_config.max_bid_no_marriage:
+        if not has_marriage_in_hand(game.active_seats_info.hand):
+            raise GameRulesException(detail="Could not make bid: bid is too high for hand without marriage")
 
     return BidMadeEvent(bid=bid, made_by=game.active_seat)
 

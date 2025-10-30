@@ -45,8 +45,8 @@ class GameTableManager:
         try:
             table_id = self._generate_table_id()
             game_name = GameName.from_str(raw_config["game_name"])
-            game_config = get_game_config_parser(game_name).from_dict(raw_config.get("game_config", {}))
-            table_config = get_table_config_parser(game_name).from_dict(raw_config.get("table_config", {}))
+            game_config = get_game_config_parser(game_name)(raw_config.get("game_config", {}))
+            table_config = get_table_config_parser(game_name)(raw_config.get("table_config", {}))
             config = GameTableConfig(game_name, game_config, table_config)
             engine = get_game_engine(config.game_name)
             table = GameTable(table_id=table_id, config=config, engine=engine, owner_id=owner_id)
@@ -106,6 +106,10 @@ class GameTableManager:
             bot_strategy_kind = BotStrategyKind.from_str(options["bot_strategy_kind"])
             preferred_seat_number = options.get("preferred_seat", None)
             table = self._game_table_repository.find_by_id(table_id)
+            if table.config.table_config.bots_allowed is False:
+                raise GameTableRulesException(
+                    reason="bots_not_allowed", detail="Could not add bot player: bots are not allowed at the table"
+                )
             self._validate_user_is_owner_of_table(table, iniated_by.pk)
             bot_strategy = get_bot_strategy(table.config.game_name, bot_strategy_kind)
             table.add_player(preferred_seat_number=preferred_seat_number, bot_strategy=bot_strategy)
