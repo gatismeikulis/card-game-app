@@ -8,26 +8,6 @@ from ..five_hundred_game_config import FiveHundredGameConfig
 from ..five_hundred_round import FiveHundredRound
 
 
-@pytest.fixture
-def sample_game_config() -> FiveHundredGameConfig:
-    return FiveHundredGameConfig(max_rounds=100, max_bid_no_marriage=120, min_bid=60)
-
-
-@pytest.fixture
-def sample_game(
-    sample_game_config: FiveHundredGameConfig, sample_seats: frozenset[Seat], sample_round: FiveHundredRound
-) -> FiveHundredGame:
-    return FiveHundredGame(
-        is_finished=False,
-        game_config=sample_game_config,
-        taken_seats=sample_seats,
-        round=sample_round,
-        results=[],
-        summary={seat: GAME_STARTING_POINTS for seat in sample_seats},
-        active_seat=sample_round.first_seat,
-    )
-
-
 def test_init_requires_game_specific_game_config(sample_seats: frozenset[Seat]):
     with pytest.raises(GameEngineException):
         _ = FiveHundredGame.init(

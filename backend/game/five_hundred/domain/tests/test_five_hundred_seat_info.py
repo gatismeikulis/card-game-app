@@ -14,16 +14,9 @@ Qs = FiveHundredCard(Suit.SPADE, Rank.QUEEN)
 
 
 @pytest.fixture
-def sample_hand() -> Hand[FiveHundredCard]:
-    # 5 cards without clubs and diamonds
-    cards = [Ah, Kh, Ts, Js, Qs]
-    return Hand[FiveHundredCard](tuple(cards))
-
-
-@pytest.fixture
-def sample_seat_info(sample_hand: Hand[FiveHundredCard]) -> FiveHundredSeatInfo:
+def sample_seat_info() -> FiveHundredSeatInfo:
     return FiveHundredSeatInfo(
-        hand=sample_hand,
+        hand=Hand[FiveHundredCard](tuple([Ah, Kh, Ts, Js, Qs])),
         bid=120,
         points=11,
         trick_count=2,

@@ -1,6 +1,10 @@
+from dataclasses import replace
+
+from ....common.card import Rank, Suit
+from ....common.seat import Seat
+from ..five_hundred_card import FiveHundredCard
 from ..five_hundred_round import FiveHundredRound
 from ..five_hundred_phase import FiveHundredPhase
-from ....common.seat import Seat
 
 
 def test_create_initializes_empty_round(sample_seats: frozenset[Seat]):
@@ -28,7 +32,8 @@ def test_create_initializes_empty_round(sample_seats: frozenset[Seat]):
 
 
 def test_cards_on_board_count(sample_round: FiveHundredRound):
-    assert sample_round.cards_on_board_count == 1
+    sample_round_updated = replace(sample_round, cards_on_board={Seat(1): FiveHundredCard(Suit.CLUB, Rank.ACE)})
+    assert sample_round_updated.cards_on_board_count == 1
 
 
 def test_to_dict_and_from_dict_roundtrip(sample_round: FiveHundredRound):

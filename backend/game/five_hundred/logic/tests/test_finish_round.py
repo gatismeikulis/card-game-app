@@ -46,15 +46,3 @@ def test_finish_round_scoring_logic(
 
     assert game.results[-1] == expected_round_result
     assert game.summary == {seat: expected_summary_per_seat_number[seat.number] for seat in sample_seat_infos.keys()}
-
-    # expected_results = [
-    #     FiveHundredRoundResults(
-    #         round_number=sample_game.round.round_number,
-    #         bidding_results=(sample_game.round.highest_bid[0], sample_game.round.highest_bid[1]),
-    #         seat_points=expected_results_per_seat_number,
-    #     )
-    # ]
-
-    # # check scoring outcomes (sign inverted because seat_points stored as negative)
-    # assert finished.results[-1].seat_points[seat1] == expected_winner_points
-    # assert finished.results[-1].seat_points[seat2] == expected_loser_points

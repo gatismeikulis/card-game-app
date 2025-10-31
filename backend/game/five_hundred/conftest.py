@@ -1,15 +1,15 @@
 import pytest
 
-from ....common.card import Rank, Suit
-from ....common.seat import Seat
-from ....common.hand import Hand
-from ...domain.five_hundred_card import FiveHundredCard
-from ...domain.five_hundred_seat_info import FiveHundredSeatInfo
-from ...domain.five_hundred_round import FiveHundredRound
-from ...domain.five_hundred_phase import FiveHundredPhase
-from ...domain.five_hundred_game import FiveHundredGame
-from ...domain.five_hundred_game_config import FiveHundredGameConfig
-from ...domain.constants import GAME_STARTING_POINTS
+from ..common.card import Rank, Suit
+from ..common.seat import Seat
+from ..common.hand import Hand
+from .domain.five_hundred_card import FiveHundredCard
+from .domain.five_hundred_seat_info import FiveHundredSeatInfo
+from .domain.five_hundred_round import FiveHundredRound
+from .domain.five_hundred_phase import FiveHundredPhase
+from .domain.five_hundred_game import FiveHundredGame
+from .domain.five_hundred_game_config import FiveHundredGameConfig
+from .domain.constants import GAME_STARTING_POINTS
 
 
 @pytest.fixture
@@ -55,7 +55,7 @@ def sample_round(sample_seat_infos: dict[Seat, FiveHundredSeatInfo]) -> FiveHund
         required_suit=None,
         trump_suit=None,
         highest_bid=(Seat(1), 100),
-        phase=FiveHundredPhase.PLAYING_CARDS,
+        phase=FiveHundredPhase.INITIALIZING,
         round_number=1,
         first_seat=Seat(1),
         is_marriage_announced=False,
@@ -63,13 +63,20 @@ def sample_round(sample_seat_infos: dict[Seat, FiveHundredSeatInfo]) -> FiveHund
 
 
 @pytest.fixture
-def sample_game(sample_seats: frozenset[Seat], sample_round: FiveHundredRound) -> FiveHundredGame:
+def sample_game_config() -> FiveHundredGameConfig:
+    return FiveHundredGameConfig(max_rounds=100, max_bid_no_marriage=120, min_bid=60)
+
+
+@pytest.fixture
+def sample_game(
+    sample_seats: frozenset[Seat], sample_round: FiveHundredRound, sample_game_config: FiveHundredGameConfig
+) -> FiveHundredGame:
     return FiveHundredGame(
         round=sample_round,
         results=[],
         summary={seat: GAME_STARTING_POINTS for seat in sample_seats},
         active_seat=sample_round.first_seat,
         is_finished=False,
-        game_config=FiveHundredGameConfig(max_rounds=100, max_bid_no_marriage=120, min_bid=60),
+        game_config=sample_game_config,
         taken_seats=sample_seats,
     )
