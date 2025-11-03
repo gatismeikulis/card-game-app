@@ -1,11 +1,13 @@
-from typing import override
+from typing import Callable, override
+from collections.abc import Sequence
 from django.db import transaction
 from django.db.models import QuerySet
 from django.utils import timezone
 from core.exceptions.not_exist_exception import NotExistException
 from core.exceptions.infrastructure_exception import InfrastructureException
-
+from game.common.game_event import GameEvent
 from ..models import (
+    GamePlayEvent,
     GameTableSnapshot,
     GameTablePlayer,
     TableConfig as TableConfigModel,
@@ -52,17 +54,48 @@ class GameTableRepository(IGameTableRepository):
 
         return game_table.id
 
-    @transaction.atomic
     @override
-    def update(self, game_table: GameTable) -> None:
+    @transaction.atomic
+    def modify_during_game_action(
+        self, table_id: str, modifier: Callable[[GameTable], Sequence[GameEvent]]
+    ) -> tuple[Sequence[GameEvent], GameTable]:
         try:
-            updated_rows = GameTableSnapshot.objects.filter(id=game_table.id).update(
-                game_name=game_table.config.game_name.value,
-                status=game_table.status.value,
-                owner_id=game_table.owner_id,
-                data=game_table.to_dict(),
-                updated_at=timezone.now(),
-            )
+            db_game_table = GameTableSnapshot.objects.select_for_update().get(id=table_id)
+            game_table = GameTableDeserializer.deserialize_table(db_game_table.data)
+
+            events = modifier(game_table)  # mutates game_table and returns sequence of game events
+
+            # appending events logic
+            rows = []
+            current_last_event_sequence_number = db_game_table.last_event_sequence_number or 0
+            running_last_event_sequence_number: int = current_last_event_sequence_number
+
+            for i, event in enumerate(events, start=current_last_event_sequence_number + 1):
+                rows.append(GamePlayEvent(game_table=db_game_table, sequence_number=i, data=event.to_dict()))
+                running_last_event_sequence_number = i
+
+            _ = GamePlayEvent.objects.bulk_create(rows)
+
+            db_game_table.data = game_table.to_dict()
+            db_game_table.status = game_table.status.value
+            db_game_table.updated_at = timezone.now()
+            db_game_table.last_event_sequence_number = running_last_event_sequence_number
+            db_game_table.save(update_fields=["data", "status", "updated_at", "last_event_sequence_number"])
+
+            return events, game_table
+
+        except GameTableSnapshot.DoesNotExist:
+            raise NotExistException(reason="game_table_not_exist")
+
+    @override
+    @transaction.atomic
+    def modify(self, table_id: str, modifier: Callable[[GameTable], None]) -> GameTable:
+        try:
+            db_game_table = GameTableSnapshot.objects.select_for_update().get(id=table_id)
+            game_table = GameTableDeserializer.deserialize_table(db_game_table.data)
+
+            modifier(game_table)  # mutates game_table
+
             # deletes all players from the table and reinserts new ones
             _ = GameTablePlayer.objects.filter(game_table_id=game_table.id).delete()
             for player in game_table.players:
@@ -73,27 +106,17 @@ class GameTableRepository(IGameTableRepository):
                     bot_strategy_kind=player.bot_strategy.kind.value if player.bot_strategy else None,
                 )
 
-            # Configs do not change during the game_table's life cycle, so we do not need to update them
+            # configs do not change during the game_table's life cycle, so we do not need to update them
 
-            if updated_rows != 1:
-                raise NotExistException(reason="game_table_not_exist")
+            db_game_table.data = game_table.to_dict()
+            db_game_table.status = game_table.status.value
+            db_game_table.updated_at = timezone.now()
+            db_game_table.save(update_fields=["data", "status", "updated_at"])
 
-        except Exception as e:
-            raise InfrastructureException(detail=f"Could not update game table: {e}") from e
+            return game_table
 
-    @override
-    def update_after_game_action(self, game_table: GameTable, last_event_sequence_number: int) -> None:
-        try:
-            updated_rows = GameTableSnapshot.objects.filter(id=game_table.id).update(
-                data=game_table.to_dict(),
-                status=game_table.status.value,
-                last_event_sequence_number=last_event_sequence_number,
-                updated_at=timezone.now(),
-            )
-            if updated_rows != 1:
-                raise NotExistException(reason="game_table_not_exist")
-        except Exception as e:
-            raise InfrastructureException(detail=f"Could not update game table after game action: {e}") from e
+        except GameTableSnapshot.DoesNotExist:
+            raise NotExistException(reason="game_table_not_exist")
 
     @override
     def delete(self, id: str) -> None:
@@ -102,8 +125,6 @@ class GameTableRepository(IGameTableRepository):
         except GameTableSnapshot.DoesNotExist:
             # table already deleted
             return None
-        except Exception as e:
-            raise InfrastructureException(detail=f"Could not delete game table: {e}") from e
 
     @override
     def find_by_id(self, id: str) -> GameTable:

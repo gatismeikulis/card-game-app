@@ -109,12 +109,12 @@ class GameTableViewSet(ViewSet):
         serializer = JoinGameTableRequestSerializer(data=request.data)
         _ = serializer.is_valid(raise_exception=True)
 
-        table_id = _table_manager.join_table(
+        table = _table_manager.join_table(
             table_id=pk,
             user=request.user,
             preferred_seat_number=serializer.validated_data["preferred_seat"],
         )
-        headers = {"Location": request.build_absolute_uri(f"{table_id}/")}
+        headers = {"Location": request.build_absolute_uri(f"{table.id}/")}
 
         return Response({}, status=status.HTTP_201_CREATED, headers=headers)
 
@@ -123,9 +123,9 @@ class GameTableViewSet(ViewSet):
         """
         POST /{table_id}/leave/
         """
-        _table_manager.leave_table(table_id=pk, user_id=request.user.pk)
+        _ = _table_manager.leave_table(table_id=pk, user_id=request.user.pk)
 
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response({}, status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=["post"], url_path="add-bot")
     def add_bot(self, request: Request, pk: str) -> Response:
@@ -138,7 +138,7 @@ class GameTableViewSet(ViewSet):
         """
         serializer = AddBotRequestSerializer(data=request.data)
         _ = serializer.is_valid(raise_exception=True)
-        _table_manager.add_bot_player(
+        _ = _table_manager.add_bot_player(
             table_id=pk,
             iniated_by=request.user,
             options=serializer.validated_data,
@@ -156,7 +156,7 @@ class GameTableViewSet(ViewSet):
         """
         serializer = RemoveBotRequestSerializer(data=request.data)
         _ = serializer.is_valid(raise_exception=True)
-        _table_manager.remove_bot_player(
+        _ = _table_manager.remove_bot_player(
             table_id=pk, iniated_by=request.user.pk, seat_number_to_remove=serializer.validated_data["seat_number"]
         )
 
@@ -167,7 +167,7 @@ class GameTableViewSet(ViewSet):
         """
         POST /{table_id}/start-game/
         """
-        _table_manager.start_game(table_id=pk, iniated_by=request.user.pk)
+        _ = _table_manager.start_game(table_id=pk, iniated_by=request.user.pk)
 
         return Response({}, status=status.HTTP_200_OK)
 
@@ -183,7 +183,9 @@ class GameTableViewSet(ViewSet):
         serializer = TakeRegularTurnRequestSerializer(data=request.data)
         _ = serializer.is_valid(raise_exception=True)
 
-        _table_manager.take_regular_turn(table_id=pk, user_id=request.user.pk, raw_command=serializer.validated_data)
+        _ = _table_manager.take_regular_turn(
+            table_id=pk, user_id=request.user.pk, raw_command=serializer.validated_data
+        )
 
         return Response({}, status=status.HTTP_200_OK)
 
@@ -192,7 +194,7 @@ class GameTableViewSet(ViewSet):
         """
         POST /{table_id}/take-automatic-turn/
         """
-        _table_manager.take_automatic_turn(table_id=pk, iniated_by=request.user.pk)
+        _ = _table_manager.take_automatic_turn(table_id=pk, initiated_by=request.user.pk)
 
         return Response({}, status=status.HTTP_200_OK)
 

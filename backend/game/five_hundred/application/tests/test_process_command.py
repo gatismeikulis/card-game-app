@@ -11,7 +11,6 @@ from ...domain.five_hundred_event import (
 from .. import process_command as process_command_module
 
 
-
 def test_process_command_runs_until_no_more_events(mocker: pytest_mock.MockerFixture, sample_game: FiveHundredGame):
     mock_handle = mocker.patch.object(process_command_module, "handle_command")
     mock_apply = mocker.patch.object(process_command_module, "apply_event")

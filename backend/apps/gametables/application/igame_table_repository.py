@@ -1,6 +1,8 @@
-from typing import Protocol
+from collections.abc import Sequence
+from typing import Callable, Protocol
 from django.db.models import QuerySet
 
+from game.common.game_event import GameEvent
 from ..models import GameTableSnapshot
 from ..domain.game_table import GameTable
 
@@ -14,7 +16,7 @@ class IGameTableRepository(Protocol):
         ...
 
     def find_by_id(self, id: str) -> GameTable:
-        """Get full table instance for manipulation by ID.
+        """Get full game table instance.
         Returns:
             GameTable
         """
@@ -27,12 +29,20 @@ class IGameTableRepository(Protocol):
         """
         ...
 
-    def update(self, game_table: GameTable) -> None:
-        """Update GameTableSnapshot and all related models"""
+    def modify_during_game_action(
+        self, table_id: str, modifier: Callable[[GameTable], Sequence[GameEvent]]
+    ) -> tuple[Sequence[GameEvent], GameTable]:
+        """Modify GameTableSnapshot and append emitted events
+        Returns:
+            Tuple of sequence of game events and the modified GameTable
+        """
         ...
 
-    def update_after_game_action(self, game_table: GameTable, last_event_sequence_number: int) -> None:
-        """Update only data, status and last_event_sequence_number fields of GameTableSnapshot without updating related models (configs, players, etc.)"""
+    def modify(self, table_id: str, modifier: Callable[[GameTable], None]) -> GameTable:
+        """Modify GameTableSnapshot and related models without appending events
+        Returns:
+            The modified GameTable
+        """
         ...
 
     def delete(self, id: str) -> None:

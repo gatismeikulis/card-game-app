@@ -1,7 +1,5 @@
 from collections.abc import Sequence
 from typing import override
-from django.db import transaction
-from django.db.models import Max
 
 from core.exceptions.not_exist_exception import NotExistException
 from core.exceptions.infrastructure_exception import InfrastructureException
@@ -13,29 +11,6 @@ from game.common.game_event import GameEvent
 
 
 class GamePlayEventRepository(IGamePlayEventRepository):
-    @transaction.atomic
-    @override
-    def append(self, table_id: str, game_events: Sequence[GameEvent]) -> int:
-        try:
-            snapshot = GameTableSnapshot.objects.get(pk=table_id)
-
-            max_seq = (
-                GamePlayEvent.objects.filter(game_table=snapshot).aggregate(max=Max("sequence_number"))["max"] or 0
-            )
-
-            rows = []
-            last_sequence_number = max_seq
-            for i, event in enumerate(game_events, start=max_seq + 1):
-                _ = rows.append(GamePlayEvent(game_table=snapshot, sequence_number=i, data=event.to_dict()))
-                last_sequence_number = i
-
-            _ = GamePlayEvent.objects.bulk_create(rows)
-            return last_sequence_number
-        except GameTableSnapshot.DoesNotExist:
-            raise NotExistException(reason="game_table_not_exist")
-        except Exception as e:
-            raise InfrastructureException(detail=f"Could not append game events: {e}") from e
-
     @override
     def find_many(
         self, table_id: str, start_inclusive: int | None = None, end_inclusive: int | None = None

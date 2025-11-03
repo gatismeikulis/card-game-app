@@ -73,17 +73,80 @@ class GameTable:
     def taken_seat_numbers(self) -> frozenset[SeatNumber]:
         return frozenset({player.seat_number for player in self._players})
 
+    def add_human_player(self, user_id: int, screen_name: str, preferred_seat_number: SeatNumber | None = None) -> None:
+        self._validate_status(acceptable_statuses={TableStatus.NOT_STARTED})
+        self._validate_has_free_seats()
+        self._validate_can_join_table(user_id)
+        seat_number = self._get_seat_number(preferred_seat_number)
+        player_id = "human-" + str(user_id)
+        player = Player(
+            player_id=player_id,
+            seat_number=seat_number,
+            screen_name=screen_name,
+            bot_strategy=None,
+            user_id=user_id,
+        )
+        self._players.append(player)
+
+    def add_bot_player(
+        self, bot_strategy: BotStrategy, initiated_by: int, preferred_seat_number: SeatNumber | None = None
+    ) -> None:
+        self._validate_status(acceptable_statuses={TableStatus.NOT_STARTED})
+        self._validate_has_free_seats()
+        self._validate_is_owner(initiated_by)
+        self._validate_bots_allowed()
+        seat_number = self._get_seat_number(preferred_seat_number)
+        player_id = self._generate_bot_player_id()
+        player = Player(
+            player_id=player_id,
+            seat_number=seat_number,
+            screen_name=f"bot_{seat_number}",
+            bot_strategy=bot_strategy,
+        )
+        self._players.append(player)
+
+    def remove_human_player(self, user_id: int) -> None:
+        self._validate_status(acceptable_statuses={TableStatus.NOT_STARTED})
+        self._validate_is_player(user_id)
+        to_remove = next((player for player in self._players if player.user_id == user_id), None)
+        if to_remove is None:
+            raise GameTableInternalException(
+                reason="player_not_found", detail="Could not remove player: player not found"
+            )
+        self._players.remove(to_remove)
+
+    def remove_bot_player(self, seat_number: SeatNumber, initiated_by: int) -> None:
+        self._validate_status(acceptable_statuses={TableStatus.NOT_STARTED})
+        self._validate_is_owner(initiated_by)
+        to_remove = next((player for player in self._players if player.seat_number == seat_number), None)
+        if to_remove is None:
+            raise GameTableRulesException(
+                reason="bot_player_not_found", detail="Could not remove bot player: bot player not found"
+            )
+        self._players.remove(to_remove)
+
+    def start_game(self, initiated_by: int) -> Sequence[GameEvent]:
+        # TODO: maybe check if all players have agreed to start according to table config
+        self._validate_status(acceptable_statuses={TableStatus.NOT_STARTED})
+        self._validate_is_owner(initiated_by)
+        self._validate_has_enough_players()
+        game_state, events = self._engine.start_game(self._config.game_config, self.taken_seat_numbers)
+        self._game_state = game_state
+        self._status = TableStatus.IN_PROGRESS
+        return events
+
     # regular turn is a turn taken by a human player by providing a command
     def take_regular_turn(self, user_id: int, command: GameCommand) -> Sequence[GameEvent]:
-        self._validate_game_status_for_taking_turn()
+        self._validate_status(acceptable_statuses={TableStatus.IN_PROGRESS})
         if self.active_player.user_id != user_id:
             raise GameTableRulesException(reason="not_player_turn", detail="Could not take turn: not the player's turn")
         return self._take_turn(self.game_state, command)
 
     # automatic turn is a turn taken by a bot player by producing a command
-    # this may be async because it may take time to create a command using bot strategy
-    def take_automatic_turn(self) -> Sequence[GameEvent]:
-        self._validate_game_status_for_taking_turn()
+    # it may take some time to create a command using bot strategy if some complicated algorithm or external service is used
+    def take_automatic_turn(self, initiated_by: int) -> Sequence[GameEvent]:
+        self._validate_status(acceptable_statuses={TableStatus.IN_PROGRESS})
+        self._validate_is_player(initiated_by)
         active_player = self.active_player
         if not active_player.is_bot:
             raise GameTableRulesException(reason="not_bot_turn", detail="Could not take turn: not a bot's turn")
@@ -97,12 +160,6 @@ class GameTable:
         command = bot_strategy.create_command(game_state)
         return self._take_turn(game_state, command)
 
-    def _validate_game_status_for_taking_turn(self) -> None:
-        if self.status != TableStatus.IN_PROGRESS:
-            raise GameTableRulesException(
-                reason="invalid_table_status", detail="Could not take turn: game is not started or is already ended"
-            )
-
     def _take_turn(self, game_state: GameState, command: GameCommand) -> Sequence[GameEvent]:
         game_state_updated, events = self._engine.process_command(game_state, command)
         if game_state_updated.is_finished:
@@ -110,29 +167,30 @@ class GameTable:
         self._game_state = game_state_updated
         return events
 
+    # can cancel only not-finished/aborted games
+    def cancel_game(self, initiated_by: int) -> None:
+        self._validate_status(unacceptable_statuses={TableStatus.FINISHED, TableStatus.ABORTED})
+        self._validate_is_owner(initiated_by)
+        self._status = TableStatus.CANCELLED
+
+    # this should mark game as aborted (because player left or was kicked by owner for some reason) and link the user_id who to blame for this
+    # so that user's reputation can be affected etc... just a reminder for later when these features come in
+    # def abort_game(self, caused_by_user_id: int) -> None: ...
+
+    def restore_game_state(self, events: Sequence[GameEvent]) -> None:
+        restored_game_state = self._engine.restore_game_state(events, self._config.game_config, self.taken_seat_numbers)
+        self._game_state = restored_game_state
+        return None
+
+    ###  Helper methods ###
+
     def _generate_seat_number(self, choices: set[SeatNumber]) -> SeatNumber:
         return random.choice(list(choices))
 
     def _generate_bot_player_id(self) -> str:
         return "bot-" + str(uuid.uuid4())
 
-    def add_player(
-        self,
-        user_id: int | None = None,
-        screen_name: str | None = None,
-        preferred_seat_number: SeatNumber | None = None,
-        bot_strategy: BotStrategy | None = None,
-    ) -> None:
-        if self.status != TableStatus.NOT_STARTED:
-            raise GameTableRulesException(
-                reason="invalid_table_status", detail="Could not add player: game is already started/ended"
-            )
-        if len(self._players) >= self._config.table_config.max_seats:
-            raise GameTableRulesException(reason="table_full", detail="Could not add player: table is full")
-        if user_id is not None and user_id in [player.user_id for player in self._players]:
-            raise GameTableRulesException(
-                reason="player_already_exists", detail="Could not add player: user already exists at the table"
-            )
+    def _get_seat_number(self, preferred_seat_number: SeatNumber | None = None) -> SeatNumber:
         taken_seat_numbers = {player.seat_number for player in self.players}
         available_seat_numbers = set(self._config.possible_seat_numbers) - taken_seat_numbers
         # if seat number is not provided, choose random one. if it is provided, use it if it is available
@@ -143,69 +201,57 @@ class GameTable:
                     detail=f"Could not add player: preferred seat number {preferred_seat_number} is not available at the table",
                 )
             available_seat_numbers = {preferred_seat_number}
-        seat_number = self._generate_seat_number(available_seat_numbers)
-        player_id = "human-" + str(user_id) if bot_strategy is None else self._generate_bot_player_id()
-        player = Player(
-            player_id=player_id,
-            seat_number=seat_number,
-            screen_name=screen_name if screen_name is not None else f"bot_{seat_number}",
-            bot_strategy=bot_strategy,
-            user_id=user_id,
-        )
-        self._players.append(player)
+        return self._generate_seat_number(available_seat_numbers)
 
-    def remove_player(self, user_id: int | None = None, seat_number: SeatNumber | None = None) -> None:
-        if self.status != TableStatus.NOT_STARTED:
-            raise GameTableRulesException(
-                reason="invalid_table_status", detail="Could not remove player: game is already started/ended"
-            )
-        if user_id is not None:
-            to_remove = next((player for player in self._players if player.user_id == user_id), None)
-        elif seat_number is not None:
-            to_remove = next(
-                (player for player in self._players if player.seat_number == seat_number),
-                None,
-            )
-        else:
-            raise GameTableRulesException(
-                reason="player_not_found",
-                detail="Could not remove player: either user-id or seat number must be provided",
-            )
-        if to_remove is None:
-            raise GameTableInternalException(
-                reason="player_not_found", detail="Could not remove player: player not found"
-            )
-        self._players.remove(to_remove)
-        return None
+    ###  Validation methods ###
 
-    def start_game(self) -> Sequence[GameEvent]:
-        # TODO: maybe check if all players have agreed to start
-        if self.status != TableStatus.NOT_STARTED:
+    def _validate_bots_allowed(self) -> None:
+        if not self._config.table_config.bots_allowed:
             raise GameTableRulesException(
-                reason="invalid_table_status", detail="Could not start game: game is already started/ended"
+                reason="bots_not_allowed", detail="Could not add bot player: bots are not allowed at the table"
             )
+
+    def _validate_can_join_table(self, user_id: int) -> None:
+        if user_id in [player.user_id for player in self._players]:
+            raise GameTableRulesException(
+                reason="player_already_exists", detail="Could not add player: user already exists at the table"
+            )
+
+    def _validate_is_owner(self, user_id: int) -> None:
+        if self.owner_id != user_id:
+            raise GameTableRulesException(
+                reason="not_table_owner", detail="Could not perform action: not the table owner"
+            )
+
+    def _validate_is_player(self, user_id: int) -> None:
+        if user_id not in [player.user_id for player in self._players]:
+            raise GameTableRulesException(
+                reason="not_player_of_table", detail="Could not perform action: not a player of the table"
+            )
+
+    def _validate_status(
+        self, acceptable_statuses: set[TableStatus] | None = None, unacceptable_statuses: set[TableStatus] | None = None
+    ) -> None:
+        if acceptable_statuses is not None and self.status not in acceptable_statuses:
+            raise GameTableRulesException(
+                reason="invalid_table_status",
+                detail="Could not perform action: table is not in the one of the correct statuses",
+            )
+        if unacceptable_statuses is not None and self.status in unacceptable_statuses:
+            raise GameTableRulesException(
+                reason="invalid_table_status",
+                detail="Could not perform action: table is in the one of the unacceptable statuses",
+            )
+
+    def _validate_has_free_seats(self) -> None:
+        if len(self._players) >= self._config.table_config.max_seats:
+            raise GameTableRulesException(reason="table_full", detail="Could not add player: table is full")
+
+    def _validate_has_enough_players(self) -> None:
         if len(self._players) < self._config.table_config.min_seats:
             raise GameTableRulesException(
                 reason="not_enough_players", detail="Could not start game: not enough players to start the game"
             )
-        game_state, events = self._engine.start_game(self._config.game_config, self.taken_seat_numbers)
-        self._game_state = game_state
-        self._status = TableStatus.IN_PROGRESS
-        return events
-
-    # can cancel only not-finished/aborted games
-    def cancel_game(self) -> None:
-        if self.status != TableStatus.FINISHED and self.status != TableStatus.ABORTED:
-            self._status = TableStatus.CANCELLED
-
-    # this should mark game as aborted (because player left or was kicked by owner for some reason) and link the user_id who to blame for this
-    # so that user's reputation can be affected etc... just a reminder for later when these features come in
-    # def abort_game(self, caused_by_user_id: int) -> None: ...
-
-    def restore_game_state(self, events: Sequence[GameEvent]) -> None:
-        restored_game_state = self._engine.restore_game_state(events, self._config.game_config, self.taken_seat_numbers)
-        self._game_state = restored_game_state
-        return None
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize to JSON-compatible dict"""
