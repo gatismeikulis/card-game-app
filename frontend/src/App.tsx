@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { refreshAccessToken, getAccessToken } from "./auth";
 import { Tables } from "./features/Tables";
 import { TableDetail } from "./features/TableDetail";
+import { TableWebSocket } from "./features/TableWebSocket";
 import { UserProvider } from "./contexts/UserContext";
 import { Loader2 } from "lucide-react";
 
@@ -57,7 +58,13 @@ export default function App() {
   }
 
   // Render the appropriate component based on the current path
-  if (location.pathname.startsWith("/tables/")) {
+  if (location.pathname.startsWith("/ws/tables/")) {
+    return (
+      <UserProvider>
+        <TableWebSocket />
+      </UserProvider>
+    );
+  } else if (location.pathname.startsWith("/tables/")) {
     return (
       <UserProvider>
         <TableDetail />

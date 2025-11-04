@@ -15,6 +15,7 @@ const router = createBrowserRouter([
   { path: "/", element: <App /> },
   { path: "/tables", element: <App /> },
   { path: "/tables/:id", element: <App /> },
+  { path: "/ws/tables/:id", element: <App /> },
 ]);
 
 export function AppRouter() {
