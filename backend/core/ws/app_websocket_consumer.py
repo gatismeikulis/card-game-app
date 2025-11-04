@@ -18,6 +18,7 @@ class AppWebSocketConsumer(AsyncJsonWebsocketConsumer):
             await self.close(code=4003, reason=auth_error)
             return
 
+        # user still can be AnonymousUser
         self.user: User = user
         await self.accept()
 

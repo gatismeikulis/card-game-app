@@ -19,13 +19,12 @@ class GameTableWebSocketConsumer(AppWebSocketConsumer):
     @override
     async def receive_json(self, content: dict[str, Any], **kwargs):
         """Handle parsed JSON messages"""
-
+        
         await self.channel_layer.group_send(
-            self.table_group_name, {"type": "table.action", "message": f"test-{content}"}
+            self.table_group_name, {"type": "table.action", "message": f"from {self.user.username}: {content}"}
         )
 
     async def table_action(self, event: dict[str, Any]):
         """Handle group messages"""
         message = event["message"]
-        # Use send_json instead of manual json.dumps
-        await self.send_json({"message": f"From ${self.user.username}: {message}"})
+        await self.send_json({"message": message})
