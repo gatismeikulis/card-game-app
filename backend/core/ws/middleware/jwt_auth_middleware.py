@@ -1,3 +1,4 @@
+from typing import override
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 from rest_framework_simplejwt.tokens import AccessToken
@@ -27,6 +28,7 @@ class JWTAuthMiddleware(BaseMiddleware):
     Token must be provided as query parameter: ?token=<token>
     """
 
+    @override
     async def __call__(self, scope, receive, send):
         token_string = None
 

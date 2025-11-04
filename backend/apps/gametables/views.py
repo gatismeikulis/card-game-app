@@ -7,8 +7,6 @@ from rest_framework.request import Request
 from rest_framework.permissions import AllowAny, BasePermission, IsAuthenticated
 from rest_framework.pagination import LimitOffsetPagination
 
-from .infra.game_play_event_repository import GamePlayEventRepository
-from .infra.game_table_repository import GameTableRepository
 from .serializers import (
     AddBotRequestSerializer,
     CreateGameTableRequestSerializer,
@@ -19,15 +17,7 @@ from .serializers import (
     TableListRequestQuerySerializer,
     TakeRegularTurnRequestSerializer,
 )
-from .application.game_table_manager import GameTableManager
-
-
-# Creating singletons at module load
-_game_table_repository = GameTableRepository()
-_game_play_event_repository = GamePlayEventRepository()
-_table_manager = GameTableManager(
-    game_table_repository=_game_table_repository, game_play_event_repository=_game_play_event_repository
-)
+from .dependencies import game_table_repository, table_manager
 
 
 class GameTableViewSet(ViewSet):
@@ -48,7 +38,7 @@ class GameTableViewSet(ViewSet):
         request_serializer = TableListRequestQuerySerializer(data=request.query_params)
         _ = request_serializer.is_valid(raise_exception=True)
 
-        tables = _game_table_repository.find_many(filters=request_serializer.validated_data)
+        tables = game_table_repository.find_many(filters=request_serializer.validated_data)
 
         paginator = LimitOffsetPagination()
         page = paginator.paginate_queryset(tables, request)
@@ -67,7 +57,7 @@ class GameTableViewSet(ViewSet):
         serializer = CreateGameTableRequestSerializer(data=request.data)
         _ = serializer.is_valid(raise_exception=True)
 
-        table_id = _table_manager.add_table(
+        table_id = table_manager.add_table(
             raw_config=serializer.validated_data,
             owner_id=request.user.pk,
         )
@@ -79,14 +69,14 @@ class GameTableViewSet(ViewSet):
         """
         DELETE /{table_id}
         """
-        _table_manager.remove_table(table_id=pk, iniated_by=request.user.pk)
+        table_manager.remove_table(table_id=pk, iniated_by=request.user.pk)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def retrieve(self, request: Request, pk: str):
         """
         GET /{table_id}
         """
-        table = _table_manager.get_table(pk)
+        table = table_manager.get_table(pk)
         user_seat_number: int | None = None
         user_id: int | None = request.user.pk
 
@@ -109,7 +99,7 @@ class GameTableViewSet(ViewSet):
         serializer = JoinGameTableRequestSerializer(data=request.data)
         _ = serializer.is_valid(raise_exception=True)
 
-        table = _table_manager.join_table(
+        table = table_manager.join_table(
             table_id=pk,
             user=request.user,
             preferred_seat_number=serializer.validated_data["preferred_seat"],
@@ -123,7 +113,7 @@ class GameTableViewSet(ViewSet):
         """
         POST /{table_id}/leave/
         """
-        _ = _table_manager.leave_table(table_id=pk, user_id=request.user.pk)
+        _ = table_manager.leave_table(table_id=pk, user_id=request.user.pk)
 
         return Response({}, status=status.HTTP_204_NO_CONTENT)
 
@@ -138,7 +128,7 @@ class GameTableViewSet(ViewSet):
         """
         serializer = AddBotRequestSerializer(data=request.data)
         _ = serializer.is_valid(raise_exception=True)
-        _ = _table_manager.add_bot_player(
+        _ = table_manager.add_bot_player(
             table_id=pk,
             iniated_by=request.user,
             options=serializer.validated_data,
@@ -156,7 +146,7 @@ class GameTableViewSet(ViewSet):
         """
         serializer = RemoveBotRequestSerializer(data=request.data)
         _ = serializer.is_valid(raise_exception=True)
-        _ = _table_manager.remove_bot_player(
+        _ = table_manager.remove_bot_player(
             table_id=pk, iniated_by=request.user.pk, seat_number_to_remove=serializer.validated_data["seat_number"]
         )
 
@@ -167,7 +157,7 @@ class GameTableViewSet(ViewSet):
         """
         POST /{table_id}/start-game/
         """
-        _ = _table_manager.start_game(table_id=pk, iniated_by=request.user.pk)
+        _ = table_manager.start_game(table_id=pk, iniated_by=request.user.pk)
 
         return Response({}, status=status.HTTP_200_OK)
 
@@ -183,9 +173,7 @@ class GameTableViewSet(ViewSet):
         serializer = TakeRegularTurnRequestSerializer(data=request.data)
         _ = serializer.is_valid(raise_exception=True)
 
-        _ = _table_manager.take_regular_turn(
-            table_id=pk, user_id=request.user.pk, raw_command=serializer.validated_data
-        )
+        _ = table_manager.take_regular_turn(table_id=pk, user_id=request.user.pk, raw_command=serializer.validated_data)
 
         return Response({}, status=status.HTTP_200_OK)
 
@@ -194,7 +182,7 @@ class GameTableViewSet(ViewSet):
         """
         POST /{table_id}/take-automatic-turn/
         """
-        _ = _table_manager.take_automatic_turn(table_id=pk, initiated_by=request.user.pk)
+        _ = table_manager.take_automatic_turn(table_id=pk, initiated_by=request.user.pk)
 
         return Response({}, status=status.HTTP_200_OK)
 
@@ -206,7 +194,7 @@ class GameTableViewSet(ViewSet):
         serializer = HistoryRequestQuerySerializer(data=request.query_params)
         _ = serializer.is_valid(raise_exception=True)
 
-        table = _table_manager.get_table_from_past(table_id=pk, upto_event=serializer.validated_data["event"])
+        table = table_manager.get_table_from_past(table_id=pk, upto_event=serializer.validated_data["event"])
         table_dict = table.to_dict()  # TODO: NOT SAFE during in-progress tables, because contains private info...
 
         return Response(table_dict, status=status.HTTP_200_OK)
