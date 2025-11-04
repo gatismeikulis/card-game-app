@@ -4,6 +4,7 @@ from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from channels.middleware import BaseMiddleware
 from channels.db import database_sync_to_async
+from urllib.parse import parse_qs
 
 User = get_user_model()
 
@@ -23,24 +24,23 @@ def get_user_from_token(token_string: str):
 class JWTAuthMiddleware(BaseMiddleware):
     """
     Custom middleware to authenticate WebSocket connections using JWT tokens.
-    Token can be provided as auth header:
-    Authorization: Bearer <token>
+    Token must be provided as query parameter: ?token=<token>
     """
 
     async def __call__(self, scope, receive, send):
-        # Extract token from authorization header
-        headers = dict(scope.get("headers", []))
-
         token_string = None
 
-        auth_header = headers.get(b"authorization", b"").decode()
-        if auth_header.startswith("Bearer "):
-            token_string = auth_header.split("Bearer ")[1]
+        query_string = scope.get("query_string", b"").decode()
+        if query_string:
+            query_params = parse_qs(query_string)
+            token_list = query_params.get("token", [])
+            if token_list:
+                token_string = token_list[0]
 
-        # Authenticate user
         if token_string:
             try:
-                scope["user"] = await get_user_from_token(token_string)
+                user = await get_user_from_token(token_string)
+                scope["user"] = user
             except TokenError as e:
                 scope["auth_error"] = str(e)
         else:
