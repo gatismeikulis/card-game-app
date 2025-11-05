@@ -58,6 +58,13 @@ export function useGameActions({ sendMessage }: UseGameActionsProps) {
     [sendMessage]
   );
 
+  const giveUp = useCallback(() => {
+    sendMessage("TAKE_REGULAR_TURN", {
+      type: "give_up",
+      params: {},
+    });
+  }, [sendMessage]);
+
   return {
     join,
     leave,
@@ -67,6 +74,7 @@ export function useGameActions({ sendMessage }: UseGameActionsProps) {
     takeTurn,
     takeAutomaticTurn,
     passCards,
+    giveUp,
   };
 }
 

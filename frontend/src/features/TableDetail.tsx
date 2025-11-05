@@ -13,6 +13,7 @@ import { BotTurnButton } from "../components/BotTurnButton";
 import { TableHeader } from "../components/TableHeader";
 import { ErrorMessage } from "../components/ErrorMessage";
 import { PassCardsButton } from "../components/PassCardsButton";
+import { GiveUpButton } from "../components/GiveUpButton";
 import { Card, CardContent } from "../components/ui/card";
 import { useUserData } from "../contexts/UserContext";
 import { useTableWebSocket } from "../hooks/useTableWebSocket";
@@ -32,7 +33,11 @@ export function TableDetail() {
   const [tableData, setTableData] = useState<any>(null);
 
   // Initial HTTP fetch to get table state
-  const { data: initialData, isLoading, error } = useQuery({
+  const {
+    data: initialData,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["table", id],
     queryFn: () => apiFetch(`/api/v1/tables/${id}/`),
     enabled: !!id,
@@ -56,8 +61,12 @@ export function TableDetail() {
     }
   }, []);
 
-  const { connected: wsConnected, pending: wsPending, error: wsError, sendMessage } =
-    useTableWebSocket(id, !!initialData, handleWebSocketMessage);
+  const {
+    connected: wsConnected,
+    pending: wsPending,
+    error: wsError,
+    sendMessage,
+  } = useTableWebSocket(id, !!initialData, handleWebSocketMessage);
 
   // Game actions
   const {
@@ -69,6 +78,7 @@ export function TableDetail() {
     takeTurn,
     takeAutomaticTurn,
     passCards,
+    giveUp,
   } = useGameActions({ sendMessage });
 
   // Card selection
@@ -115,9 +125,7 @@ export function TableDetail() {
   const isGameFinished =
     tableData?.status === "FINISHED" || tableData?.game_state?.is_finished;
 
-  const currentUser = tableData.players?.find(
-    (p: any) => p.user_id === userId
-  );
+  const currentUser = tableData.players?.find((p: any) => p.user_id === userId);
   const currentUserSeat = currentUser?.seat_number;
   const currentPlayerSeatInfo = currentUserSeat
     ? tableData.game_state?.round?.seat_infos?.[currentUserSeat]
@@ -192,14 +200,21 @@ export function TableDetail() {
                 isPending={wsPending}
               />
 
+              {tableData.game_state?.round?.phase === "Forming Hands" &&
+                tableData.game_state?.is_my_turn && (
+                  <GiveUpButton onGiveUp={giveUp} isPending={wsPending} />
+                )}
+
               <GameBoard
                 players={processedPlayers}
                 currentUserSeat={currentUserSeat}
                 currentUserHand={playerHand}
-                selectedCards={[
-                  selectedCards.cardToNextSeat,
-                  selectedCards.cardToPrevSeat,
-                ].filter(Boolean) as string[]}
+                selectedCards={
+                  [
+                    selectedCards.cardToNextSeat,
+                    selectedCards.cardToPrevSeat,
+                  ].filter(Boolean) as string[]
+                }
                 hoveredCard={hoveredCard}
                 onCardClick={(card) =>
                   handleCardClick(

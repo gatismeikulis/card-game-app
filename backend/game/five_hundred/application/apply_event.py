@@ -45,7 +45,7 @@ def apply_event(game: FiveHundredGame, event: FiveHundredEvent) -> FiveHundredGa
             return add_marriage_points(game, points, added_to)
         case TrickTakenEvent(taken_by=taken_by):
             return take_trick(game, taken_by)
-        case RoundFinishedEvent():
-            return finish_round(game)
+        case RoundFinishedEvent(given_up=given_up):
+            return finish_round(game, has_declarer_given_up=given_up)
         case GameFinishedEvent():
             return finish_game(game)
