@@ -1,7 +1,8 @@
 import { useNavigate, useParams } from "react-router-dom";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { apiFetch } from "../api";
+import { getAccessToken } from "../auth";
 import { GameBoard } from "../components/GameBoard";
 import { BiddingPanel } from "../components/BiddingPanel";
 import { Button } from "../components/ui/button";
@@ -13,6 +14,8 @@ import {
 } from "../components/ui/card";
 import { useUserData } from "../contexts/UserContext";
 import { RefreshCw, LogOut, Play } from "lucide-react";
+
+const WS_BASE = (import.meta as any).env?.VITE_WS_BASE ?? "ws://localhost:8000";
 
 // Helper function to safely render any value
 const safeRender = (value: any): string => {
@@ -32,7 +35,6 @@ const safeRender = (value: any): string => {
 
 // Check if hand has a marriage (KQ of same suit)
 const checkForMarriage = (hand: string[] | number): boolean => {
-  // If hand is a number (for other players), we can't check for marriage
   if (
     typeof hand === "number" ||
     !hand ||
@@ -86,7 +88,7 @@ const renderSuitBadge = (value: any) => {
 export function TableDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
+  const { userId } = useUserData();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [selectedCards, setSelectedCards] = useState<{
     cardToNextSeat: string | null;
@@ -96,205 +98,173 @@ export function TableDetail() {
     cardToPrevSeat: null,
   });
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
+  const [tableData, setTableData] = useState<any>(null);
+  const [wsConnected, setWsConnected] = useState(false);
+  const [wsPending, setWsPending] = useState(false);
+  const wsRef = useRef<WebSocket | null>(null);
 
-  // Get current user data from context - MUST be called before any early returns
-  const { userId } = useUserData();
-
-  const { data, isLoading, error, refetch, isFetching } = useQuery({
+  // Initial HTTP fetch to get table state
+  const { data: initialData, isLoading, error } = useQuery({
     queryKey: ["table", id],
     queryFn: () => apiFetch(`/api/v1/tables/${id}/`),
     enabled: !!id,
-    staleTime: 0, // Always consider data stale
-    gcTime: 0, // Don't cache data at all
-    refetchOnWindowFocus: true, // Refetch when window gains focus
-    refetchOnMount: true, // Always refetch on mount
-    refetchInterval: (query) => {
-      // Poll every 1 second during active games for real-time updates
-      // Stop polling if game is finished or not started
-      const gameData = query.state.data as any;
-      if (!gameData) return 1000; // Poll every second while loading
-
-      const isActive = gameData.status === "in_progress" && gameData.game_state;
-      const isFinished =
-        gameData.status === "FINISHED" || gameData.game_state?.is_finished;
-
-      // Poll every 2 second during active gameplay for real-time updates
-      if (isActive && !isFinished) return 2000;
-
-      // Poll every 5 seconds while waiting for game to start
-      if (gameData.status === "not_started") return 5000;
-
-      // Stop polling for finished games
-      return false;
-    },
+    staleTime: 0,
+    gcTime: 0,
   });
 
-  const refresh = () => {
-    refetch();
-    setErrorMessage(null);
-  };
-
-  const join = useMutation({
-    mutationFn: (seatNumber: number | null) =>
-      apiFetch(`/api/v1/tables/${id}/join/`, {
-        method: "POST",
-        body: JSON.stringify({
-          preferred_seat: seatNumber ?? undefined,
-        }),
-      }),
-    onSuccess: () => {
-      refetch();
-      setErrorMessage(null);
-    },
-    onError: (error) => {
-      setErrorMessage(String(error));
-    },
-  });
-
-  const leave = useMutation({
-    mutationFn: () =>
-      apiFetch(`/api/v1/tables/${id}/leave/`, {
-        method: "POST",
-        body: JSON.stringify({}),
-      }),
-    onSuccess: () => {
-      refetch();
-      setErrorMessage(null);
-    },
-    onError: (error) => {
-      setErrorMessage(String(error));
-    },
-  });
-
-  const addBot = useMutation({
-    mutationFn: (seatNumber: number) =>
-      apiFetch(`/api/v1/tables/${id}/add-bot/`, {
-        method: "POST",
-        body: JSON.stringify({
-          bot_strategy_kind: "random",
-          preferred_seat: seatNumber,
-        }),
-      }),
-    onSuccess: () => {
-      refetch();
-      setErrorMessage(null);
-    },
-    onError: (error) => {
-      setErrorMessage(String(error));
-    },
-  });
-
-  const removeBot = useMutation({
-    mutationFn: (seatNumber: number) =>
-      apiFetch(`/api/v1/tables/${id}/remove-bot/`, {
-        method: "POST",
-        body: JSON.stringify({ seat_number: seatNumber }),
-      }),
-    onSuccess: () => {
-      refetch();
-      setErrorMessage(null);
-    },
-    onError: (error) => {
-      setErrorMessage(String(error));
-    },
-  });
-
-  const startGame = useMutation({
-    mutationFn: () =>
-      apiFetch(`/api/v1/tables/${id}/start-game/`, {
-        method: "POST",
-        body: JSON.stringify({}),
-      }),
-    onSuccess: () => {
-      refetch();
-      setErrorMessage(null);
-    },
-    onError: (error) => {
-      setErrorMessage(String(error));
-    },
-  });
-
-  const takeTurn = useMutation({
-    mutationFn: (command: { type: string; params: any }) =>
-      apiFetch(`/api/v1/tables/${id}/take-turn/`, {
-        method: "POST",
-        body: JSON.stringify(command),
-      }),
-    onSuccess: () => {
-      refetch();
-      queryClient.invalidateQueries({ queryKey: ["table", id] });
-      setErrorMessage(null);
-    },
-    onError: (error) => {
-      setErrorMessage(String(error));
-    },
-  });
-
-  const takeAutomaticTurn = useMutation({
-    mutationFn: async () => {
-      const result = await apiFetch(
-        `/api/v1/tables/${id}/take-automatic-turn/`,
-        {
-          method: "POST",
-        },
-      );
-      return result;
-    },
-    onSuccess: () => {
-      refetch();
-      queryClient.invalidateQueries({ queryKey: ["table", id] });
-      setErrorMessage(null);
-    },
-    onError: (error) => {
-      console.error("Take automatic turn error:", error);
-      setErrorMessage(String(error));
-    },
-  });
-
-  // Track when 3 cards were placed to ensure they stay visible for 1 second
-  const [threeCardsPlacedAt, setThreeCardsPlacedAt] = useState<number | null>(
-    null,
-  );
-
-  // Detect when 3 cards are on board
+  // Initialize table data from initial fetch
   useEffect(() => {
-    if (!data?.game_state?.round?.cards_on_board) return;
+    if (initialData) {
+      setTableData(initialData);
+    }
+  }, [initialData]);
 
-    const cardsOnBoard = data.game_state.round.cards_on_board || {};
+  // WebSocket connection
+  useEffect(() => {
+    if (!id || !initialData) return;
+
+    const token = getAccessToken();
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
+    const wsUrl = `${WS_BASE}/ws/tables/${id}/?token=${encodeURIComponent(token)}`;
+    const ws = new WebSocket(wsUrl);
+
+    ws.onopen = () => {
+      console.log("WebSocket connected");
+      setWsConnected(true);
+      setWsPending(false);
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const message = JSON.parse(event.data);
+        
+        if (message.type === "table_action") {
+          // Update table data from WebSocket message
+          if (message.data?.table_data) {
+            setTableData(message.data.table_data);
+          }
+          // Reset pending state on successful table update
+          setWsPending(false);
+        } else if (message.type === "info") {
+          console.log("WebSocket info:", message.data);
+        } else if (message.type === "error") {
+          setErrorMessage(message.data?.detail || message.data?.message || "An error occurred");
+          // Reset pending state on error so UI doesn't freeze
+          setWsPending(false);
+        }
+      } catch (e) {
+        console.error("Failed to parse WebSocket message:", e);
+        // Reset pending state on parse error too
+        setWsPending(false);
+      }
+    };
+
+    ws.onerror = (error) => {
+      console.error("WebSocket error:", error);
+      setErrorMessage("WebSocket connection error");
+      setWsConnected(false);
+    };
+
+    ws.onclose = () => {
+      console.log("WebSocket closed");
+      setWsConnected(false);
+    };
+
+    wsRef.current = ws;
+
+    return () => {
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
+    };
+  }, [id, initialData, navigate]);
+
+  // Send WebSocket message
+  const sendWsMessage = useCallback((action: string, data: any) => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+      setErrorMessage("WebSocket not connected");
+      return;
+    }
+
+    setWsPending(true);
+    setErrorMessage(null);
+
+    wsRef.current.send(
+      JSON.stringify({
+        action,
+        data,
+      })
+    );
+  }, []);
+
+  // Track when 3 cards were placed
+  const [threeCardsPlacedAt, setThreeCardsPlacedAt] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!tableData?.game_state?.round?.cards_on_board) return;
+
+    const cardsOnBoard = tableData.game_state.round.cards_on_board || {};
     const cardsPlayed = Object.values(cardsOnBoard).filter(
       (card) => card !== null,
     ).length;
 
     if (cardsPlayed === 3 && threeCardsPlacedAt === null) {
-      // 3 cards just placed, record the time
       setThreeCardsPlacedAt(Date.now());
     } else if (cardsPlayed !== 3) {
-      // Reset when cards are cleared
       setThreeCardsPlacedAt(null);
     }
-  }, [data?.game_state?.round?.cards_on_board, threeCardsPlacedAt]);
+  }, [tableData?.game_state?.round?.cards_on_board, threeCardsPlacedAt]);
 
-  const passCards = useMutation({
-    mutationFn: (cards: {
-      card_to_next_seat: string;
-      card_to_prev_seat: string;
-    }) =>
-      apiFetch(`/api/v1/tables/${id}/take-turn/`, {
-        method: "POST",
-        body: JSON.stringify({
-          type: "pass_cards",
-          params: cards,
-        }),
-      }),
-    onSuccess: () => {
-      setSelectedCards({ cardToNextSeat: null, cardToPrevSeat: null });
-      refetch();
-      setErrorMessage(null);
-    },
-    onError: (error) => {
-      setErrorMessage(String(error));
-    },
-  });
+  // Actions
+  const join = () => {
+    sendWsMessage("JOIN_TABLE", { preferred_seat: null });
+  };
+
+  const joinSeat = (seatNumber: number) => {
+    sendWsMessage("JOIN_TABLE", { preferred_seat: seatNumber });
+  };
+
+  const leave = () => {
+    sendWsMessage("LEAVE_TABLE", {});
+  };
+
+  const addBot = (seatNumber: number) => {
+    sendWsMessage("ADD_BOT", {
+      bot_strategy_kind: "random",
+      preferred_seat: seatNumber,
+    });
+  };
+
+  const removeBot = (seatNumber: number) => {
+    sendWsMessage("REMOVE_BOT", { seat_number: seatNumber });
+  };
+
+  const startGame = () => {
+    sendWsMessage("START_GAME", {});
+  };
+
+  const takeTurn = (command: { type: string; params: any }) => {
+    sendWsMessage("TAKE_REGULAR_TURN", command);
+  };
+
+  const takeAutomaticTurn = () => {
+    sendWsMessage("TAKE_AUTOMATIC_TURN", {});
+  };
+
+  const passCards = (cards: {
+    card_to_next_seat: string;
+    card_to_prev_seat: string;
+  }) => {
+    sendWsMessage("TAKE_REGULAR_TURN", {
+      type: "pass_cards",
+      params: cards,
+    });
+    setSelectedCards({ cardToNextSeat: null, cardToPrevSeat: null });
+  };
 
   if (isLoading)
     return (
@@ -310,30 +280,33 @@ export function TableDetail() {
       </div>
     );
 
+  if (!tableData)
+    return (
+      <div className="min-h-screen game-gradient flex items-center justify-center">
+        <div className="text-lg">Loading...</div>
+      </div>
+    );
+
   // Check if game is finished
   const isGameFinished =
-    data?.status === "FINISHED" || data?.game_state?.is_finished;
+    tableData?.status === "FINISHED" || tableData?.game_state?.is_finished;
 
   // Extract player hand for current user
-  const currentUser = data.players?.find((p: any) => p.user_id === userId);
+  const currentUser = tableData.players?.find((p: any) => p.user_id === userId);
   const currentUserSeat = currentUser?.seat_number;
   const currentPlayerSeatInfo = currentUserSeat
-    ? data.game_state?.round?.seat_infos?.[currentUserSeat]
+    ? tableData.game_state?.round?.seat_infos?.[currentUserSeat]
     : null;
   const playerHand = currentPlayerSeatInfo?.hand || [];
-  // Prepare cards on board
-  const cardsOnBoard = data.game_state?.round?.cards_on_board || {};
+  const cardsOnBoard = tableData.game_state?.round?.cards_on_board || {};
+  const currentPhase = tableData.game_state?.round?.phase || "";
 
-  // Get current phase
-  const currentPhase = data.game_state?.round?.phase || "";
-
-  // Extract bidding status for all players
+  // Extract bidding status
   const biddingStatus = (() => {
     const status: Record<number, { bid?: number; passed?: boolean }> = {};
 
-    // Get bidding information from seat_infos
-    if (data.game_state?.round?.seat_infos) {
-      Object.entries(data.game_state.round.seat_infos).forEach(
+    if (tableData.game_state?.round?.seat_infos) {
+      Object.entries(tableData.game_state.round.seat_infos).forEach(
         ([seat, info]: [string, any]) => {
           const seatNum = parseInt(seat);
           if (info.bid !== undefined) {
@@ -348,18 +321,16 @@ export function TableDetail() {
     return status;
   })();
 
-  // Prepare selected cards for visual feedback
   const selectedCardsList = [
     selectedCards.cardToNextSeat,
     selectedCards.cardToPrevSeat,
   ].filter(Boolean) as string[];
 
-  // Process players data with additional information
-  const processedPlayers = (data.players || []).map((player: any) => {
-    const seatInfo = data.game_state?.round?.seat_infos?.[player.seat_number];
+  // Process players data
+  const processedPlayers = (tableData.players || []).map((player: any) => {
+    const seatInfo = tableData.game_state?.round?.seat_infos?.[player.seat_number];
     const hand = seatInfo?.hand;
 
-    // Handle hand_size - can be integer or array
     let hand_size = 0;
     if (typeof hand === "number") {
       hand_size = hand;
@@ -374,7 +345,7 @@ export function TableDetail() {
       bid: seatInfo?.bid || undefined,
       running_points: seatInfo?.points || undefined,
       marriage_points: seatInfo?.marriage_points || undefined,
-      hand: hand, // Pass the actual hand data
+      hand: hand,
     };
   });
 
@@ -384,27 +355,22 @@ export function TableDetail() {
         {/* Header with navigation and actions */}
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => refresh()}
-              disabled={isFetching}
-            >
-              <RefreshCw
-                className={`mr-2 h-4 w-4 ${isFetching ? "animate-spin" : ""}`}
-              />
-              {isFetching ? "Fetching..." : "Refresh"}
-            </Button>
+            <div className={`px-3 py-1.5 rounded text-sm font-medium ${
+              wsConnected ? "bg-green-500/20 text-green-600" : "bg-yellow-500/20 text-yellow-600"
+            }`}>
+              {wsConnected ? "● Connected" : "○ Disconnected"}
+            </div>
           </div>
           <div className="flex gap-2">
-            {!data.game_state && (
+            {!tableData.game_state && (
               <>
                 <Button
                   size="sm"
-                  onClick={() => join.mutate(null)}
+                  onClick={join}
                   disabled={
-                    data.players?.length >= (data.max_players || 3) ||
-                    data.players.some((p: any) => p.user_id === userId)
+                    tableData.players?.length >= (tableData.max_players || 3) ||
+                    tableData.players.some((p: any) => p.user_id === userId) ||
+                    wsPending
                   }
                 >
                   Join Table
@@ -412,8 +378,8 @@ export function TableDetail() {
                 <Button
                   size="sm"
                   variant="secondary"
-                  onClick={() => startGame.mutate()}
-                  disabled={data.players?.length < (data.min_players || 3)}
+                  onClick={startGame}
+                  disabled={tableData.players?.length < (tableData.min_players || 3) || wsPending}
                 >
                   <Play className="mr-2 h-4 w-4" />
                   Start Game
@@ -451,20 +417,20 @@ export function TableDetail() {
               <div>
                 <h3 className="font-semibold mb-2">Final Scores:</h3>
                 <div className="space-y-2">
-                  {data.game_state?.summary
-                    ? Object.entries(data.game_state.summary)
+                  {tableData.game_state?.summary
+                    ? Object.entries(tableData.game_state.summary)
                         .sort(
                           ([, a]: any, [, b]: any) =>
                             (b as number) - (a as number),
                         )
                         .map(([seat, points]: [string, any]) => {
-                          const player = data.players?.find(
+                          const player = tableData.players?.find(
                             (p: any) => p.seat_number === parseInt(seat),
                           );
                           const playerName =
                             player?.screen_name || `Seat ${seat}`;
                           const allScores = Object.values(
-                            data.game_state.summary,
+                            tableData.game_state.summary,
                           ) as number[];
                           const isWinner = points === Math.max(...allScores);
                           return (
@@ -500,11 +466,11 @@ export function TableDetail() {
               <div className="flex gap-2">
                 <Button
                   className="flex-1"
-                  onClick={() => startGame.mutate()}
-                  disabled={startGame.isPending}
+                  onClick={startGame}
+                  disabled={wsPending}
                 >
                   <Play className="mr-2 h-4 w-4" />
-                  {startGame.isPending ? "Starting..." : "Start New Game"}
+                  {wsPending ? "Starting..." : "Start New Game"}
                 </Button>
                 <Button variant="outline" onClick={() => navigate("/tables")}>
                   Back to Tables
@@ -514,14 +480,14 @@ export function TableDetail() {
           </Card>
         )}
 
-        {/* Game Canvas and Info - Three column layout */}
-        {data.game_state && (
+        {/* Game Canvas and Info */}
+        {tableData.game_state && (
           <div className="flex flex-col lg:flex-row gap-4 items-stretch w-full min-h-0">
             {/* Canvas - Main game area */}
             <div className="flex-1 flex justify-center relative min-w-0 w-full lg:w-auto">
-              {/* Pass Cards Button - Prominent overlay during Forming Hands phase */}
-              {data.game_state?.is_my_turn &&
-                data.game_state?.round?.phase === "Forming Hands" &&
+              {/* Pass Cards Button */}
+              {tableData.game_state?.is_my_turn &&
+                tableData.game_state?.round?.phase === "Forming Hands" &&
                 selectedCards.cardToNextSeat &&
                 selectedCards.cardToPrevSeat && (
                   <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50">
@@ -531,20 +497,18 @@ export function TableDetail() {
                           selectedCards.cardToNextSeat &&
                           selectedCards.cardToPrevSeat
                         ) {
-                          passCards.mutate({
+                          passCards({
                             card_to_next_seat: selectedCards.cardToNextSeat,
                             card_to_prev_seat: selectedCards.cardToPrevSeat,
                           });
                         }
                       }}
-                      disabled={passCards.isPending}
+                      disabled={wsPending}
                       className="h-16 px-8 text-xl font-bold animate-pulse card-glow shadow-2xl"
                       size="lg"
                     >
                       <Play className="h-6 w-6 mr-2" />
-                      {passCards.isPending
-                        ? "Passing Cards..."
-                        : "Pass Selected Cards"}
+                      {wsPending ? "Passing Cards..." : "Pass Selected Cards"}
                     </Button>
                   </div>
                 )}
@@ -556,73 +520,65 @@ export function TableDetail() {
                 selectedCards={selectedCardsList}
                 hoveredCard={hoveredCard}
                 onCardClick={(card) => {
-                  // Don't allow card clicks when it's not the player's turn
-                  if (!data.game_state?.is_my_turn) {
+                  if (!tableData.game_state?.is_my_turn) {
                     return;
                   }
 
-                  const phase = data.game_state?.round?.phase;
+                  const phase = tableData.game_state?.round?.phase;
 
-                  // Don't allow card clicks during bidding phase
                   if (phase === "Bidding") {
                     return;
                   }
 
                   if (phase === "Forming Hands") {
-                    // Toggle card selection - click again to deselect
                     if (selectedCards.cardToNextSeat === card) {
-                      // Deselect cardToNextSeat
                       setSelectedCards((prev) => ({
                         ...prev,
                         cardToNextSeat: null,
                       }));
                     } else if (selectedCards.cardToPrevSeat === card) {
-                      // Deselect cardToPrevSeat
                       setSelectedCards((prev) => ({
                         ...prev,
                         cardToPrevSeat: null,
                       }));
                     } else if (!selectedCards.cardToNextSeat) {
-                      // Select as cardToNextSeat
                       setSelectedCards((prev) => ({
                         ...prev,
                         cardToNextSeat: card,
                       }));
                     } else if (!selectedCards.cardToPrevSeat) {
-                      // Select as cardToPrevSeat
                       setSelectedCards((prev) => ({
                         ...prev,
                         cardToPrevSeat: card,
                       }));
                     }
                   } else {
-                    // Normal play - immediate action
-                    takeTurn.mutate({
+                    takeTurn({
                       type: "play_card",
                       params: { card: card },
                     });
                   }
                 }}
                 onCardHover={setHoveredCard}
-                activeSeat={data.game_state.active_seat}
+                activeSeat={tableData.game_state.active_seat}
                 phase={currentPhase}
                 cardsOnBoard={cardsOnBoard}
                 biddingPanel={
-                  data.game_state?.is_my_turn &&
-                  data.game_state?.round?.phase === "Bidding" ? (
+                  tableData.game_state?.is_my_turn &&
+                  tableData.game_state?.round?.phase === "Bidding" ? (
                     <BiddingPanel
                       onBid={(amount) => {
-                        takeTurn.mutate({
+                        takeTurn({
                           type: "make_bid",
                           params: { bid: amount },
                         });
                       }}
-                      isLoading={takeTurn.isPending}
+                      isLoading={wsPending}
                       minBid={60}
                       maxBid={200}
                       hasMarriage={checkForMarriage(playerHand)}
                       currentHighestBid={(() => {
-                        const bid = data.game_state?.round?.highest_bid;
+                        const bid = tableData.game_state?.round?.highest_bid;
                         if (
                           typeof bid === "object" &&
                           bid !== null &&
@@ -633,14 +589,14 @@ export function TableDetail() {
                         return 0;
                       })()}
                       currentHighestBidder={(() => {
-                        const bid = data.game_state?.round?.highest_bid;
+                        const bid = tableData.game_state?.round?.highest_bid;
                         if (
                           typeof bid === "object" &&
                           bid !== null &&
                           bid["0"] !== undefined
                         ) {
                           const seatNumber = parseInt(bid["0"]);
-                          const player = data.players?.find(
+                          const player = tableData.players?.find(
                             (p: any) => p.seat_number === seatNumber,
                           );
                           return player?.screen_name;
@@ -653,11 +609,11 @@ export function TableDetail() {
                   ) : null
                 }
                 playerStats={currentPlayerSeatInfo}
-                requiredSuit={data.game_state?.round?.required_suit}
-                trumpSuit={data.game_state?.round?.trump_suit}
-                lastTrick={data.game_state?.round?.prev_trick}
+                requiredSuit={tableData.game_state?.round?.required_suit}
+                trumpSuit={tableData.game_state?.round?.trump_suit}
+                lastTrick={tableData.game_state?.round?.prev_trick}
                 highestBid={(() => {
-                  const bid = data.game_state?.round?.highest_bid;
+                  const bid = tableData.game_state?.round?.highest_bid;
                   if (
                     bid &&
                     typeof bid === "object" &&
@@ -665,7 +621,7 @@ export function TableDetail() {
                   ) {
                     const seatNumber = parseInt(bid["0"]);
                     const bidAmount = bid["1"];
-                    const player = data.players?.find(
+                    const player = tableData.players?.find(
                       (p: any) => p.seat_number === seatNumber,
                     );
                     const playerName =
@@ -680,8 +636,8 @@ export function TableDetail() {
             {/* Mobile Bot Turn Button */}
             <div className="lg:hidden">
               {(() => {
-                const activeSeat = data.game_state?.active_seat;
-                const activePlayer = data.players?.find(
+                const activeSeat = tableData.game_state?.active_seat;
+                const activePlayer = tableData.players?.find(
                   (p: any) => p.seat_number === activeSeat,
                 );
                 const isBotTurn = activePlayer?.bot_strategy_kind;
@@ -696,14 +652,12 @@ export function TableDetail() {
                           ⚡ Bot's turn - Click to advance
                         </div>
                         <Button
-                          onClick={() => takeAutomaticTurn.mutate()}
-                          disabled={takeAutomaticTurn.isPending}
+                          onClick={takeAutomaticTurn}
+                          disabled={wsPending}
                           size="sm"
                           className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                         >
-                          {takeAutomaticTurn.isPending
-                            ? "Processing..."
-                            : "🤖 Take Bot Turn"}
+                          {wsPending ? "Processing..." : "🤖 Take Bot Turn"}
                         </Button>
                       </div>
                     </CardContent>
@@ -712,7 +666,7 @@ export function TableDetail() {
               })()}
             </div>
 
-            {/* Right Side Panel - Current Move, Game Info and Bot Controls */}
+            {/* Right Side Panel */}
             <div className="hidden lg:block w-full lg:w-64 space-y-4 flex-shrink-0">
               {/* Game Phase Info */}
               <Card className="card-glow">
@@ -731,7 +685,7 @@ export function TableDetail() {
                         Required:
                       </span>
                       <div className="mt-1">
-                        {renderSuitBadge(data.game_state?.round?.required_suit)}
+                        {renderSuitBadge(tableData.game_state?.round?.required_suit)}
                       </div>
                     </div>
                     <div>
@@ -739,19 +693,19 @@ export function TableDetail() {
                         Trump:
                       </span>
                       <div className="mt-1">
-                        {renderSuitBadge(data.game_state?.round?.trump_suit)}
+                        {renderSuitBadge(tableData.game_state?.round?.trump_suit)}
                       </div>
                     </div>
                   </div>
 
-                  {data.game_state?.round?.highest_bid && (
+                  {tableData.game_state?.round?.highest_bid && (
                     <div>
                       <span className="text-muted-foreground">
                         Highest Bid:
                       </span>
                       <p className="font-semibold">
                         {(() => {
-                          const bid = data.game_state.round.highest_bid;
+                          const bid = tableData.game_state.round.highest_bid;
                           if (typeof bid === "object" && bid !== null) {
                             if (
                               bid["0"] !== undefined &&
@@ -759,7 +713,7 @@ export function TableDetail() {
                             ) {
                               const seatNumber = parseInt(bid["0"]);
                               const bidAmount = bid["1"];
-                              const player = data.players?.find(
+                              const player = tableData.players?.find(
                                 (p: any) => p.seat_number === seatNumber,
                               );
                               const playerName =
@@ -773,10 +727,9 @@ export function TableDetail() {
                     </div>
                   )}
 
-                  {/* Last Trick */}
-                  {data.game_state?.round?.prev_trick &&
-                    Array.isArray(data.game_state.round.prev_trick) &&
-                    data.game_state.round.prev_trick.length > 0 && (
+                  {tableData.game_state?.round?.prev_trick &&
+                    Array.isArray(tableData.game_state.round.prev_trick) &&
+                    tableData.game_state.round.prev_trick.length > 0 && (
                       <div className="pt-3 border-t">
                         <div className="space-y-2">
                           <h4 className="text-sm font-semibold text-primary">
@@ -784,7 +737,7 @@ export function TableDetail() {
                           </h4>
                           <div className="text-xs border rounded p-2 bg-muted/50">
                             <div className="mt-1 flex flex-wrap gap-1">
-                              {data.game_state.round.prev_trick.map(
+                              {tableData.game_state.round.prev_trick.map(
                                 (card: any, idx: number) => {
                                   const cardStr = String(card);
                                   const suit = cardStr.slice(-1);
@@ -817,15 +770,15 @@ export function TableDetail() {
                 </CardContent>
               </Card>
 
-              {/* Automatic Turn Button - Owner Only */}
-              {data.game_state &&
-                (data.owner_id === currentUser?.user_id ||
-                  data.owner_id === currentUser?.id) && (
+              {/* Automatic Turn Button */}
+              {tableData.game_state &&
+                (tableData.owner_id === currentUser?.user_id ||
+                  tableData.owner_id === currentUser?.id) && (
                   <Card>
                     <CardContent className="pt-4">
                       {(() => {
-                        const activeSeat = data.game_state?.active_seat;
-                        const activePlayer = data.players?.find(
+                        const activeSeat = tableData.game_state?.active_seat;
+                        const activePlayer = tableData.players?.find(
                           (p: any) => p.seat_number === activeSeat,
                         );
                         const isBotTurn = activePlayer?.bot_strategy_kind;
@@ -838,14 +791,12 @@ export function TableDetail() {
                               ⚡ Bot's turn - Click to advance
                             </div>
                             <Button
-                              onClick={() => takeAutomaticTurn.mutate()}
-                              disabled={takeAutomaticTurn.isPending}
+                              onClick={takeAutomaticTurn}
+                              disabled={wsPending}
                               size="sm"
                               className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                             >
-                              {takeAutomaticTurn.isPending
-                                ? "Processing..."
-                                : "🤖 Take Bot Turn"}
+                              {wsPending ? "Processing..." : "🤖 Take Bot Turn"}
                             </Button>
                           </div>
                         );
@@ -857,14 +808,14 @@ export function TableDetail() {
           </div>
         )}
 
-        {/* Game Status and Action Cards */}
+        {/* Game Status Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
             <CardHeader>
               <CardTitle className="text-sm">Status</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-lg font-semibold">{data.status}</p>
+              <p className="text-lg font-semibold">{tableData.status}</p>
             </CardContent>
           </Card>
 
@@ -874,7 +825,7 @@ export function TableDetail() {
             </CardHeader>
             <CardContent>
               <p className="text-lg font-semibold">
-                {safeRender(data.game_state?.round?.round_number)}
+                {safeRender(tableData.game_state?.round?.round_number)}
               </p>
             </CardContent>
           </Card>
@@ -885,10 +836,10 @@ export function TableDetail() {
             </CardHeader>
             <CardContent>
               <div className="text-sm space-y-1">
-                {data.game_state?.summary
-                  ? Object.entries(data.game_state.summary).map(
+                {tableData.game_state?.summary
+                  ? Object.entries(tableData.game_state.summary).map(
                       ([seat, points]) => {
-                        const player = data.players?.find(
+                        const player = tableData.players?.find(
                           (p: any) => p.seat_number === parseInt(seat),
                         );
                         const playerName =
@@ -909,9 +860,9 @@ export function TableDetail() {
           </Card>
         </div>
 
-        {/* Card Selection Info - During Forming Hands phase */}
-        {data.game_state?.round?.phase === "Forming Hands" &&
-          data.game_state?.is_my_turn && (
+        {/* Card Selection Info */}
+        {tableData.game_state?.round?.phase === "Forming Hands" &&
+          tableData.game_state?.is_my_turn && (
             <Card className="border-primary/50">
               <CardContent className="pt-4">
                 <div className="flex justify-center items-center gap-8 text-sm">
@@ -932,8 +883,8 @@ export function TableDetail() {
             </Card>
           )}
 
-        {/* Table Seats - shown when game hasn't started */}
-        {!data.game_state && (
+        {/* Table Seats */}
+        {!tableData.game_state && (
           <Card>
             <CardHeader>
               <CardTitle>Table Seats</CardTitle>
@@ -941,16 +892,16 @@ export function TableDetail() {
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {[1, 2, 3].map((seatNum) => {
-                  const player = data.players?.find(
+                  const player = tableData.players?.find(
                     (p: any) => p.seat_number === seatNum,
                   );
                   const isSeatTaken = !!player;
-                  const isCurrentUser = player && !player.bot_strategy_kind;
+                  const isCurrentUser = player && !player.bot_strategy_kind && player.user_id === userId;
                   const isBot = player && player.bot_strategy_kind;
                   const canJoin =
                     !isSeatTaken &&
-                    data.players?.length < (data.max_players || 3) &&
-                    !data.players.some((p: any) => p.user_id === userId);
+                    tableData.players?.length < (tableData.max_players || 3) &&
+                    !tableData.players.some((p: any) => p.user_id === userId);
 
                   return (
                     <Card key={seatNum} className="card-hover">
@@ -972,24 +923,22 @@ export function TableDetail() {
                               <Button
                                 variant="destructive"
                                 size="sm"
-                                onClick={() => removeBot.mutate(seatNum)}
-                                disabled={removeBot.isPending}
+                                onClick={() => removeBot(seatNum)}
+                                disabled={wsPending}
                                 className="w-full"
                               >
-                                {removeBot.isPending
-                                  ? "Removing..."
-                                  : "Remove Bot"}
+                                {wsPending ? "Removing..." : "Remove Bot"}
                               </Button>
                             )}
                             {isCurrentUser && (
                               <Button
                                 variant="destructive"
                                 size="sm"
-                                onClick={() => leave.mutate()}
-                                disabled={leave.isPending}
+                                onClick={leave}
+                                disabled={wsPending}
                                 className="w-full"
                               >
-                                {leave.isPending ? "Leaving..." : "Leave Table"}
+                                {wsPending ? "Leaving..." : "Leave Table"}
                               </Button>
                             )}
                           </div>
@@ -1001,20 +950,20 @@ export function TableDetail() {
                             <div className="flex flex-col gap-2">
                               <Button
                                 size="sm"
-                                onClick={() => join.mutate(seatNum)}
-                                disabled={join.isPending || !canJoin}
+                                onClick={() => joinSeat(seatNum)}
+                                disabled={wsPending || !canJoin}
                                 className="w-full"
                               >
-                                {join.isPending ? "Joining..." : "Join Table"}
+                                {wsPending ? "Joining..." : "Join Table"}
                               </Button>
                               <Button
                                 size="sm"
                                 variant="secondary"
-                                onClick={() => addBot.mutate(seatNum)}
-                                disabled={addBot.isPending}
+                                onClick={() => addBot(seatNum)}
+                                disabled={wsPending}
                                 className="w-full"
                               >
-                                {addBot.isPending ? "Adding..." : "Add Bot"}
+                                {wsPending ? "Adding..." : "Add Bot"}
                               </Button>
                             </div>
                           </div>
@@ -1027,6 +976,7 @@ export function TableDetail() {
             </CardContent>
           </Card>
         )}
+
         {/* Debug: Raw data */}
         <details className="mt-4">
           <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground">
@@ -1035,7 +985,7 @@ export function TableDetail() {
           <Card className="mt-2">
             <CardContent className="pt-6">
               <pre className="text-xs overflow-auto max-h-96">
-                {JSON.stringify(data, null, 2)}
+                {JSON.stringify(tableData, null, 2)}
               </pre>
             </CardContent>
           </Card>
@@ -1044,3 +994,4 @@ export function TableDetail() {
     </div>
   );
 }
+
