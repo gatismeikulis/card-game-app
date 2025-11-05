@@ -1,6 +1,5 @@
-#!/bin/bash
-
-set -e  # exit immediately on error
+#!/bin/sh
+set -e
 
 echo "Running database migrations..."
 uv run python manage.py migrate
@@ -8,7 +7,6 @@ uv run python manage.py migrate
 echo "Collecting static files..."
 uv run python manage.py collectstatic --noinput
 
-# Create superuser only if environment variables are set and user does not already exist
 if [ -n "$SUPERUSER_USERNAME" ] && [ -n "$SUPERUSER_PASSWORD" ]; then
     uv run python manage.py shell -c "
 from django.contrib.auth import get_user_model
@@ -25,11 +23,12 @@ else
 fi
 
 echo "Starting server..."
-
 if [ "$ENVIRONMENT" = "production" ]; then
     echo "Running Daphne for production (ASGI with WebSocket support)..."
-    # Single process only - required for InMemoryChannelLayer
-    exec uv run daphne -b 0.0.0.0 -p "${PORT}" config.asgi:application
+    # Fallback to 8000 for local runs, works fine on Railway too
+    PORT=${PORT:-8000}
+    echo "Using PORT=$PORT"
+    exec uv run daphne -b 0.0.0.0 -p "$PORT" config.asgi:application
 else
     echo "Running Django development server (uv run)..."
     exec uv run python manage.py runserver 0.0.0.0:8000

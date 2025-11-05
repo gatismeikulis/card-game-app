@@ -17,7 +17,7 @@ RUN uv sync --frozen
 COPY . /app/
 
 # Documents that the container will listen on port 8000 (Django's default port)
-EXPOSE $PORT
+EXPOSE 8000
 
 # Make entrypoint executable (adds execution permissions)
 RUN chmod +x /app/docker-entrypoint.sh
