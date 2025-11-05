@@ -15,11 +15,11 @@ from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.security.websocket import AllowedHostsOriginValidator
 from django.core.asgi import get_asgi_application
 
+application = get_asgi_application()
+
 from core.ws.middleware.jwt_auth_middleware import JWTAuthMiddleware
 from .ws_urls import websocket_urlpatterns
 
-
-application = get_asgi_application()
 
 application = ProtocolTypeRouter(
     {
