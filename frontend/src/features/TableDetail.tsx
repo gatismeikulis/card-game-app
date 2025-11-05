@@ -1,107 +1,35 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { apiFetch } from "../api";
-import { getAccessToken } from "../auth";
 import { GameBoard } from "../components/GameBoard";
 import { BiddingPanel } from "../components/BiddingPanel";
-import { Button } from "../components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "../components/ui/card";
+import { GameFinishedCard } from "../components/GameFinishedCard";
+import { GameStatusCards } from "../components/GameStatusCards";
+import { TableSeats } from "../components/TableSeats";
+import { CardSelectionInfo } from "../components/CardSelectionInfo";
+import { GameInfoPanel } from "../components/GameInfoPanel";
+import { BotTurnButton } from "../components/BotTurnButton";
+import { TableHeader } from "../components/TableHeader";
+import { ErrorMessage } from "../components/ErrorMessage";
+import { PassCardsButton } from "../components/PassCardsButton";
+import { Card, CardContent } from "../components/ui/card";
 import { useUserData } from "../contexts/UserContext";
-import { RefreshCw, LogOut, Play } from "lucide-react";
-
-const WS_BASE = (import.meta as any).env?.VITE_WS_BASE ?? "ws://localhost:8000";
-
-// Helper function to safely render any value
-const safeRender = (value: any): string => {
-  if (value === null || value === undefined) return "N/A";
-  if (
-    typeof value === "string" ||
-    typeof value === "number" ||
-    typeof value === "boolean"
-  ) {
-    return String(value);
-  }
-  if (typeof value === "object") {
-    return `Object (${Object.keys(value).length} keys)`;
-  }
-  return String(value);
-};
-
-// Check if hand has a marriage (KQ of same suit)
-const checkForMarriage = (hand: string[] | number): boolean => {
-  if (
-    typeof hand === "number" ||
-    !hand ||
-    !Array.isArray(hand) ||
-    hand.length === 0
-  )
-    return false;
-
-  const suits = ["h", "d", "s", "c"];
-
-  for (const suit of suits) {
-    const hasKing = hand.some((card) => card.toLowerCase() === `k${suit}`);
-    const hasQueen = hand.some((card) => card.toLowerCase() === `q${suit}`);
-    if (hasKing && hasQueen) return true;
-  }
-
-  return false;
-};
-
-// Helper to render suit as a colored badge with full name
-const renderSuitBadge = (value: any) => {
-  if (!value)
-    return (
-      <span className="px-2 py-0.5 rounded border text-sm text-gray-500">
-        N/A
-      </span>
-    );
-  const sym = String(value).trim().toLowerCase();
-  const map: Record<string, { name: string; cls: string }> = {
-    s: { name: "SPADE", cls: "bg-gray-100 text-black border-gray-300" },
-    h: { name: "HEART", cls: "bg-red-100 text-red-700 border-red-300" },
-    d: { name: "DIAMOND", cls: "bg-blue-100 text-blue-700 border-blue-300" },
-    c: { name: "CLUB", cls: "bg-green-100 text-green-700 border-green-300" },
-  };
-  const info = map[sym];
-  if (!info)
-    return (
-      <span className="px-2 py-0.5 rounded border text-sm text-gray-500">
-        N/A
-      </span>
-    );
-  return (
-    <span
-      className={`px-2 py-0.5 rounded border text-sm font-medium ${info.cls}`}
-    >
-      {info.name}
-    </span>
-  );
-};
+import { useTableWebSocket } from "../hooks/useTableWebSocket";
+import { useGameActions } from "../hooks/useGameActions";
+import { useCardSelection } from "../hooks/useCardSelection";
+import {
+  checkForMarriage,
+  extractBiddingStatus,
+  extractHighestBid,
+  processPlayers,
+} from "../utils/gameUtils";
 
 export function TableDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { userId } = useUserData();
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [selectedCards, setSelectedCards] = useState<{
-    cardToNextSeat: string | null;
-    cardToPrevSeat: string | null;
-  }>({
-    cardToNextSeat: null,
-    cardToPrevSeat: null,
-  });
-  const [hoveredCard, setHoveredCard] = useState<string | null>(null);
   const [tableData, setTableData] = useState<any>(null);
-  const [wsConnected, setWsConnected] = useState(false);
-  const [wsPending, setWsPending] = useState(false);
-  const wsRef = useRef<WebSocket | null>(null);
 
   // Initial HTTP fetch to get table state
   const { data: initialData, isLoading, error } = useQuery({
@@ -120,179 +48,76 @@ export function TableDetail() {
   }, [initialData]);
 
   // WebSocket connection
-  useEffect(() => {
-    if (!id || !initialData) return;
-
-    const token = getAccessToken();
-    if (!token) {
-      navigate("/login");
-      return;
-    }
-
-    const wsUrl = `${WS_BASE}/ws/tables/${id}/?token=${encodeURIComponent(token)}`;
-    const ws = new WebSocket(wsUrl);
-
-    ws.onopen = () => {
-      console.log("WebSocket connected");
-      setWsConnected(true);
-      setWsPending(false);
-    };
-
-    ws.onmessage = (event) => {
-      try {
-        const message = JSON.parse(event.data);
-        
-        if (message.type === "table_action") {
-          // Update table data from WebSocket message
-          if (message.data?.table_data) {
-            setTableData(message.data.table_data);
-          }
-          // Reset pending state on successful table update
-          setWsPending(false);
-        } else if (message.type === "info") {
-          console.log("WebSocket info:", message.data);
-        } else if (message.type === "error") {
-          setErrorMessage(message.data?.detail || message.data?.message || "An error occurred");
-          // Reset pending state on error so UI doesn't freeze
-          setWsPending(false);
-        }
-      } catch (e) {
-        console.error("Failed to parse WebSocket message:", e);
-        // Reset pending state on parse error too
-        setWsPending(false);
+  const handleWebSocketMessage = useCallback((message: any) => {
+    if (message.type === "table_action") {
+      if (message.data?.table_data) {
+        setTableData(message.data.table_data);
       }
-    };
-
-    ws.onerror = (error) => {
-      console.error("WebSocket error:", error);
-      setErrorMessage("WebSocket connection error");
-      setWsConnected(false);
-    };
-
-    ws.onclose = () => {
-      console.log("WebSocket closed");
-      setWsConnected(false);
-    };
-
-    wsRef.current = ws;
-
-    return () => {
-      if (wsRef.current) {
-        wsRef.current.close();
-      }
-    };
-  }, [id, initialData, navigate]);
-
-  // Send WebSocket message
-  const sendWsMessage = useCallback((action: string, data: any) => {
-    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
-      setErrorMessage("WebSocket not connected");
-      return;
     }
-
-    setWsPending(true);
-    setErrorMessage(null);
-
-    wsRef.current.send(
-      JSON.stringify({
-        action,
-        data,
-      })
-    );
   }, []);
 
-  // Track when 3 cards were placed
-  const [threeCardsPlacedAt, setThreeCardsPlacedAt] = useState<number | null>(null);
+  const { connected: wsConnected, pending: wsPending, error: wsError, sendMessage } =
+    useTableWebSocket(id, !!initialData, handleWebSocketMessage);
 
-  useEffect(() => {
-    if (!tableData?.game_state?.round?.cards_on_board) return;
+  // Game actions
+  const {
+    join,
+    leave,
+    addBot,
+    removeBot,
+    startGame,
+    takeTurn,
+    takeAutomaticTurn,
+    passCards,
+  } = useGameActions({ sendMessage });
 
-    const cardsOnBoard = tableData.game_state.round.cards_on_board || {};
-    const cardsPlayed = Object.values(cardsOnBoard).filter(
-      (card) => card !== null,
-    ).length;
+  // Card selection
+  const { selectedCards, handleCardClick, clearSelection } = useCardSelection();
+  const [hoveredCard, setHoveredCard] = useState<string | null>(null);
 
-    if (cardsPlayed === 3 && threeCardsPlacedAt === null) {
-      setThreeCardsPlacedAt(Date.now());
-    } else if (cardsPlayed !== 3) {
-      setThreeCardsPlacedAt(null);
+  // Handle passing cards
+  const handlePassCards = () => {
+    if (selectedCards.cardToNextSeat && selectedCards.cardToPrevSeat) {
+      passCards({
+        card_to_next_seat: selectedCards.cardToNextSeat,
+        card_to_prev_seat: selectedCards.cardToPrevSeat,
+      });
+      clearSelection();
     }
-  }, [tableData?.game_state?.round?.cards_on_board, threeCardsPlacedAt]);
-
-  // Actions
-  const join = () => {
-    sendWsMessage("JOIN_TABLE", { preferred_seat: null });
   };
 
-  const joinSeat = (seatNumber: number) => {
-    sendWsMessage("JOIN_TABLE", { preferred_seat: seatNumber });
-  };
-
-  const leave = () => {
-    sendWsMessage("LEAVE_TABLE", {});
-  };
-
-  const addBot = (seatNumber: number) => {
-    sendWsMessage("ADD_BOT", {
-      bot_strategy_kind: "random",
-      preferred_seat: seatNumber,
-    });
-  };
-
-  const removeBot = (seatNumber: number) => {
-    sendWsMessage("REMOVE_BOT", { seat_number: seatNumber });
-  };
-
-  const startGame = () => {
-    sendWsMessage("START_GAME", {});
-  };
-
-  const takeTurn = (command: { type: string; params: any }) => {
-    sendWsMessage("TAKE_REGULAR_TURN", command);
-  };
-
-  const takeAutomaticTurn = () => {
-    sendWsMessage("TAKE_AUTOMATIC_TURN", {});
-  };
-
-  const passCards = (cards: {
-    card_to_next_seat: string;
-    card_to_prev_seat: string;
-  }) => {
-    sendWsMessage("TAKE_REGULAR_TURN", {
-      type: "pass_cards",
-      params: cards,
-    });
-    setSelectedCards({ cardToNextSeat: null, cardToPrevSeat: null });
-  };
-
-  if (isLoading)
+  // Loading and error states
+  if (isLoading) {
     return (
       <div className="min-h-screen game-gradient flex items-center justify-center">
         <div className="text-lg">Loading game...</div>
       </div>
     );
+  }
 
-  if (error)
+  if (error) {
     return (
       <div className="min-h-screen game-gradient flex items-center justify-center">
         <div className="text-destructive text-lg">{String(error)}</div>
       </div>
     );
+  }
 
-  if (!tableData)
+  if (!tableData) {
     return (
       <div className="min-h-screen game-gradient flex items-center justify-center">
         <div className="text-lg">Loading...</div>
       </div>
     );
+  }
 
-  // Check if game is finished
+  // Extract game state data
   const isGameFinished =
     tableData?.status === "FINISHED" || tableData?.game_state?.is_finished;
 
-  // Extract player hand for current user
-  const currentUser = tableData.players?.find((p: any) => p.user_id === userId);
+  const currentUser = tableData.players?.find(
+    (p: any) => p.user_id === userId
+  );
   const currentUserSeat = currentUser?.seat_number;
   const currentPlayerSeatInfo = currentUserSeat
     ? tableData.game_state?.round?.seat_infos?.[currentUserSeat]
@@ -301,264 +126,89 @@ export function TableDetail() {
   const cardsOnBoard = tableData.game_state?.round?.cards_on_board || {};
   const currentPhase = tableData.game_state?.round?.phase || "";
 
-  // Extract bidding status
-  const biddingStatus = (() => {
-    const status: Record<number, { bid?: number; passed?: boolean }> = {};
+  // Process data
+  const processedPlayers = processPlayers(
+    tableData.players || [],
+    tableData.game_state
+  );
+  const biddingStatus = extractBiddingStatus(
+    tableData.game_state?.round?.seat_infos
+  );
+  const highestBidInfo = extractHighestBid(
+    tableData.game_state?.round?.highest_bid,
+    tableData.players || []
+  );
 
-    if (tableData.game_state?.round?.seat_infos) {
-      Object.entries(tableData.game_state.round.seat_infos).forEach(
-        ([seat, info]: [string, any]) => {
-          const seatNum = parseInt(seat);
-          if (info.bid !== undefined) {
-            status[seatNum] = { bid: info.bid };
-          } else if (info.passed === true) {
-            status[seatNum] = { passed: true };
-          }
-        },
-      );
-    }
-
-    return status;
-  })();
-
-  const selectedCardsList = [
-    selectedCards.cardToNextSeat,
-    selectedCards.cardToPrevSeat,
-  ].filter(Boolean) as string[];
-
-  // Process players data
-  const processedPlayers = (tableData.players || []).map((player: any) => {
-    const seatInfo = tableData.game_state?.round?.seat_infos?.[player.seat_number];
-    const hand = seatInfo?.hand;
-
-    let hand_size = 0;
-    if (typeof hand === "number") {
-      hand_size = hand;
-    } else if (Array.isArray(hand)) {
-      hand_size = hand.length;
-    }
-
-    return {
-      ...player,
-      hand_size: hand_size,
-      tricks_taken: seatInfo?.trick_count || 0,
-      bid: seatInfo?.bid || undefined,
-      running_points: seatInfo?.points || undefined,
-      marriage_points: seatInfo?.marriage_points || undefined,
-      hand: hand,
-    };
-  });
+  // Check if it's bot's turn
+  const activeSeat = tableData.game_state?.active_seat;
+  const activePlayer = tableData.players?.find(
+    (p: any) => p.seat_number === activeSeat
+  );
+  const isBotTurn = activePlayer?.bot_strategy_kind;
+  const isOwner =
+    tableData.owner_id === currentUser?.user_id ||
+    tableData.owner_id === currentUser?.id;
 
   return (
     <div className="min-h-screen game-gradient">
       <div className="max-w-7xl mx-auto p-4 space-y-4">
-        {/* Header with navigation and actions */}
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex gap-2">
-            <div className={`px-3 py-1.5 rounded text-sm font-medium ${
-              wsConnected ? "bg-green-500/20 text-green-600" : "bg-yellow-500/20 text-yellow-600"
-            }`}>
-              {wsConnected ? "● Connected" : "○ Disconnected"}
-            </div>
-          </div>
-          <div className="flex gap-2">
-            {!tableData.game_state && (
-              <>
-                <Button
-                  size="sm"
-                  onClick={join}
-                  disabled={
-                    tableData.players?.length >= (tableData.max_players || 3) ||
-                    tableData.players.some((p: any) => p.user_id === userId) ||
-                    wsPending
-                  }
-                >
-                  Join Table
-                </Button>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={startGame}
-                  disabled={tableData.players?.length < (tableData.min_players || 3) || wsPending}
-                >
-                  <Play className="mr-2 h-4 w-4" />
-                  Start Game
-                </Button>
-              </>
-            )}
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => navigate("/tables")}
-            >
-              <LogOut className="mr-2 h-4 w-4" />
-              Return
-            </Button>
-          </div>
-        </div>
+        <TableHeader
+          wsConnected={wsConnected}
+          hasGameState={!!tableData.game_state}
+          canJoin={
+            !tableData.game_state &&
+            tableData.players?.length < (tableData.max_players || 3) &&
+            !tableData.players.some((p: any) => p.user_id === userId)
+          }
+          canStartGame={
+            !tableData.game_state &&
+            tableData.players?.length >= (tableData.min_players || 3)
+          }
+          onJoin={() => join(null)}
+          onStartGame={startGame}
+          onBack={() => navigate("/tables")}
+          isPending={wsPending}
+        />
 
-        {errorMessage && (
-          <Card className="border-destructive">
-            <CardContent className="pt-6">
-              <p className="text-destructive text-sm">{errorMessage}</p>
-            </CardContent>
-          </Card>
-        )}
+        <ErrorMessage message={wsError || ""} />
 
-        {/* Game Finished Message */}
         {isGameFinished && (
-          <Card className="border-amber-500/50 bg-amber-500/10 card-glow">
-            <CardHeader>
-              <CardTitle className="text-2xl text-amber-500 flex items-center gap-2">
-                🏆 Game Finished!
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <h3 className="font-semibold mb-2">Final Scores:</h3>
-                <div className="space-y-2">
-                  {tableData.game_state?.summary
-                    ? Object.entries(tableData.game_state.summary)
-                        .sort(
-                          ([, a]: any, [, b]: any) =>
-                            (b as number) - (a as number),
-                        )
-                        .map(([seat, points]: [string, any]) => {
-                          const player = tableData.players?.find(
-                            (p: any) => p.seat_number === parseInt(seat),
-                          );
-                          const playerName =
-                            player?.screen_name || `Seat ${seat}`;
-                          const allScores = Object.values(
-                            tableData.game_state.summary,
-                          ) as number[];
-                          const isWinner = points === Math.max(...allScores);
-                          return (
-                            <div
-                              key={seat}
-                              className={`flex justify-between items-center p-2 rounded ${
-                                isWinner
-                                  ? "bg-amber-500/20 border border-amber-500/50"
-                                  : "bg-muted/50"
-                              }`}
-                            >
-                              <span
-                                className={`font-medium ${
-                                  isWinner ? "text-amber-500" : ""
-                                }`}
-                              >
-                                {isWinner && "👑 "}
-                                {playerName}
-                              </span>
-                              <span
-                                className={`font-bold text-lg ${
-                                  isWinner ? "text-amber-500" : ""
-                                }`}
-                              >
-                                {String(points)}
-                              </span>
-                            </div>
-                          );
-                        })
-                    : "No scores available"}
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  className="flex-1"
-                  onClick={startGame}
-                  disabled={wsPending}
-                >
-                  <Play className="mr-2 h-4 w-4" />
-                  {wsPending ? "Starting..." : "Start New Game"}
-                </Button>
-                <Button variant="outline" onClick={() => navigate("/tables")}>
-                  Back to Tables
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <GameFinishedCard
+            gameState={tableData.game_state}
+            players={tableData.players || []}
+            onStartNewGame={startGame}
+            onBackToTables={() => navigate("/tables")}
+            isPending={wsPending}
+          />
         )}
 
-        {/* Game Canvas and Info */}
         {tableData.game_state && (
           <div className="flex flex-col lg:flex-row gap-4 items-stretch w-full min-h-0">
-            {/* Canvas - Main game area */}
             <div className="flex-1 flex justify-center relative min-w-0 w-full lg:w-auto">
-              {/* Pass Cards Button */}
-              {tableData.game_state?.is_my_turn &&
-                tableData.game_state?.round?.phase === "Forming Hands" &&
-                selectedCards.cardToNextSeat &&
-                selectedCards.cardToPrevSeat && (
-                  <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50">
-                    <Button
-                      onClick={() => {
-                        if (
-                          selectedCards.cardToNextSeat &&
-                          selectedCards.cardToPrevSeat
-                        ) {
-                          passCards({
-                            card_to_next_seat: selectedCards.cardToNextSeat,
-                            card_to_prev_seat: selectedCards.cardToPrevSeat,
-                          });
-                        }
-                      }}
-                      disabled={wsPending}
-                      className="h-16 px-8 text-xl font-bold animate-pulse card-glow shadow-2xl"
-                      size="lg"
-                    >
-                      <Play className="h-6 w-6 mr-2" />
-                      {wsPending ? "Passing Cards..." : "Pass Selected Cards"}
-                    </Button>
-                  </div>
-                )}
+              <PassCardsButton
+                cardToNextSeat={selectedCards.cardToNextSeat}
+                cardToPrevSeat={selectedCards.cardToPrevSeat}
+                onPass={handlePassCards}
+                isPending={wsPending}
+              />
 
               <GameBoard
                 players={processedPlayers}
                 currentUserSeat={currentUserSeat}
                 currentUserHand={playerHand}
-                selectedCards={selectedCardsList}
+                selectedCards={[
+                  selectedCards.cardToNextSeat,
+                  selectedCards.cardToPrevSeat,
+                ].filter(Boolean) as string[]}
                 hoveredCard={hoveredCard}
-                onCardClick={(card) => {
-                  if (!tableData.game_state?.is_my_turn) {
-                    return;
-                  }
-
-                  const phase = tableData.game_state?.round?.phase;
-
-                  if (phase === "Bidding") {
-                    return;
-                  }
-
-                  if (phase === "Forming Hands") {
-                    if (selectedCards.cardToNextSeat === card) {
-                      setSelectedCards((prev) => ({
-                        ...prev,
-                        cardToNextSeat: null,
-                      }));
-                    } else if (selectedCards.cardToPrevSeat === card) {
-                      setSelectedCards((prev) => ({
-                        ...prev,
-                        cardToPrevSeat: null,
-                      }));
-                    } else if (!selectedCards.cardToNextSeat) {
-                      setSelectedCards((prev) => ({
-                        ...prev,
-                        cardToNextSeat: card,
-                      }));
-                    } else if (!selectedCards.cardToPrevSeat) {
-                      setSelectedCards((prev) => ({
-                        ...prev,
-                        cardToPrevSeat: card,
-                      }));
-                    }
-                  } else {
-                    takeTurn({
-                      type: "play_card",
-                      params: { card: card },
-                    });
-                  }
-                }}
+                onCardClick={(card) =>
+                  handleCardClick(
+                    card,
+                    currentPhase,
+                    tableData.game_state?.is_my_turn || false,
+                    (card) => takeTurn({ type: "play_card", params: { card } })
+                  )
+                }
                 onCardHover={setHoveredCard}
                 activeSeat={tableData.game_state.active_seat}
                 phase={currentPhase}
@@ -567,42 +217,15 @@ export function TableDetail() {
                   tableData.game_state?.is_my_turn &&
                   tableData.game_state?.round?.phase === "Bidding" ? (
                     <BiddingPanel
-                      onBid={(amount) => {
-                        takeTurn({
-                          type: "make_bid",
-                          params: { bid: amount },
-                        });
-                      }}
+                      onBid={(amount) =>
+                        takeTurn({ type: "make_bid", params: { bid: amount } })
+                      }
                       isLoading={wsPending}
                       minBid={60}
                       maxBid={200}
                       hasMarriage={checkForMarriage(playerHand)}
-                      currentHighestBid={(() => {
-                        const bid = tableData.game_state?.round?.highest_bid;
-                        if (
-                          typeof bid === "object" &&
-                          bid !== null &&
-                          bid["1"] !== undefined
-                        ) {
-                          return Number(bid["1"]);
-                        }
-                        return 0;
-                      })()}
-                      currentHighestBidder={(() => {
-                        const bid = tableData.game_state?.round?.highest_bid;
-                        if (
-                          typeof bid === "object" &&
-                          bid !== null &&
-                          bid["0"] !== undefined
-                        ) {
-                          const seatNumber = parseInt(bid["0"]);
-                          const player = tableData.players?.find(
-                            (p: any) => p.seat_number === seatNumber,
-                          );
-                          return player?.screen_name;
-                        }
-                        return undefined;
-                      })()}
+                      currentHighestBid={highestBidInfo?.amount || 0}
+                      currentHighestBidder={highestBidInfo?.bidder}
                       biddingStatus={biddingStatus}
                       currentPlayerSeat={currentUserSeat}
                     />
@@ -612,372 +235,68 @@ export function TableDetail() {
                 requiredSuit={tableData.game_state?.round?.required_suit}
                 trumpSuit={tableData.game_state?.round?.trump_suit}
                 lastTrick={tableData.game_state?.round?.prev_trick}
-                highestBid={(() => {
-                  const bid = tableData.game_state?.round?.highest_bid;
-                  if (
-                    bid &&
-                    typeof bid === "object" &&
-                    bid["0"] !== undefined
-                  ) {
-                    const seatNumber = parseInt(bid["0"]);
-                    const bidAmount = bid["1"];
-                    const player = tableData.players?.find(
-                      (p: any) => p.seat_number === seatNumber,
-                    );
-                    const playerName =
-                      player?.screen_name || `Seat ${seatNumber}`;
-                    return { bidder: playerName, amount: bidAmount };
-                  }
-                  return undefined;
-                })()}
+                highestBid={highestBidInfo}
               />
             </div>
 
-            {/* Mobile Bot Turn Button */}
             <div className="lg:hidden">
-              {(() => {
-                const activeSeat = tableData.game_state?.active_seat;
-                const activePlayer = tableData.players?.find(
-                  (p: any) => p.seat_number === activeSeat,
-                );
-                const isBotTurn = activePlayer?.bot_strategy_kind;
-
-                if (!isBotTurn) return null;
-
-                return (
-                  <Card>
-                    <CardContent className="pt-4">
-                      <div className="space-y-2">
-                        <div className="text-xs text-blue-600 font-medium">
-                          ⚡ Bot's turn - Click to advance
-                        </div>
-                        <Button
-                          onClick={takeAutomaticTurn}
-                          disabled={wsPending}
-                          size="sm"
-                          className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                        >
-                          {wsPending ? "Processing..." : "🤖 Take Bot Turn"}
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })()}
+              {isBotTurn && (
+                <BotTurnButton
+                  onTakeTurn={takeAutomaticTurn}
+                  isPending={wsPending}
+                />
+              )}
             </div>
 
-            {/* Right Side Panel */}
             <div className="hidden lg:block w-full lg:w-64 space-y-4 flex-shrink-0">
-              {/* Game Phase Info */}
-              <Card className="card-glow">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg">Game Info</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3 text-sm">
-                  <div>
-                    <span className="text-muted-foreground">Phase:</span>
-                    <p className="font-semibold">{currentPhase || "N/A"}</p>
-                  </div>
+              <GameInfoPanel
+                phase={currentPhase}
+                requiredSuit={tableData.game_state?.round?.required_suit}
+                trumpSuit={tableData.game_state?.round?.trump_suit}
+                highestBid={tableData.game_state?.round?.highest_bid}
+                players={tableData.players || []}
+                prevTrick={tableData.game_state?.round?.prev_trick}
+              />
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <span className="text-muted-foreground text-xs">
-                        Required:
-                      </span>
-                      <div className="mt-1">
-                        {renderSuitBadge(tableData.game_state?.round?.required_suit)}
-                      </div>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground text-xs">
-                        Trump:
-                      </span>
-                      <div className="mt-1">
-                        {renderSuitBadge(tableData.game_state?.round?.trump_suit)}
-                      </div>
-                    </div>
-                  </div>
-
-                  {tableData.game_state?.round?.highest_bid && (
-                    <div>
-                      <span className="text-muted-foreground">
-                        Highest Bid:
-                      </span>
-                      <p className="font-semibold">
-                        {(() => {
-                          const bid = tableData.game_state.round.highest_bid;
-                          if (typeof bid === "object" && bid !== null) {
-                            if (
-                              bid["0"] !== undefined &&
-                              bid["1"] !== undefined
-                            ) {
-                              const seatNumber = parseInt(bid["0"]);
-                              const bidAmount = bid["1"];
-                              const player = tableData.players?.find(
-                                (p: any) => p.seat_number === seatNumber,
-                              );
-                              const playerName =
-                                player?.screen_name || `Seat ${seatNumber}`;
-                              return `${playerName}: ${bidAmount}`;
-                            }
-                          }
-                          return safeRender(bid);
-                        })()}
-                      </p>
-                    </div>
-                  )}
-
-                  {tableData.game_state?.round?.prev_trick &&
-                    Array.isArray(tableData.game_state.round.prev_trick) &&
-                    tableData.game_state.round.prev_trick.length > 0 && (
-                      <div className="pt-3 border-t">
-                        <div className="space-y-2">
-                          <h4 className="text-sm font-semibold text-primary">
-                            Last Trick
-                          </h4>
-                          <div className="text-xs border rounded p-2 bg-muted/50">
-                            <div className="mt-1 flex flex-wrap gap-1">
-                              {tableData.game_state.round.prev_trick.map(
-                                (card: any, idx: number) => {
-                                  const cardStr = String(card);
-                                  const suit = cardStr.slice(-1);
-                                  let cardColor =
-                                    "bg-background text-foreground border";
-
-                                  if (suit === "h" || suit === "d") {
-                                    cardColor =
-                                      "bg-red-100 text-red-800 border-red-300";
-                                  } else if (suit === "s" || suit === "c") {
-                                    cardColor =
-                                      "bg-gray-100 text-gray-800 border-gray-300";
-                                  }
-
-                                  return (
-                                    <span
-                                      key={idx}
-                                      className={`text-sm px-2 py-1 rounded border font-bold ${cardColor}`}
-                                    >
-                                      {cardStr}
-                                    </span>
-                                  );
-                                },
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                </CardContent>
-              </Card>
-
-              {/* Automatic Turn Button */}
-              {tableData.game_state &&
-                (tableData.owner_id === currentUser?.user_id ||
-                  tableData.owner_id === currentUser?.id) && (
-                  <Card>
-                    <CardContent className="pt-4">
-                      {(() => {
-                        const activeSeat = tableData.game_state?.active_seat;
-                        const activePlayer = tableData.players?.find(
-                          (p: any) => p.seat_number === activeSeat,
-                        );
-                        const isBotTurn = activePlayer?.bot_strategy_kind;
-
-                        if (!isBotTurn) return null;
-
-                        return (
-                          <div className="space-y-2">
-                            <div className="text-xs text-blue-600 font-medium">
-                              ⚡ Bot's turn - Click to advance
-                            </div>
-                            <Button
-                              onClick={takeAutomaticTurn}
-                              disabled={wsPending}
-                              size="sm"
-                              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                            >
-                              {wsPending ? "Processing..." : "🤖 Take Bot Turn"}
-                            </Button>
-                          </div>
-                        );
-                      })()}
-                    </CardContent>
-                  </Card>
-                )}
+              {isOwner && isBotTurn && (
+                <BotTurnButton
+                  onTakeTurn={takeAutomaticTurn}
+                  isPending={wsPending}
+                />
+              )}
             </div>
           </div>
         )}
 
-        {/* Game Status Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm">Status</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-lg font-semibold">{tableData.status}</p>
-            </CardContent>
-          </Card>
+        <GameStatusCards
+          status={tableData.status}
+          roundNumber={tableData.game_state?.round?.round_number}
+          summary={tableData.game_state?.summary}
+          players={tableData.players || []}
+        />
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm">Round</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-lg font-semibold">
-                {safeRender(tableData.game_state?.round?.round_number)}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm">Scores</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-sm space-y-1">
-                {tableData.game_state?.summary
-                  ? Object.entries(tableData.game_state.summary).map(
-                      ([seat, points]) => {
-                        const player = tableData.players?.find(
-                          (p: any) => p.seat_number === parseInt(seat),
-                        );
-                        const playerName =
-                          player?.screen_name || `Seat ${seat}`;
-                        return (
-                          <div key={seat} className="flex justify-between">
-                            <span>{playerName}:</span>
-                            <span className="font-semibold">
-                              {String(points)}
-                            </span>
-                          </div>
-                        );
-                      },
-                    )
-                  : "No scores yet"}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Card Selection Info */}
         {tableData.game_state?.round?.phase === "Forming Hands" &&
           tableData.game_state?.is_my_turn && (
-            <Card className="border-primary/50">
-              <CardContent className="pt-4">
-                <div className="flex justify-center items-center gap-8 text-sm">
-                  <div className="text-center">
-                    <p className="text-muted-foreground mb-1">To Next Seat</p>
-                    <p className="font-medium text-lg">
-                      {selectedCards.cardToNextSeat || "❌ Select card"}
-                    </p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-muted-foreground mb-1">To Prev Seat</p>
-                    <p className="font-medium text-lg">
-                      {selectedCards.cardToPrevSeat || "❌ Select card"}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <CardSelectionInfo
+              cardToNextSeat={selectedCards.cardToNextSeat}
+              cardToPrevSeat={selectedCards.cardToPrevSeat}
+            />
           )}
 
-        {/* Table Seats */}
         {!tableData.game_state && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Table Seats</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {[1, 2, 3].map((seatNum) => {
-                  const player = tableData.players?.find(
-                    (p: any) => p.seat_number === seatNum,
-                  );
-                  const isSeatTaken = !!player;
-                  const isCurrentUser = player && !player.bot_strategy_kind && player.user_id === userId;
-                  const isBot = player && player.bot_strategy_kind;
-                  const canJoin =
-                    !isSeatTaken &&
-                    tableData.players?.length < (tableData.max_players || 3) &&
-                    !tableData.players.some((p: any) => p.user_id === userId);
-
-                  return (
-                    <Card key={seatNum} className="card-hover">
-                      <CardContent className="pt-6 text-center">
-                        <div className="text-sm text-muted-foreground mb-3">
-                          Seat {seatNum}
-                        </div>
-                        {isSeatTaken ? (
-                          <div className="space-y-3">
-                            <div className="font-medium text-lg">
-                              {player.screen_name}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {isBot
-                                ? `Bot (${player.bot_strategy_kind})`
-                                : "Human Player"}
-                            </div>
-                            {isBot && (
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => removeBot(seatNum)}
-                                disabled={wsPending}
-                                className="w-full"
-                              >
-                                {wsPending ? "Removing..." : "Remove Bot"}
-                              </Button>
-                            )}
-                            {isCurrentUser && (
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={leave}
-                                disabled={wsPending}
-                                className="w-full"
-                              >
-                                {wsPending ? "Leaving..." : "Leave Table"}
-                              </Button>
-                            )}
-                          </div>
-                        ) : (
-                          <div className="space-y-2">
-                            <div className="text-muted-foreground text-sm mb-3">
-                              Empty Seat
-                            </div>
-                            <div className="flex flex-col gap-2">
-                              <Button
-                                size="sm"
-                                onClick={() => joinSeat(seatNum)}
-                                disabled={wsPending || !canJoin}
-                                className="w-full"
-                              >
-                                {wsPending ? "Joining..." : "Join Table"}
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="secondary"
-                                onClick={() => addBot(seatNum)}
-                                disabled={wsPending}
-                                className="w-full"
-                              >
-                                {wsPending ? "Adding..." : "Add Bot"}
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
+          <TableSeats
+            players={tableData.players || []}
+            userId={userId}
+            maxPlayers={tableData.max_players || 3}
+            onJoin={join}
+            onJoinAny={() => join(null)}
+            onLeave={leave}
+            onAddBot={addBot}
+            onRemoveBot={removeBot}
+            isPending={wsPending}
+          />
         )}
 
-        {/* Debug: Raw data */}
         <details className="mt-4">
           <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground">
             View Raw Data (Debug)
@@ -994,4 +313,3 @@ export function TableDetail() {
     </div>
   );
 }
-
