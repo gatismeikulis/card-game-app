@@ -7,7 +7,6 @@ import { UserProvider } from "./contexts/UserContext";
 import { Loader2 } from "lucide-react";
 
 export default function App() {
-  const [loggedIn, setLoggedIn] = useState(false);
   const [loading, setLoading] = useState(true);
   const location = useLocation();
   const navigate = useNavigate();
@@ -18,14 +17,12 @@ export default function App() {
       const existingToken = getAccessToken();
 
       if (existingToken) {
-        setLoggedIn(true);
         setLoading(false);
         return;
       }
 
       // Try to refresh the token
       const refreshed = await refreshAccessToken();
-      setLoggedIn(refreshed);
       setLoading(false);
 
       // Don't redirect to login - allow viewing tables without authentication

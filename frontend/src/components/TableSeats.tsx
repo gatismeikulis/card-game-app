@@ -6,7 +6,6 @@ interface TableSeatsProps {
   userId: number | undefined;
   maxPlayers: number;
   onJoin: (seatNumber: number) => void;
-  onJoinAny: () => void;
   onLeave: () => void;
   onAddBot: (seatNumber: number) => void;
   onRemoveBot: (seatNumber: number) => void;
@@ -19,7 +18,6 @@ export function TableSeats({
   userId,
   maxPlayers,
   onJoin,
-  onJoinAny,
   onLeave,
   onAddBot,
   onRemoveBot,
@@ -27,9 +25,6 @@ export function TableSeats({
   isAuthenticated,
 }: TableSeatsProps) {
   const seatNumbers = [1, 2, 3];
-  const canJoinAny =
-    players.length < maxPlayers &&
-    !players.some((p: any) => p.user_id === userId);
 
   return (
     <Card>

@@ -312,7 +312,6 @@ export function TableDetail() {
             userId={userId}
             maxPlayers={tableData.max_players || 3}
             onJoin={join}
-            onJoinAny={() => join(null)}
             onLeave={leave}
             onAddBot={addBot}
             onRemoveBot={removeBot}

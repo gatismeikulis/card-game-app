@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
 import { getAccessToken } from "../auth";
 
 const WS_BASE = (import.meta as any).env?.VITE_WS_BASE ?? "ws://localhost:8000";
@@ -16,7 +15,6 @@ export function useTableWebSocket(
   enabled: boolean,
   onMessage: (message: any) => void
 ): UseTableWebSocketResult {
-  const navigate = useNavigate();
   const [connected, setConnected] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,7 +52,9 @@ export function useTableWebSocket(
           setPending(false);
           setError(null);
         } else if (message.type === "error") {
-          setError(message.data?.detail || message.data?.message || "An error occurred");
+          setError(
+            message.data?.detail || message.data?.message || "An error occurred"
+          );
           setPending(false);
         }
       } catch (e) {
@@ -83,25 +83,22 @@ export function useTableWebSocket(
     };
   }, [tableId, enabled]);
 
-  const sendMessage = useCallback(
-    (action: string, data: any) => {
-      if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
-        setError("WebSocket not connected");
-        return;
-      }
+  const sendMessage = useCallback((action: string, data: any) => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+      setError("WebSocket not connected");
+      return;
+    }
 
-      setPending(true);
-      setError(null);
+    setPending(true);
+    setError(null);
 
-      wsRef.current.send(
-        JSON.stringify({
-          action,
-          data,
-        })
-      );
-    },
-    []
-  );
+    wsRef.current.send(
+      JSON.stringify({
+        action,
+        data,
+      })
+    );
+  }, []);
 
   return {
     connected,
@@ -110,4 +107,3 @@ export function useTableWebSocket(
     sendMessage,
   };
 }
-

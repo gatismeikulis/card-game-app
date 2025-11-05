@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { getSuitBadgeInfo, extractHighestBid, safeRender } from "../utils/gameUtils";
+import { getSuitBadgeInfo, extractHighestBid } from "../utils/gameUtils";
 
 interface GameInfoPanelProps {
   phase: string;
