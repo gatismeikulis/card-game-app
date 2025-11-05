@@ -12,12 +12,14 @@ from ...domain.five_hundred_command import (
     MakeBidCommand,
     PassCardsCommand,
     PlayCardCommand,
+    GiveUpCommand,
 )
 from ...domain.five_hundred_event import (
     DeckShuffledEvent,
     BidMadeEvent,
     CardsPassedEvent,
     CardPlayedEvent,
+    DeclarerGaveUpEvent,
 )
 from ...domain.five_hundred_card import FiveHundredCard
 from ...domain.five_hundred_game import FiveHundredGame
@@ -61,6 +63,20 @@ def test_handle_make_bid_command_happy_path(sample_game: FiveHundredGame):
     cmd = MakeBidCommand(bid=round_updated.highest_bid[1] + 5 if round_updated.highest_bid else 105)
     event = handle_command(game_updated, cmd)
     assert event == BidMadeEvent(bid=cmd.bid, made_by=sample_game.active_seat)
+
+
+def test_handle_give_up_command_incorrect_phase(sample_game: FiveHundredGame):
+    cmd = GiveUpCommand()
+    with pytest.raises(GameRulesException):
+        _ = handle_command(sample_game, cmd)
+
+
+def test_handle_give_up_command_happy_path(sample_game: FiveHundredGame):
+    round_updated = replace(sample_game.round, phase=FiveHundredPhase.FORMING_HANDS)
+    game_updated = replace(sample_game, round=round_updated)
+    cmd = GiveUpCommand()
+    event = handle_command(game_updated, cmd)
+    assert event == DeclarerGaveUpEvent(made_by=sample_game.active_seat)
 
 
 def test_handle_pass_cards_command_incorrect_phase(sample_game: FiveHundredGame):

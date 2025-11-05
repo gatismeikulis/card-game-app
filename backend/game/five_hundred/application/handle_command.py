@@ -11,6 +11,7 @@ from ..domain.five_hundred_deck import FiveHundredDeck
 from ..domain.five_hundred_card import FiveHundredCard
 from ..domain.five_hundred_command import (
     FiveHundredCommand,
+    GiveUpCommand,
     MakeBidCommand,
     PassCardsCommand,
     PlayCardCommand,
@@ -22,6 +23,7 @@ from ..domain.five_hundred_event import (
     CardsPassedEvent,
     DeckShuffledEvent,
     FiveHundredEvent,
+    DeclarerGaveUpEvent,
 )
 from ..domain.five_hundred_game import FiveHundredGame
 from ..domain.five_hundred_phase import FiveHundredPhase
@@ -33,6 +35,8 @@ def handle_command(game: FiveHundredGame, cmd: FiveHundredCommand) -> FiveHundre
             return handle_start_game()
         case MakeBidCommand(bid=bid):
             return handle_make_bid(game, bid)
+        case GiveUpCommand():
+            return handle_give_up(game)
         case PassCardsCommand(card_to_next_seat=card_to_next_seat, card_to_prev_seat=card_to_prev_seat):
             return handle_pass_cards(game, card_to_next_seat, card_to_prev_seat)
         case PlayCardCommand(card=card):
@@ -68,6 +72,13 @@ def handle_make_bid(game: FiveHundredGame, bid: int) -> FiveHundredEvent:
             raise GameRulesException(detail="Could not make bid: bid is too high for hand without marriage")
 
     return BidMadeEvent(bid=bid, made_by=game.active_seat)
+
+
+def handle_give_up(game: FiveHundredGame) -> FiveHundredEvent:
+    if game.round.phase != FiveHundredPhase.FORMING_HANDS:
+        raise GameRulesException(detail="Could not give up: not 'forming hands' phase")
+
+    return DeclarerGaveUpEvent(made_by=game.active_seat)
 
 
 def handle_pass_cards(

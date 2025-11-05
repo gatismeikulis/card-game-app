@@ -64,7 +64,7 @@ def sample_round(sample_seat_infos: dict[Seat, FiveHundredSeatInfo]) -> FiveHund
 
 @pytest.fixture
 def sample_game_config() -> FiveHundredGameConfig:
-    return FiveHundredGameConfig(max_rounds=100, max_bid_no_marriage=120, min_bid=60)
+    return FiveHundredGameConfig(max_rounds=100, max_bid_no_marriage=120, min_bid=60, give_up_points=50)
 
 
 @pytest.fixture

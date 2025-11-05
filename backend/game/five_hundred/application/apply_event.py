@@ -6,6 +6,7 @@ from ..domain.five_hundred_event import (
     CardsPassedEvent,
     FiveHundredEvent,
     GameFinishedEvent,
+    DeclarerGaveUpEvent,
     HiddenCardsTakenEvent,
     MarriagePointsAddedEvent,
     RoundFinishedEvent,
@@ -34,6 +35,8 @@ def apply_event(game: FiveHundredGame, event: FiveHundredEvent) -> FiveHundredGa
             return finish_bidding(game)
         case HiddenCardsTakenEvent():
             return take_hidden_cards(game)
+        case DeclarerGaveUpEvent():
+            return game
         case CardsPassedEvent(card_to_next_seat=card_to_next_seat, card_to_prev_seat=card_to_prev_seat):
             return pass_cards(game, card_to_next_seat, card_to_prev_seat)
         case CardPlayedEvent(card=card):

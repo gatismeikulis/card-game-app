@@ -5,6 +5,7 @@ from ..common.game_command import GameCommand
 from ..common.game_command_parser import GameCommandParser
 from .domain.five_hundred_card import FiveHundredCard
 from .domain.five_hundred_command import (
+    GiveUpCommand,
     MakeBidCommand,
     PassCardsCommand,
     PlayCardCommand,
@@ -26,6 +27,8 @@ class FiveHundredCommandParser(GameCommandParser):
                 except Exception:
                     raise error("make_bid")
                 return MakeBidCommand(bid=bid)
+            case "give_up":
+                return GiveUpCommand()
             case "pass_cards":
                 try:
                     card_to_next_seat = FiveHundredCard.from_string(raw_command["params"]["card_to_next_seat"])

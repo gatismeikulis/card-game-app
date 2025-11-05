@@ -43,7 +43,9 @@ import pytest
                 "cards": [FiveHundredCard(Suit.SPADE, Rank.JACK), FiveHundredCard(Suit.CLUB, Rank.TEN)],
             },
         ),
-        (RoundFinishedEvent, {"round_number": 1}),
+        (RoundFinishedEvent, {"round_number": 1, "declarer": Seat(1), "given_up": False}),
+        (RoundFinishedEvent, {"round_number": 3, "declarer": None, "given_up": True}),
+        (RoundFinishedEvent, {"round_number": 3, "declarer": None, "given_up": False}),
         (GameFinishedEvent, {}),
     ],
     ids=[
@@ -56,7 +58,9 @@ import pytest
         "card_played",
         "marriage_points_added",
         "trick_taken",
-        "round_finished",
+        "round_finished_has_declarer",
+        "round_finished_declarer_gave_up",
+        "round_finished_no_declarer",
         "game_finished",
     ],
 )

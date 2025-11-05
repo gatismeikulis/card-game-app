@@ -17,6 +17,11 @@ class MakeBidCommand(GameCommand):
 
 
 @dataclass(frozen=True, slots=True)
+class GiveUpCommand(GameCommand):
+    type: ClassVar[Literal["give_up"]] = "give_up"
+
+
+@dataclass(frozen=True, slots=True)
 class PassCardsCommand(GameCommand):
     type: ClassVar[Literal["pass_cards"]] = "pass_cards"
     card_to_next_seat: FiveHundredCard
@@ -29,4 +34,4 @@ class PlayCardCommand(GameCommand):
     card: FiveHundredCard
 
 
-FiveHundredCommand = StartGameCommand | MakeBidCommand | PassCardsCommand | PlayCardCommand
+FiveHundredCommand = StartGameCommand | MakeBidCommand | GiveUpCommand | PassCardsCommand | PlayCardCommand

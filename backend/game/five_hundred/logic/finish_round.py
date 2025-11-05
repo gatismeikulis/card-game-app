@@ -7,16 +7,19 @@ from ..domain.five_hundred_round import FiveHundredRound
 from ..domain.five_hundred_round_results import FiveHundredRoundResults
 
 
-def finish_round(game: FiveHundredGame) -> FiveHundredGame:
+def finish_round(game: FiveHundredGame, has_declarer_given_up: bool = False) -> FiveHundredGame:
     bidding_winning_seat = game.round.highest_bid[0] if game.round.highest_bid else None
 
     def get_round_points_for_seat(seat: Seat, seats_game_points: int) -> int:
-        points = game.round.seat_infos[seat].points
+        points_from_tricks = game.round.seat_infos[seat].points
         if bidding_winning_seat == seat:
             winning_bid = game.round.highest_bid[1] if game.round.highest_bid else 0
-            return winning_bid if winning_bid <= points else -winning_bid
+            return (
+                winning_bid if winning_bid <= points_from_tricks else -winning_bid
+            )  # this logic is correct also after giving up
         else:
-            diff_of_five = points % 5
+            points = game.game_config.give_up_points if has_declarer_given_up else points_from_tricks
+            diff_of_five = points_from_tricks % 5
             points_rounded = points - diff_of_five + 5 if diff_of_five > 2 else points - diff_of_five
             return points_rounded if seats_game_points >= MUST_BID_THRESHOLD else 0
 

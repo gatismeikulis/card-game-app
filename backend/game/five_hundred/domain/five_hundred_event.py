@@ -85,6 +85,21 @@ class HiddenCardsTakenEvent(GameEvent):
 
 
 @dataclass(frozen=True, slots=True)
+class DeclarerGaveUpEvent(GameEvent):
+    type: ClassVar[Literal["declarer_gave_up"]] = "declarer_gave_up"
+    made_by: Seat
+
+    @override
+    def to_dict(self) -> dict[str, Any]:
+        return {"type": self.type, "made_by": self.made_by.to_dict()}
+
+    @classmethod
+    @override
+    def from_dict(cls, data: dict[str, Any]) -> Self:
+        return cls(made_by=Seat.from_dict(data["made_by"]))
+
+
+@dataclass(frozen=True, slots=True)
 class CardsPassedEvent(GameEvent):
     type: ClassVar[Literal["cards_passed"]] = "cards_passed"
     card_to_next_seat: FiveHundredCard
@@ -180,18 +195,26 @@ class TrickTakenEvent(GameEvent):
 class RoundFinishedEvent(GameEvent):
     type: ClassVar[Literal["round_finished"]] = "round_finished"
     round_number: int
+    declarer: Seat | None
+    given_up: bool
 
     @override
     def to_dict(self) -> dict[str, Any]:
         return {
             "type": self.type,
             "round_number": self.round_number,
+            "declarer": self.declarer.to_dict() if self.declarer else None,
+            "given_up": self.given_up,
         }
 
     @classmethod
     @override
     def from_dict(cls, data: dict[str, Any]) -> Self:
-        return cls(round_number=data["round_number"])
+        return cls(
+            round_number=data["round_number"],
+            declarer=Seat.from_dict(data["declarer"]) if data["declarer"] else None,
+            given_up=data["given_up"],
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -213,6 +236,7 @@ FiveHundredEvent = (
     | BidMadeEvent
     | BiddingFinishedEvent
     | HiddenCardsTakenEvent
+    | DeclarerGaveUpEvent
     | CardsPassedEvent
     | CardPlayedEvent
     | RoundFinishedEvent

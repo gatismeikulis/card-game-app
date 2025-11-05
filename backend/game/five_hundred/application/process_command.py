@@ -19,6 +19,7 @@ from ..domain.five_hundred_event import (
     MarriagePointsAddedEvent,
     RoundFinishedEvent,
     TrickTakenEvent,
+    DeclarerGaveUpEvent,
 )
 from ..domain.five_hundred_game import FiveHundredGame
 from ..logic.helpers import get_next_seat_to_bid, get_trick_winning_card, is_played_card_part_of_marriage
@@ -61,9 +62,16 @@ def check_for_additional_events(game: FiveHundredGame, last_event: FiveHundredEv
 
         case BiddingFinishedEvent():
             if game.round.highest_bid is None:
-                return RoundFinishedEvent(round_number=game.round.round_number)
+                return RoundFinishedEvent(round_number=game.round.round_number, declarer=None, given_up=False)
             else:
                 return HiddenCardsTakenEvent()
+
+        case DeclarerGaveUpEvent():
+            return RoundFinishedEvent(
+                round_number=game.round.round_number,
+                declarer=game.round.highest_bid[0] if game.round.highest_bid else None,
+                given_up=True,
+            )
 
         case CardPlayedEvent(played_by=card_played_by, card=played_card):
             cards_on_board_count = game.round.cards_on_board_count
@@ -101,7 +109,11 @@ def check_for_additional_events(game: FiveHundredGame, last_event: FiveHundredEv
         case TrickTakenEvent():
             # if any of seats does not have cards left, then round is finished
             if len(game.active_seats_info.hand.cards) == EMPTY_HAND_SIZE:
-                return RoundFinishedEvent(round_number=game.round.round_number)
+                return RoundFinishedEvent(
+                    round_number=game.round.round_number,
+                    declarer=game.round.highest_bid[0] if game.round.highest_bid else None,
+                    given_up=False,
+                )
             return None
 
         case RoundFinishedEvent():
