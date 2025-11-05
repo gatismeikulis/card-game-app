@@ -29,7 +29,7 @@ echo "Starting server..."
 if [ "$ENVIRONMENT" = "production" ]; then
     echo "Running Daphne for production (ASGI with WebSocket support)..."
     # Single process only - required for InMemoryChannelLayer
-    exec uv run daphne -b 0.0.0.0 -p ${PORT:-8000} config.asgi:application
+    exec uv run daphne -b 0.0.0.0 -p "${PORT}" config.asgi:application
 else
     echo "Running Django development server (uv run)..."
     exec uv run python manage.py runserver 0.0.0.0:8000
