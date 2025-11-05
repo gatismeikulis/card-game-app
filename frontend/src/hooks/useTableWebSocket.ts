@@ -32,12 +32,10 @@ export function useTableWebSocket(
     if (!tableId || !enabled) return;
 
     const token = getAccessToken();
-    if (!token) {
-      navigate("/login");
-      return;
-    }
-
-    const wsUrl = `${WS_BASE}/ws/tables/${tableId}/?token=${encodeURIComponent(token)}`;
+    // Connect with or without token - backend allows AnonymousUser
+    const wsUrl = token
+      ? `${WS_BASE}/ws/tables/${tableId}/?token=${encodeURIComponent(token)}`
+      : `${WS_BASE}/ws/tables/${tableId}/`;
     const ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
@@ -83,7 +81,7 @@ export function useTableWebSocket(
         wsRef.current.close();
       }
     };
-  }, [tableId, enabled, navigate]);
+  }, [tableId, enabled]);
 
   const sendMessage = useCallback(
     (action: string, data: any) => {

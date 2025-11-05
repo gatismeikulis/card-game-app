@@ -28,13 +28,20 @@ export default function App() {
       setLoggedIn(refreshed);
       setLoading(false);
 
-      if (!refreshed) {
+      // Don't redirect to login - allow viewing tables without authentication
+      // Only redirect to login for routes that require authentication
+      const publicRoutes = ["/", "/tables", "/tables/"];
+      const isPublicRoute = publicRoutes.some((route) =>
+        location.pathname === route || location.pathname.startsWith("/tables/")
+      );
+
+      if (!refreshed && !isPublicRoute) {
         navigate("/login");
       }
     }
 
     checkAuth();
-  }, [navigate]);
+  }, [navigate, location.pathname]);
 
   if (loading) {
     return (
@@ -48,12 +55,6 @@ export default function App() {
         </div>
       </div>
     );
-  }
-
-  if (!loggedIn) {
-    // This shouldn't happen as we navigate to /login, but as a fallback
-    navigate("/login");
-    return null;
   }
 
   // Render the appropriate component based on the current path

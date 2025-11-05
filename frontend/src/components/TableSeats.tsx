@@ -11,6 +11,7 @@ interface TableSeatsProps {
   onAddBot: (seatNumber: number) => void;
   onRemoveBot: (seatNumber: number) => void;
   isPending: boolean;
+  isAuthenticated: boolean;
 }
 
 export function TableSeats({
@@ -23,6 +24,7 @@ export function TableSeats({
   onAddBot,
   onRemoveBot,
   isPending,
+  isAuthenticated,
 }: TableSeatsProps) {
   const seatNumbers = [1, 2, 3];
   const canJoinAny =
@@ -93,25 +95,33 @@ export function TableSeats({
                       <div className="text-muted-foreground text-sm mb-3">
                         Empty Seat
                       </div>
-                      <div className="flex flex-col gap-2">
-                        <Button
-                          size="sm"
-                          onClick={() => onJoin(seatNum)}
-                          disabled={isPending || !canJoin}
-                          className="w-full"
-                        >
-                          {isPending ? "Joining..." : "Join Table"}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => onAddBot(seatNum)}
-                          disabled={isPending}
-                          className="w-full"
-                        >
-                          {isPending ? "Adding..." : "Add Bot"}
-                        </Button>
-                      </div>
+                            <div className="flex flex-col gap-2">
+                              {isAuthenticated ? (
+                                <>
+                                  <Button
+                                    size="sm"
+                                    onClick={() => onJoin(seatNum)}
+                                    disabled={isPending || !canJoin}
+                                    className="w-full"
+                                  >
+                                    {isPending ? "Joining..." : "Join Table"}
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="secondary"
+                                    onClick={() => onAddBot(seatNum)}
+                                    disabled={isPending}
+                                    className="w-full"
+                                  >
+                                    {isPending ? "Adding..." : "Add Bot"}
+                                  </Button>
+                                </>
+                              ) : (
+                                <div className="text-sm text-muted-foreground text-center py-2">
+                                  Login to join
+                                </div>
+                              )}
+                            </div>
                     </div>
                   )}
                 </CardContent>

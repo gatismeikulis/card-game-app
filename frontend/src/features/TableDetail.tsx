@@ -29,7 +29,7 @@ import {
 export function TableDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { userId } = useUserData();
+  const { userId, isLoggedIn } = useUserData();
   const [tableData, setTableData] = useState<any>(null);
 
   // Initial HTTP fetch to get table state
@@ -164,11 +164,13 @@ export function TableDetail() {
           wsConnected={wsConnected}
           hasGameState={!!tableData.game_state}
           canJoin={
+            isLoggedIn &&
             !tableData.game_state &&
             tableData.players?.length < (tableData.max_players || 3) &&
             !tableData.players.some((p: any) => p.user_id === userId)
           }
           canStartGame={
+            isLoggedIn &&
             !tableData.game_state &&
             tableData.players?.length >= (tableData.min_players || 3)
           }
@@ -176,6 +178,7 @@ export function TableDetail() {
           onStartGame={startGame}
           onBack={() => navigate("/tables")}
           isPending={wsPending}
+          isAuthenticated={isLoggedIn}
         />
 
         <ErrorMessage message={wsError || ""} />
@@ -193,17 +196,20 @@ export function TableDetail() {
         {tableData.game_state && (
           <div className="flex flex-col lg:flex-row gap-4 items-stretch w-full min-h-0">
             <div className="flex-1 flex justify-center relative min-w-0 w-full lg:w-auto">
-              <PassCardsButton
-                cardToNextSeat={selectedCards.cardToNextSeat}
-                cardToPrevSeat={selectedCards.cardToPrevSeat}
-                onPass={handlePassCards}
-                isPending={wsPending}
-              />
-
-              {tableData.game_state?.round?.phase === "Forming Hands" &&
-                tableData.game_state?.is_my_turn && (
-                  <GiveUpButton onGiveUp={giveUp} isPending={wsPending} />
-                )}
+              {isLoggedIn && (
+                <>
+                  <PassCardsButton
+                    cardToNextSeat={selectedCards.cardToNextSeat}
+                    cardToPrevSeat={selectedCards.cardToPrevSeat}
+                    onPass={handlePassCards}
+                    isPending={wsPending}
+                  />
+                  {tableData.game_state?.round?.phase === "Forming Hands" &&
+                    tableData.game_state?.is_my_turn && (
+                      <GiveUpButton onGiveUp={giveUp} isPending={wsPending} />
+                    )}
+                </>
+              )}
 
               <GameBoard
                 players={processedPlayers}
@@ -229,6 +235,7 @@ export function TableDetail() {
                 phase={currentPhase}
                 cardsOnBoard={cardsOnBoard}
                 biddingPanel={
+                  isLoggedIn &&
                   tableData.game_state?.is_my_turn &&
                   tableData.game_state?.round?.phase === "Bidding" ? (
                     <BiddingPanel
@@ -255,7 +262,7 @@ export function TableDetail() {
             </div>
 
             <div className="lg:hidden">
-              {isBotTurn && (
+              {isLoggedIn && isOwner && isBotTurn && (
                 <BotTurnButton
                   onTakeTurn={takeAutomaticTurn}
                   isPending={wsPending}
@@ -273,7 +280,7 @@ export function TableDetail() {
                 prevTrick={tableData.game_state?.round?.prev_trick}
               />
 
-              {isOwner && isBotTurn && (
+              {isLoggedIn && isOwner && isBotTurn && (
                 <BotTurnButton
                   onTakeTurn={takeAutomaticTurn}
                   isPending={wsPending}
@@ -290,7 +297,8 @@ export function TableDetail() {
           players={tableData.players || []}
         />
 
-        {tableData.game_state?.round?.phase === "Forming Hands" &&
+        {isLoggedIn &&
+          tableData.game_state?.round?.phase === "Forming Hands" &&
           tableData.game_state?.is_my_turn && (
             <CardSelectionInfo
               cardToNextSeat={selectedCards.cardToNextSeat}
@@ -309,6 +317,7 @@ export function TableDetail() {
             onAddBot={addBot}
             onRemoveBot={removeBot}
             isPending={wsPending}
+            isAuthenticated={isLoggedIn}
           />
         )}
 

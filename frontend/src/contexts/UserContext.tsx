@@ -7,6 +7,7 @@ import {
 } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "../api";
+import { getAccessToken } from "../auth";
 
 // User data interface
 export interface User {
@@ -36,16 +37,18 @@ interface UserProviderProps {
 export function UserProvider({ children }: UserProviderProps) {
   const [user, setUser] = useState<User | null>(null);
 
-  // Fetch user data
+  // Fetch user data - allow this to fail gracefully if not authenticated
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["user", "me"],
     queryFn: async () => {
       const response = await apiFetch("/api/v1/users/me/");
       return response;
     },
-    retry: 1,
+    retry: false, // Don't retry if not authenticated
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
+    // Only run query if we have a token
+    enabled: !!getAccessToken(),
   });
 
   // Update user state when data changes
