@@ -97,7 +97,7 @@ class GameTableManager:
     def add_bot_player(
         self,
         table_id: str,
-        iniated_by: User,
+        iniated_by: int,
         options: dict[str, Any],
     ) -> GameTable:
         try:
@@ -107,12 +107,12 @@ class GameTableManager:
                 preferred_seat_number = options.get("preferred_seat", None)
                 bot_strategy = get_bot_strategy(table.config.game_name, bot_strategy_kind)
                 table.add_bot_player(
-                    bot_strategy=bot_strategy, initiated_by=iniated_by.pk, preferred_seat_number=preferred_seat_number
+                    bot_strategy=bot_strategy, initiated_by=iniated_by, preferred_seat_number=preferred_seat_number
                 )
 
             return self._game_table_repository.modify(table_id, _modifier)
         except AppException as e:
-            raise e.with_context(table_id=table_id, user_id=iniated_by.pk, operation="add_bot_player")
+            raise e.with_context(table_id=table_id, user_id=iniated_by, operation="add_bot_player")
 
     def remove_bot_player(self, table_id: str, iniated_by: int, seat_number_to_remove: SeatNumber) -> GameTable:
         try:

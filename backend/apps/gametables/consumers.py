@@ -1,5 +1,14 @@
+from collections.abc import Sequence
 from typing import Any, override
 
+from .domain.game_table_action import GameTableAction
+from .serializers import (
+    AddBotRequestSerializer,
+    JoinGameTableRequestSerializer,
+    RemoveBotRequestSerializer,
+    TakeRegularTurnRequestSerializer,
+)
+from game.common.game_event import GameEvent
 from core.exceptions.app_exception import AppException
 from core.ws.app_websocket_consumer import AppWebSocketConsumer
 from channels.db import database_sync_to_async
@@ -37,22 +46,68 @@ class GameTableWebSocketConsumer(AppWebSocketConsumer):
     async def receive_json(self, content: dict[str, Any], **kwargs):
         """Handle parsed JSON messages"""
 
-        # check if content contains "type" key
-        # type key can be take_turn, take_regular_turn, chat_message, join_table, leave_table, add_bot, remove_bot
+        action = GameTableAction.from_str(content.get("action", "none"))
+        data = content.get("data", {})
 
-        table = await database_sync_to_async(table_manager.get_table)(self.table_id)
+        events: Sequence[GameEvent] = []
+
+        match action:
+            case GameTableAction.TAKE_REGULAR_TURN:
+                serializer = TakeRegularTurnRequestSerializer(data=data)
+                _ = serializer.is_valid(raise_exception=True)
+
+                events, table = await database_sync_to_async(table_manager.take_regular_turn)(
+                    table_id=self.table_id, user_id=self.user.pk, raw_command=serializer.validated_data
+                )
+            case GameTableAction.TAKE_AUTOMATIC_TURN:
+                events, table = await database_sync_to_async(table_manager.take_automatic_turn)(
+                    table_id=self.table_id, initiated_by=self.user.pk
+                )
+
+            case GameTableAction.JOIN_TABLE:
+                serializer = JoinGameTableRequestSerializer(data=data)
+                _ = serializer.is_valid(raise_exception=True)
+
+                table = await database_sync_to_async(table_manager.join_table)(
+                    table_id=self.table_id,
+                    user=self.user,
+                    preferred_seat_number=serializer.validated_data["preferred_seat"],
+                )
+            case GameTableAction.LEAVE_TABLE:
+                table = await database_sync_to_async(table_manager.leave_table)(
+                    table_id=self.table_id, user_id=self.user.pk
+                )
+            case GameTableAction.ADD_BOT:
+                serializer = AddBotRequestSerializer(data=data)
+                _ = serializer.is_valid(raise_exception=True)
+                table = await database_sync_to_async(table_manager.add_bot_player)(
+                    table_id=self.table_id, iniated_by=self.user.pk, options=serializer.validated_data
+                )
+            case GameTableAction.REMOVE_BOT:
+                serializer = RemoveBotRequestSerializer(data=data)
+                _ = serializer.is_valid(raise_exception=True)
+                table = await database_sync_to_async(table_manager.remove_bot_player)(
+                    table_id=self.table_id,
+                    iniated_by=self.user.pk,
+                    seat_number_to_remove=serializer.validated_data["seat_number"],
+                )
+            case GameTableAction.START_GAME:
+                events, table = await database_sync_to_async(table_manager.start_game)(
+                    table_id=self.table_id, iniated_by=self.user.pk
+                )
 
         await self.channel_layer.group_send(
             self.group_name,
             {
                 "type": "table.action",
-                "message": f"from {self.user.username or 'anonymous'}: {content}",
-                "table": table.to_dict(),
+                "game_events": [event.to_dict() for event in events],
+                "public_table_data": table.to_public_dict(),
+                "private_table_data": {p.user_id: table.to_public_dict(p.seat_number) for p in table.players},
             },
         )
 
     async def table_action(self, event: dict[str, Any]):
         """Handle group messages"""
-        message = event["message"]
-        table = event["table"]
-        await self.send_json({"message": message, "table": table})
+        game_events = event["game_events"]
+        table_data = event["private_table_data"].get(self.user.pk, event["public_table_data"])
+        await self.send_json({"type": "table_action", "data": {"game_events": game_events, "table_data": table_data}})

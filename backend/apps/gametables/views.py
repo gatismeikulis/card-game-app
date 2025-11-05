@@ -69,7 +69,7 @@ class GameTableViewSet(ViewSet):
         """
         DELETE /{table_id}
         """
-        table_manager.remove_table(table_id=pk, iniated_by=request.user.pk)
+        table_manager.remove_table(table_id=pk)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def retrieve(self, request: Request, pk: str):
@@ -130,7 +130,7 @@ class GameTableViewSet(ViewSet):
         _ = serializer.is_valid(raise_exception=True)
         _ = table_manager.add_bot_player(
             table_id=pk,
-            iniated_by=request.user,
+            iniated_by=request.user.pk,
             options=serializer.validated_data,
         )
 

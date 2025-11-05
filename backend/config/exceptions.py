@@ -15,6 +15,8 @@ def custom_exception_handler(exc: Exception, context: dict[str, Any]) -> Respons
     if response is not None:
         return response
 
+    print(f"EXCEPTION: {exc}")
+
     if isinstance(exc, AppException):
         match exc:
             case DomainException() as domain_exception:
