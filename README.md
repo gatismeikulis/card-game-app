@@ -8,21 +8,21 @@ Try it out: https://gm-card-games.up.railway.app/
 
 ## Features (WIP)
 
-- **Real-time multiplayer** via WebSockets (planned), initially HTTP polling
+- **Real-time multiplayer** via WebSockets
 - **Bot players** with different levels; ML-capable
 - **Event‑sourced architecture** with event‑sourced game engines
-- **Detailed statistics** and game analysis tools
+- **Detailed statistics** and game analysis tools (planned)
 - **Multiple card games** (starting with ‘Five Hundred’)
 
 ## Tech Stack
 
-- **Backend**: Python, Django, Django REST Framework
+- **Backend**: Python, Django, Django REST Framework, Channels
 - **Frontend**: TypeScript, React
 - **DB**: PostgreSQL
 
 ## Project Status
 
-🚧 Work in Progress — working on BE testing and error handling
+🚧 Work in Progress — working on improving db models and game replays
 
 ## About Five Hundred
 
@@ -36,6 +36,6 @@ Five Hundred is a trick‑taking card game not well known globally and rarely av
 - [x] REST API for managing users and interacting with game tables
 - [x] Minimalistic React FE for easier interaction with the API
 - [x] User‑friendly React frontend
-- [ ] WebSocket server
+- [x] WebSocket server
 - [ ] AI bot opponents
 - [ ] Game statistics and replays
