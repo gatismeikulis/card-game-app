@@ -18,10 +18,12 @@ from .five_hundred_seat_info import FiveHundredSeatInfo
 @dataclass(frozen=True, slots=True)
 class FiveHundredGame(GameState):
     round: FiveHundredRound  # current round
-    results: Sequence[FiveHundredRoundResults]  # round-by-round results
+    results: Sequence[
+        FiveHundredRoundResults
+    ]  # round-by-round results TODO: consider moving this out of the game state...
     summary: Mapping[Seat, int]  # running game-points
     active_seat: Seat
-    is_finished: bool
+    is_ended: bool
     game_config: FiveHundredGameConfig
     taken_seats: frozenset[Seat]
 
@@ -40,14 +42,14 @@ class FiveHundredGame(GameState):
             round=round,
             results=[],
             summary={seat: GAME_STARTING_POINTS for seat in taken_seats},
-            is_finished=False,
+            is_ended=False,
             game_config=game_config,
             taken_seats=taken_seats,
         )
 
     @property
     def winners(self) -> Sequence[Seat]:
-        if self.round.phase != FiveHundredPhase.GAME_FINISHED:
+        if self.round.phase != FiveHundredPhase.GAME_ENEDED:
             raise GameEngineException(detail="Could not get winners: game has not ended yet")
         return [seat for seat, points in self.summary.items() if points <= 0]
 
@@ -58,8 +60,8 @@ class FiveHundredGame(GameState):
     @override
     def str_repr_for_table(self) -> str:
         match self.round.phase:
-            case FiveHundredPhase.GAME_FINISHED:
-                return f"Game Finished, Winners: {', '.join(str(seat) for seat in self.winners)}, Final Scores: {', '.join(f'{seat}: {self.summary[seat]}' for seat in self.summary.keys())}"
+            case FiveHundredPhase.GAME_ENEDED:
+                return f"Game Ended, Winners: {', '.join(str(seat) for seat in self.winners)}, Final Scores: {', '.join(f'{seat}: {self.summary[seat]}' for seat in self.summary.keys())}"
             case _:
                 return f"Game in progress, Round {self.round.round_number}, {self.round.phase}, Seat {self.active_seat} is taking turn, Current scores: {', '.join(f'{seat}: {self.summary[seat]}' for seat in self.summary.keys())}"
 
@@ -71,7 +73,7 @@ class FiveHundredGame(GameState):
             "results": [result.to_dict() for result in self.results],
             "summary": {seat.to_dict(): points for seat, points in self.summary.items()},
             "active_seat": self.active_seat.to_dict(),
-            "is_finished": self.is_finished,
+            "is_ended": self.is_ended,
             "game_config": self.game_config.to_dict(),
             "taken_seats": [seat.to_dict() for seat in self.taken_seats],
         }
@@ -85,7 +87,7 @@ class FiveHundredGame(GameState):
             results=[FiveHundredRoundResults.from_dict(result) for result in data["results"]],
             summary={Seat.from_dict(int(seat)): points for seat, points in data["summary"].items()},
             active_seat=Seat.from_dict(data["active_seat"]),
-            is_finished=data["is_finished"],
+            is_ended=data["is_ended"],
             game_config=FiveHundredGameConfig.from_dict(data["game_config"]),
             taken_seats=frozenset(Seat.from_dict(int(seat)) for seat in data["taken_seats"]),
         )
@@ -93,6 +95,7 @@ class FiveHundredGame(GameState):
     @override
     def to_public_dict(self, seat_number: SeatNumber | None = None) -> dict[str, Any]:
         """Serialize to JSON-compatible dict, but exclude non-public information except specifics for given seat"""
+        print(f"to_public_dict: {seat_number}")
         return {
             "round": {
                 "phase": self.round.phase.value,

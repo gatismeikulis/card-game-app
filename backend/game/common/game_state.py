@@ -9,7 +9,7 @@ from .seat import Seat, SeatNumber
 @dataclass(frozen=True, slots=True)
 class GameState(ABC):
     active_seat: Seat
-    is_finished: bool
+    is_ended: bool
     game_config: GameConfig
     taken_seats: frozenset[Seat]
 

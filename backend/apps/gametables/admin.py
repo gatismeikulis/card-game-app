@@ -1,9 +1,9 @@
 from django.contrib import admin
 
-from .models import GameTableSnapshot
+from .models import GameTableModel
 
 
-class GameTableSnapshotAdmin(admin.ModelAdmin):
+class GameTableModelAdmin(admin.ModelAdmin):
     fields = [
         "id",
         "owner",
@@ -11,12 +11,12 @@ class GameTableSnapshotAdmin(admin.ModelAdmin):
         "status",
         "created_at",
         "updated_at",
-        "data",
+        "snapshot",
         "game_configs",
         "table_configs",
-        "game_play_events",
-        "game_table_players",
+        "events",
+        "players",
     ]
 
 
-admin.site.register(GameTableSnapshot, GameTableSnapshotAdmin)
+admin.site.register(GameTableModel, GameTableModelAdmin)

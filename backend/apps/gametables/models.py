@@ -15,7 +15,7 @@ from django.db.models.constraints import UniqueConstraint
 from apps.users.models import User
 
 
-class GameTableSnapshot(Model):
+class GameTableModel(Model):
     id = UUIDField(primary_key=True)
     game_name = CharField(max_length=50)
     status = CharField(max_length=30)
@@ -24,61 +24,83 @@ class GameTableSnapshot(Model):
     updated_at = DateTimeField(auto_now=True)
     last_event_sequence_number = IntegerField(default=0)
 
-    data = JSONField()  # serialized GameTable instance for easier game_table instance retrieval
+    snapshot = JSONField()  # serialized GameTable instance, snapshot
 
     class Meta:
+        db_table = "gametable"
         indexes = [Index(fields=["game_name", "status"], name="game_name_status_index")]
 
 
-class GameTablePlayer(Model):
-    game_table = ForeignKey(GameTableSnapshot, on_delete=CASCADE, related_name="game_table_players")
+class PlayerModel(Model):
+    game_table = ForeignKey(GameTableModel, on_delete=CASCADE, related_name="players")
     user = ForeignKey(User, on_delete=SET_NULL, null=True)
     screen_name = CharField(max_length=50)
     bot_strategy_kind = CharField(max_length=50, null=True)
 
     class Meta:
+        db_table = "gametable_player"
         constraints = [
             UniqueConstraint(fields=["game_table", "screen_name"], name="uniq_player_screen_name_per_table"),
             UniqueConstraint(fields=["game_table", "user"], name="uniq_player_user_per_table"),
         ]
 
 
-class TableConfig(Model):
-    game_table = ForeignKey(GameTableSnapshot, on_delete=CASCADE, related_name="table_configs")
+class TableConfigModel(Model):
+    game_table = ForeignKey(GameTableModel, on_delete=CASCADE, related_name="table_configs")
     config_key = CharField(max_length=100)
-    data = JSONField()
+    value = JSONField()
 
     class Meta:
+        db_table = "gametable_tableconfig"
         constraints = [
             UniqueConstraint(fields=["game_table", "config_key"], name="uniq_table_config_key_per_table"),
         ]
 
 
-class GameConfig(Model):
-    game_table = ForeignKey(GameTableSnapshot, on_delete=CASCADE, related_name="game_configs")
+class GameConfigModel(Model):
+    game_table = ForeignKey(GameTableModel, on_delete=CASCADE, related_name="game_configs")
     config_key = CharField(max_length=100)
-    data = JSONField()
+    value = JSONField()
 
     class Meta:
+        db_table = "gametable_gameconfig"
         constraints = [
             UniqueConstraint(fields=["game_table", "config_key"], name="uniq_game_config_key_per_table"),
         ]
 
 
-class GamePlayEvent(Model):
-    game_table = ForeignKey(GameTableSnapshot, on_delete=CASCADE, related_name="game_play_events")
+class GameEventModel(Model):
+    game_table = ForeignKey(GameTableModel, on_delete=CASCADE, related_name="game_events")
     sequence_number = IntegerField()
     data = JSONField()
     created_at = DateTimeField(auto_now_add=True)
+    schema_version = IntegerField(default=1)
 
     class Meta:
+        db_table = "gameevent"
         constraints = [
             UniqueConstraint(fields=["game_table", "sequence_number"], name="uniq_event_seq_per_table"),
         ]
+        indexes = [Index(fields=["game_table", "sequence_number"], name="event_table_seq_idx")]
+        ordering = ["sequence_number"]
 
-    # Consider adding (future improvements):
-    # schema_version field to track schema changes in the future
-    # user field to track the user who caused the event
-    # index on game_table and sequence_number
-    # index on game_table
-    # ordering by sequence_number
+
+# model to store game state snapshots time to time for smooth game replays, history views...
+# it will be stored like every 20? events or so...
+# removed by scheduled db maintance like 2 days after creation...
+class GameStateSnapshot(Model):
+    game_table = ForeignKey(GameTableModel, on_delete=CASCADE, related_name="game_state_snapshots")
+    event_sequence_number = IntegerField()
+    created_at = DateTimeField(auto_now_add=True)
+
+    data = JSONField()  # serialized GameState instance
+
+    class Meta:
+        db_table = "gamestate_snapshot"
+        indexes = [
+            Index(fields=["game_table", "event_sequence_number"], name="snapshot_table_event_seq_idx"),
+        ]
+        constraints = [
+            UniqueConstraint(fields=["game_table", "event_sequence_number"], name="uniq_snapshot_event_seq_per_table"),
+        ]
+        ordering = ["event_sequence_number"]

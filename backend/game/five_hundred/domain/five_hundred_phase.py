@@ -7,7 +7,7 @@ class FiveHundredPhase(Enum):
     BIDDING = "Bidding"
     FORMING_HANDS = "Forming Hands"
     PLAYING_CARDS = "Playing Cards"
-    GAME_FINISHED = "Game Ended"
+    GAME_ENEDED = "Game Ended"
 
     @override
     def __str__(self) -> str:

@@ -349,18 +349,18 @@ export function Tables() {
                               </span>{" "}
                               • Players:{" "}
                               <span className="font-medium">
-                                {t.game_table_players.length}
+                                {t.players.length}
                               </span>
                             </div>
                             {/* Player Names */}
-                            {t.game_table_players &&
-                              t.game_table_players.length > 0 && (
+                            {t.players &&
+                              t.players.length > 0 && (
                                 <div className="mt-1.5 flex items-center gap-2 flex-wrap">
                                   <span className="text-xs text-muted-foreground">
                                     Players:
                                   </span>
                                   <div className="flex items-center gap-1.5 flex-wrap">
-                                    {t.game_table_players.map(
+                                    {t.players.map(
                                       (player: any, idx: number) => (
                                         <div
                                           key={idx}

@@ -13,7 +13,7 @@ from .domain.five_hundred_event import (
     MarriagePointsAddedEvent,
     TrickTakenEvent,
     RoundFinishedEvent,
-    GameFinishedEvent,
+    GameEndedEvent,
 )
 
 
@@ -41,8 +41,8 @@ class FiveHundredEventParser(GameEventParser):
                 return TrickTakenEvent.from_dict(data)
             case "round_finished":
                 return RoundFinishedEvent.from_dict(data)
-            case "game_finished":
-                return GameFinishedEvent.from_dict(data)
+            case "game_ended":
+                return GameEndedEvent.from_dict(data)
             case _:
                 raise GameParsingException(
                     reason="game_event_parsing_error",

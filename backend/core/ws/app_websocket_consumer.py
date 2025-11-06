@@ -30,7 +30,7 @@ class AppWebSocketConsumer(AsyncJsonWebsocketConsumer):
     async def _on_connect(self):
         auth_error = self.scope.get("auth_error")
         user = self.scope.get("user")
-        
+
         # Only close if there's an auth error (invalid token), not if user is AnonymousUser
         if auth_error:
             await self.close(code=4003, reason=auth_error)

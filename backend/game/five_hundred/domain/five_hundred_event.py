@@ -218,8 +218,8 @@ class RoundFinishedEvent(GameEvent):
 
 
 @dataclass(frozen=True, slots=True)
-class GameFinishedEvent(GameEvent):
-    type: ClassVar[Literal["game_finished"]] = "game_finished"
+class GameEndedEvent(GameEvent):
+    type: ClassVar[Literal["game_ended"]] = "game_ended"
 
     @override
     def to_dict(self) -> dict[str, Any]:
@@ -231,6 +231,10 @@ class GameFinishedEvent(GameEvent):
         return cls()
 
 
+# TODO: consider adding an events like GameAbortedEvent and GameCancelledEvent...
+# figure out generic way to handle game ending since there are cancelled, aborted, finished as expected, finished in tie...
+# all cases require different handling for ELO calculations later...
+
 FiveHundredEvent = (
     DeckShuffledEvent
     | BidMadeEvent
@@ -240,7 +244,7 @@ FiveHundredEvent = (
     | CardsPassedEvent
     | CardPlayedEvent
     | RoundFinishedEvent
-    | GameFinishedEvent
+    | GameEndedEvent
     | MarriagePointsAddedEvent
     | TrickTakenEvent
 )

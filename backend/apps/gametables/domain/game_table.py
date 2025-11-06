@@ -162,12 +162,12 @@ class GameTable:
 
     def _take_turn(self, game_state: GameState, command: GameCommand) -> Sequence[GameEvent]:
         game_state_updated, events = self._engine.process_command(game_state, command)
-        if game_state_updated.is_finished:
+        if game_state_updated.is_ended:
             self._status = TableStatus.FINISHED
         self._game_state = game_state_updated
         return events
 
-    # can cancel only not-finished/aborted games
+    # can cancel only not-finished/not-aborted games
     def cancel_game(self, initiated_by: int) -> None:
         self._validate_status(unacceptable_statuses={TableStatus.FINISHED, TableStatus.ABORTED})
         self._validate_is_owner(initiated_by)

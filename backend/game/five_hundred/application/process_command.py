@@ -14,7 +14,7 @@ from ..domain.five_hundred_event import (
     CardPlayedEvent,
     DeckShuffledEvent,
     FiveHundredEvent,
-    GameFinishedEvent,
+    GameEndedEvent,
     HiddenCardsTakenEvent,
     MarriagePointsAddedEvent,
     RoundFinishedEvent,
@@ -118,11 +118,11 @@ def check_for_additional_events(game: FiveHundredGame, last_event: FiveHundredEv
 
         case RoundFinishedEvent():
             if any(points <= 0 for points in game.summary.values()):
-                return GameFinishedEvent()
+                return GameEndedEvent()
             if all(points >= NOT_ALLOWED_TO_BID_THRESHOLD for points in game.summary.values()):
-                return GameFinishedEvent()
+                return GameEndedEvent()
             if game.round.round_number >= game.game_config.max_rounds:
-                return GameFinishedEvent()
+                return GameEndedEvent()
             deck = FiveHundredDeck.build()
             return DeckShuffledEvent(deck=deck)
 

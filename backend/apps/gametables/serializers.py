@@ -11,23 +11,23 @@ from rest_framework.serializers import ModelSerializer, Serializer
 
 from game.bot_strategy_kind import BotStrategyKind
 from game.game_name import GameName
-from .models import GameTablePlayer, GameTableSnapshot
+from .models import PlayerModel, GameTableModel
 from .domain.table_status import TableStatus
 
 
-class GameTablePlayerSerializer(ModelSerializer[GameTablePlayer]):
+class GameTablePlayerSerializer(ModelSerializer[PlayerModel]):
     class Meta:
-        model = GameTablePlayer
+        model = PlayerModel
         fields = ["user", "screen_name", "bot_strategy_kind"]
 
 
-class GameTableWithRelationsSerializer(ModelSerializer[GameTableSnapshot]):
-    game_table_players = GameTablePlayerSerializer(many=True, read_only=True)
+class GameTableWithRelationsSerializer(ModelSerializer[GameTableModel]):
+    players = GameTablePlayerSerializer(many=True, read_only=True)
     game_config = SerializerMethodField(read_only=True)
     table_config = SerializerMethodField(read_only=True)
 
     class Meta:
-        model = GameTableSnapshot
+        model = GameTableModel
         fields = [
             "id",
             "game_name",
@@ -35,21 +35,21 @@ class GameTableWithRelationsSerializer(ModelSerializer[GameTableSnapshot]):
             "owner_id",
             "created_at",
             "updated_at",
-            "game_table_players",
+            "players",
             "table_config",
             "game_config",
         ]
 
-    def get_game_config(self, obj: GameTableSnapshot) -> dict[str, Any]:
+    def get_game_config(self, obj: GameTableModel) -> dict[str, Any]:
         result: dict[str, Any] = {}
         for row in obj.game_configs.all():
-            result[row.config_key] = row.data
+            result[row.config_key] = row.value
         return result
 
-    def get_table_config(self, obj: GameTableSnapshot) -> dict[str, Any]:
+    def get_table_config(self, obj: GameTableModel) -> dict[str, Any]:
         result: dict[str, Any] = {}
         for row in obj.table_configs.all():
-            result[row.config_key] = row.data
+            result[row.config_key] = row.value
         return result
 
 

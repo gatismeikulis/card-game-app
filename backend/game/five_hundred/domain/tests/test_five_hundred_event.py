@@ -5,7 +5,7 @@ from ..five_hundred_event import (
     BidMadeEvent,
     BiddingFinishedEvent,
     FiveHundredEvent,
-    GameFinishedEvent,
+    GameEndedEvent,
     HiddenCardsTakenEvent,
     CardsPassedEvent,
     MarriagePointsAddedEvent,
@@ -46,7 +46,7 @@ import pytest
         (RoundFinishedEvent, {"round_number": 1, "declarer": Seat(1), "given_up": False}),
         (RoundFinishedEvent, {"round_number": 3, "declarer": None, "given_up": True}),
         (RoundFinishedEvent, {"round_number": 3, "declarer": None, "given_up": False}),
-        (GameFinishedEvent, {}),
+        (GameEndedEvent, {}),
     ],
     ids=[
         "deck_shuffled",
@@ -61,7 +61,7 @@ import pytest
         "round_finished_has_declarer",
         "round_finished_declarer_gave_up",
         "round_finished_no_declarer",
-        "game_finished",
+        "game_ended",
     ],
 )
 def test_event_to_dict_from_dict_roundtrip(event_class: type[FiveHundredEvent], kwargs: dict[str, Any]):

@@ -7,11 +7,12 @@ from core.exceptions.not_exist_exception import NotExistException
 from core.exceptions.infrastructure_exception import InfrastructureException
 from game.common.game_event import GameEvent
 from ..models import (
-    GamePlayEvent,
-    GameTableSnapshot,
-    GameTablePlayer,
-    TableConfig as TableConfigModel,
-    GameConfig as GameConfigModel,
+    GameEventModel,
+    GameStateSnapshot,
+    GameTableModel,
+    PlayerModel,
+    TableConfigModel,
+    GameConfigModel,
 )
 from ..application.igame_table_repository import IGameTableRepository
 from ..domain.game_table import GameTable
@@ -23,29 +24,29 @@ class GameTableRepository(IGameTableRepository):
     @override
     def create(self, game_table: GameTable) -> str:
         try:
-            # Create game table snapshot
-            game_table_snapshot = GameTableSnapshot.objects.create(
+            # Create game table
+            db_game_table = GameTableModel.objects.create(
                 id=game_table.id,
                 game_name=game_table.config.game_name.value,
                 status=game_table.status.value,
                 owner_id=game_table.owner_id,
-                data=game_table.to_dict(),
+                snapshot=game_table.to_dict(),
             )
 
             # Create game configs
-            for config_key, config_value in game_table.config.table_config.to_dict().items():
+            for config_key, value in game_table.config.table_config.to_dict().items():
                 _ = TableConfigModel.objects.create(
-                    game_table=game_table_snapshot,
+                    game_table=db_game_table,
                     config_key=config_key,
-                    data=config_value,
+                    value=value,
                 )
 
             # Create game configs
-            for config_key, config_value in game_table.config.game_config.to_dict().items():
+            for config_key, value in game_table.config.game_config.to_dict().items():
                 _ = GameConfigModel.objects.create(
-                    game_table=game_table_snapshot,
+                    game_table=db_game_table,
                     config_key=config_key,
-                    data=config_value,
+                    value=value,
                 )
         # No GameTablePlayers creation, because there is no players at the moment when table is created
 
@@ -60,8 +61,8 @@ class GameTableRepository(IGameTableRepository):
         self, table_id: str, modifier: Callable[[GameTable], Sequence[GameEvent]]
     ) -> tuple[Sequence[GameEvent], GameTable]:
         try:
-            db_game_table = GameTableSnapshot.objects.select_for_update().get(id=table_id)
-            game_table = GameTableDeserializer.deserialize_table(db_game_table.data)
+            db_game_table = GameTableModel.objects.select_for_update().get(id=table_id)
+            game_table = GameTableDeserializer.deserialize_table(db_game_table.snapshot)
 
             events = modifier(game_table)  # mutates game_table and returns sequence of game events
 
@@ -69,37 +70,47 @@ class GameTableRepository(IGameTableRepository):
             rows = []
             current_last_event_sequence_number = db_game_table.last_event_sequence_number or 0
             running_last_event_sequence_number: int = current_last_event_sequence_number
+            should_store_game_state_snapshot = False
 
             for i, event in enumerate(events, start=current_last_event_sequence_number + 1):
-                rows.append(GamePlayEvent(game_table=db_game_table, sequence_number=i, data=event.to_dict()))
+                rows.append(GameEventModel(game_table=db_game_table, sequence_number=i, data=event.to_dict()))
                 running_last_event_sequence_number = i
+                if i % 20 == 0:  # store game state snapshot every 20 events
+                    should_store_game_state_snapshot = True
 
-            _ = GamePlayEvent.objects.bulk_create(rows)
+            _ = GameEventModel.objects.bulk_create(rows)
 
-            db_game_table.data = game_table.to_dict()
+            if should_store_game_state_snapshot:
+                _ = GameStateSnapshot.objects.create(
+                    game_table=db_game_table,
+                    event_sequence_number=running_last_event_sequence_number,
+                    data=game_table.game_state.to_dict(),
+                )
+
+            db_game_table.snapshot = game_table.to_dict()
             db_game_table.status = game_table.status.value
             db_game_table.updated_at = timezone.now()
             db_game_table.last_event_sequence_number = running_last_event_sequence_number
-            db_game_table.save(update_fields=["data", "status", "updated_at", "last_event_sequence_number"])
+            db_game_table.save(update_fields=["snapshot", "status", "updated_at", "last_event_sequence_number"])
 
             return events, game_table
 
-        except GameTableSnapshot.DoesNotExist:
+        except GameTableModel.DoesNotExist:
             raise NotExistException(reason="game_table_not_exist")
 
     @override
     @transaction.atomic
     def modify(self, table_id: str, modifier: Callable[[GameTable], None]) -> GameTable:
         try:
-            db_game_table = GameTableSnapshot.objects.select_for_update().get(id=table_id)
-            game_table = GameTableDeserializer.deserialize_table(db_game_table.data)
+            db_game_table = GameTableModel.objects.select_for_update().get(id=table_id)
+            game_table = GameTableDeserializer.deserialize_table(db_game_table.snapshot)
 
             modifier(game_table)  # mutates game_table
 
             # deletes all players from the table and reinserts new ones
-            _ = GameTablePlayer.objects.filter(game_table_id=game_table.id).delete()
+            _ = PlayerModel.objects.filter(game_table_id=game_table.id).delete()
             for player in game_table.players:
-                _ = GameTablePlayer.objects.create(
+                _ = PlayerModel.objects.create(
                     game_table_id=game_table.id,
                     user_id=player.user_id,
                     screen_name=player.screen_name,
@@ -108,40 +119,41 @@ class GameTableRepository(IGameTableRepository):
 
             # configs do not change during the game_table's life cycle, so we do not need to update them
 
-            db_game_table.data = game_table.to_dict()
+            db_game_table.snapshot = game_table.to_dict()
             db_game_table.status = game_table.status.value
             db_game_table.updated_at = timezone.now()
-            db_game_table.save(update_fields=["data", "status", "updated_at"])
+            db_game_table.save(update_fields=["snapshot", "status", "updated_at"])
 
             return game_table
 
-        except GameTableSnapshot.DoesNotExist:
+        except GameTableModel.DoesNotExist:
             raise NotExistException(reason="game_table_not_exist")
 
     @override
     def delete(self, id: str) -> None:
         try:
-            _ = GameTableSnapshot.objects.filter(id=id).delete()
-        except GameTableSnapshot.DoesNotExist:
+            _ = GameTableModel.objects.filter(id=id).delete()
+        except GameTableModel.DoesNotExist:
             # table already deleted
             return None
 
     @override
     def find_by_id(self, id: str) -> GameTable:
         try:
-            game_table_snapshot = GameTableSnapshot.objects.get(id=id)
-        except GameTableSnapshot.DoesNotExist:
+            db_game_table = GameTableModel.objects.get(id=id)
+            print(f"find_by_id: {db_game_table.snapshot}")
+        except GameTableModel.DoesNotExist:
             raise NotExistException(reason="game_table_not_exist")
         except Exception as e:
             raise InfrastructureException(detail=f"Could not find game table by id: {e}") from e
-        return GameTableDeserializer.deserialize_table(game_table_snapshot.data)
+        return GameTableDeserializer.deserialize_table(db_game_table.snapshot)
 
     @override
-    def find_many(self, filters: dict[str, set[str]]) -> QuerySet[GameTableSnapshot]:
+    def find_many(self, filters: dict[str, set[str]]) -> QuerySet[GameTableModel]:
         try:
             query_set = (
-                GameTableSnapshot.objects.select_related("owner")
-                .prefetch_related("game_table_players", "game_configs", "table_configs")
+                GameTableModel.objects.select_related("owner")
+                .prefetch_related("players", "game_configs", "table_configs")
                 .order_by("-created_at")
             )
 

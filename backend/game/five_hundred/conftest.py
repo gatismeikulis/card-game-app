@@ -76,7 +76,7 @@ def sample_game(
         results=[],
         summary={seat: GAME_STARTING_POINTS for seat in sample_seats},
         active_seat=sample_round.first_seat,
-        is_finished=False,
+        is_ended=False,
         game_config=sample_game_config,
         taken_seats=sample_seats,
     )

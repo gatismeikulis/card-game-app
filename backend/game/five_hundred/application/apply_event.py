@@ -5,7 +5,7 @@ from ..domain.five_hundred_event import (
     CardPlayedEvent,
     CardsPassedEvent,
     FiveHundredEvent,
-    GameFinishedEvent,
+    GameEndedEvent,
     DeclarerGaveUpEvent,
     HiddenCardsTakenEvent,
     MarriagePointsAddedEvent,
@@ -16,7 +16,7 @@ from ..domain.five_hundred_game import FiveHundredGame
 from ..logic.add_marriage_points import add_marriage_points
 from ..logic.deal_cards import deal_cards
 from ..logic.finish_bidding import finish_bidding
-from ..logic.finish_game import finish_game
+from ..logic.end_game import end_game
 from ..logic.finish_round import finish_round
 from ..logic.make_bid import make_bid
 from ..logic.pass_cards import pass_cards
@@ -47,5 +47,5 @@ def apply_event(game: FiveHundredGame, event: FiveHundredEvent) -> FiveHundredGa
             return take_trick(game, taken_by)
         case RoundFinishedEvent(given_up=given_up):
             return finish_round(game, has_declarer_given_up=given_up)
-        case GameFinishedEvent():
-            return finish_game(game)
+        case GameEndedEvent():
+            return end_game(game)
