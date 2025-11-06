@@ -55,8 +55,21 @@ export function TableDetail() {
   // WebSocket connection
   const handleWebSocketMessage = useCallback((message: any) => {
     if (message.type === "table_action") {
+      // Full table data update
       if (message.data?.table_data) {
         setTableData(message.data.table_data);
+      }
+    } else if (message.type === "game_action") {
+      // Partial update: only game_state and status
+      if (message.data) {
+        setTableData((prevData: any) => {
+          if (!prevData) return prevData;
+          return {
+            ...prevData,
+            game_state: message.data.game_state,
+            status: message.data.table_status,
+          };
+        });
       }
     }
   }, []);

@@ -48,7 +48,7 @@ export function useTableWebSocket(
         const message = JSON.parse(event.data);
         onMessageRef.current(message);
 
-        if (message.type === "table_action") {
+        if (message.type === "table_action" || message.type === "game_action") {
           setPending(false);
           setError(null);
         } else if (message.type === "error") {
