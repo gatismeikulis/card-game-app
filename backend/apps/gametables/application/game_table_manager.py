@@ -66,7 +66,6 @@ class GameTableManager:
 
     def get_table(self, table_id: str) -> GameTable:
         try:
-            print(f"get_table: {table_id}")
             return self._game_table_repository.find_by_id(table_id)
         except AppException as e:
             raise e.with_context(table_id=table_id, operation="get_table")

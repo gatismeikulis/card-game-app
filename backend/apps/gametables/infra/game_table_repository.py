@@ -141,7 +141,6 @@ class GameTableRepository(IGameTableRepository):
     def find_by_id(self, id: str) -> GameTable:
         try:
             db_game_table = GameTableModel.objects.get(id=id)
-            print(f"find_by_id: {db_game_table.snapshot}")
         except GameTableModel.DoesNotExist:
             raise NotExistException(reason="game_table_not_exist")
         except Exception as e:

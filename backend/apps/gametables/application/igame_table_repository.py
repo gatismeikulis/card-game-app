@@ -2,9 +2,7 @@ from collections.abc import Sequence
 from typing import Callable, Protocol
 from django.db.models import QuerySet
 
-from ..domain.table_status import TableStatus
 from game.common.game_event import GameEvent
-from game.common.game_state import GameState
 from ..models import GameTableModel
 from ..domain.game_table import GameTable
 
@@ -33,10 +31,10 @@ class IGameTableRepository(Protocol):
 
     def modify_during_game_action(
         self, table_id: str, modifier: Callable[[GameTable], Sequence[GameEvent]]
-    ) -> tuple[Sequence[GameEvent], GameState, TableStatus]:
-        """Modify GameTable instance according to passed modifier (only GameState is updated, table status only changes when game ends), update GameTableModel record and append emitted events
+    ) -> tuple[Sequence[GameEvent], GameTable]:
+        """Modify GameTable instance according to passed modifier, update GameTableModel record, append emitted events and store game state snapshot (every 20 events)
         Returns:
-            Tuple of sequence of game events, updated GameState, table status
+            Tuple of sequence of game events and modified GameTable instance
         """
         ...
 

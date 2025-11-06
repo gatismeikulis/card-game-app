@@ -95,7 +95,6 @@ class FiveHundredGame(GameState):
     @override
     def to_public_dict(self, seat_number: SeatNumber | None = None) -> dict[str, Any]:
         """Serialize to JSON-compatible dict, but exclude non-public information except specifics for given seat"""
-        print(f"to_public_dict: {seat_number}")
         return {
             "round": {
                 "phase": self.round.phase.value,
