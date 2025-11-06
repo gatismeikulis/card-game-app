@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { apiFetch } from "../api";
 import { Button } from "../components/ui/button";
 import { Label } from "../components/ui/label";
@@ -13,6 +13,7 @@ import {
 } from "../components/ui/card";
 import { useToast } from "../components/ui/toast";
 import { useGameDisplayName } from "../components/UserInfo";
+import { useUserData } from "../contexts/UserContext";
 import {
   Plus,
   RefreshCw,
@@ -26,6 +27,7 @@ import {
   ChevronDown,
   ChevronUp,
   X,
+  LogIn,
 } from "lucide-react";
 
 const STATUS_OPTIONS = [
@@ -38,7 +40,9 @@ const STATUS_OPTIONS = [
 
 export function Tables() {
   const { addToast } = useToast();
+  const navigate = useNavigate();
   const displayName = useGameDisplayName();
+  const { isLoggedIn } = useUserData();
 
   const [page, setPage] = useState(1);
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([
@@ -182,8 +186,9 @@ export function Tables() {
             <div>
               <CardTitle className="text-2xl">Game Tables</CardTitle>
               <CardDescription>
-                Welcome, {displayName}! Create or join a game table to start
-                playing
+                {isLoggedIn
+                  ? `Welcome, ${displayName}! Create or join a game table to start playing`
+                  : "Browse available game tables. Login to create or join a table."}
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
@@ -191,22 +196,29 @@ export function Tables() {
                 <RefreshCw className="mr-2 h-4 w-4" />
                 Refresh
               </Button>
-              <Button
-                onClick={() => createTable.mutate()}
-                disabled={createTable.isPending}
-              >
-                {createTable.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating...
-                  </>
-                ) : (
-                  <>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Create Table
-                  </>
-                )}
-              </Button>
+              {isLoggedIn ? (
+                <Button
+                  onClick={() => createTable.mutate()}
+                  disabled={createTable.isPending}
+                >
+                  {createTable.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Create Table
+                    </>
+                  )}
+                </Button>
+              ) : (
+                <Button onClick={() => navigate("/login")} variant="default">
+                  <LogIn className="mr-2 h-4 w-4" />
+                  Login
+                </Button>
+              )}
             </div>
           </div>
         </CardHeader>
@@ -303,10 +315,17 @@ export function Tables() {
             <div className="text-center py-12">
               <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
               <p className="text-muted-foreground mb-4">No tables available</p>
-              <Button onClick={() => createTable.mutate()}>
-                <Plus className="mr-2 h-4 w-4" />
-                Create Your First Table
-              </Button>
+              {isLoggedIn ? (
+                <Button onClick={() => createTable.mutate()}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create Your First Table
+                </Button>
+              ) : (
+                <Button onClick={() => navigate("/login")}>
+                  <LogIn className="mr-2 h-4 w-4" />
+                  Login to Create Table
+                </Button>
+              )}
             </div>
           ) : (
             <>
@@ -370,14 +389,16 @@ export function Tables() {
                               <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
                             </Button>
                           </Link>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => removeTable.mutate(t.id)}
-                            disabled={removeTable.isPending}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
+                          {isLoggedIn && (
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => removeTable.mutate(t.id)}
+                              disabled={removeTable.isPending}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </CardContent>
