@@ -169,7 +169,22 @@ export function TableDetail() {
   const isGameFinished =
     tableData?.status === "FINISHED" || tableData?.game_state?.is_finished;
 
-  const currentUser = tableData.players?.find((p: any) => p.user_id === userId);
+  const normalizedUserId =
+    typeof userId === "number" && Number.isFinite(userId) ? userId : null;
+  const normalizedOwnerIdRaw = tableData.owner_id;
+  const normalizedOwnerId =
+    typeof normalizedOwnerIdRaw === "number"
+      ? normalizedOwnerIdRaw
+      : normalizedOwnerIdRaw != null
+      ? Number.parseInt(String(normalizedOwnerIdRaw), 10)
+      : null;
+  const currentUser =
+    normalizedUserId === null
+      ? null
+      : tableData.players?.find(
+          (p: any) =>
+            Number.parseInt(String(p.user_id), 10) === normalizedUserId
+        );
   const currentUserSeat = currentUser?.seat_number;
   const currentPlayerSeatInfo = currentUserSeat
     ? tableData.game_state?.round?.seat_infos?.[currentUserSeat]
@@ -198,12 +213,15 @@ export function TableDetail() {
   );
   const isBotTurn = activePlayer?.bot_strategy_kind;
   const isOwner =
-    tableData.owner_id === currentUser?.user_id ||
-    tableData.owner_id === currentUser?.id;
+    normalizedUserId !== null &&
+    normalizedOwnerId !== null &&
+    normalizedOwnerId === normalizedUserId;
   const tableStatus = String(tableData.status || "").toLowerCase();
   const isInProgress = tableStatus === "in_progress";
   const ownerSeatNumber = tableData.players?.find(
-    (p: any) => p.user_id === tableData.owner_id
+    (p: any) =>
+      normalizedOwnerId !== null &&
+      Number.parseInt(String(p.user_id), 10) === normalizedOwnerId
   )?.seat_number;
   const kickableSeatNumbers = isInProgress
     ? (tableData.players || [])
