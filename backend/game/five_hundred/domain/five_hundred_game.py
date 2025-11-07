@@ -27,6 +27,7 @@ class FiveHundredGame(GameState):
     ending: GameEnding | None
     game_config: FiveHundredGameConfig
     taken_seats: frozenset[Seat]
+    turn_number: int
 
     @override
     @classmethod
@@ -46,6 +47,7 @@ class FiveHundredGame(GameState):
             ending=None,
             game_config=game_config,
             taken_seats=taken_seats,
+            turn_number=0,
         )
 
     @property
@@ -71,6 +73,7 @@ class FiveHundredGame(GameState):
             "ending": self.ending.to_dict() if self.ending else None,
             "game_config": self.game_config.to_dict(),
             "taken_seats": [seat.to_dict() for seat in self.taken_seats],
+            "turn_number": self.turn_number,
         }
 
     @override
@@ -85,6 +88,7 @@ class FiveHundredGame(GameState):
             ending=GameEnding.from_dict(data["ending"]) if data["ending"] else None,
             game_config=FiveHundredGameConfig.from_dict(data["game_config"]),
             taken_seats=frozenset(Seat.from_dict(int(seat)) for seat in data["taken_seats"]),
+            turn_number=data["turn_number"],
         )
 
     @override
@@ -118,4 +122,5 @@ class FiveHundredGame(GameState):
             "summary": {seat.to_dict(): points for seat, points in self.summary.items()},
             "active_seat": self.active_seat.to_dict(),
             "is_my_turn": self.active_seat.number == seat_number,
+            "turn_number": self.turn_number,
         }

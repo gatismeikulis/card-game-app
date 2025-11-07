@@ -32,7 +32,7 @@ class IGameTableRepository(Protocol):
     def modify_during_game_action(
         self, table_id: str, modifier: Callable[[GameTable], Sequence[GameEvent]]
     ) -> tuple[Sequence[GameEvent], GameTable]:
-        """Modify GameTable instance according to passed modifier, update GameTableModel record, append emitted events and store game state snapshot (every 20 events)
+        """Modify GameTable instance according to passed modifier, update GameTableModel record, append emitted events
         Returns:
             Tuple of sequence of game events and modified GameTable instance
         """

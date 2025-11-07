@@ -79,4 +79,5 @@ def sample_game(
         ending=None,
         game_config=sample_game_config,
         taken_seats=sample_seats,
+        turn_number=0,
     )

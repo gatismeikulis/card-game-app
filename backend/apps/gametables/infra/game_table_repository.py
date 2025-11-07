@@ -8,7 +8,6 @@ from core.exceptions.infrastructure_exception import InfrastructureException
 from game.common.game_event import GameEvent
 from ..models import (
     GameEventModel,
-    GameStateSnapshot,
     GameTableModel,
     PlayerModel,
     TableConfigModel,
@@ -70,22 +69,17 @@ class GameTableRepository(IGameTableRepository):
             rows = []
             current_last_event_sequence_number = db_game_table.last_event_sequence_number or 0
             running_last_event_sequence_number: int = current_last_event_sequence_number
-            should_store_game_state_snapshot = False
+            turn_number = game_table.game_state.turn_number
 
             for i, event in enumerate(events, start=current_last_event_sequence_number + 1):
-                rows.append(GameEventModel(game_table=db_game_table, sequence_number=i, data=event.to_dict()))
+                rows.append(
+                    GameEventModel(
+                        game_table=db_game_table, sequence_number=i, data=event.to_dict(), turn_number=turn_number
+                    )
+                )
                 running_last_event_sequence_number = i
-                if i % 20 == 0:  # store game state snapshot every 20 events
-                    should_store_game_state_snapshot = True
 
             _ = GameEventModel.objects.bulk_create(rows)
-
-            if should_store_game_state_snapshot:
-                _ = GameStateSnapshot.objects.create(
-                    game_table=db_game_table,
-                    event_sequence_number=running_last_event_sequence_number,
-                    data=game_table.game_state.to_dict(),
-                )
 
             db_game_table.snapshot = game_table.to_dict()
             db_game_table.status = game_table.status.value

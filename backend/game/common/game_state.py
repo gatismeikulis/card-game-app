@@ -13,6 +13,7 @@ class GameState(ABC):
     ending: GameEnding | None
     game_config: GameConfig
     taken_seats: frozenset[Seat]
+    turn_number: int  # total turns made in the game so far
 
     @classmethod
     @abstractmethod

@@ -55,16 +55,6 @@ class GameTableManager:
         except AppException as e:
             raise e.with_context(table_id=table_id, operation="remove_table")
 
-    # def cancel_game(self, table_id: str, iniated_by: int) -> GameTable:
-    #     try:
-
-    #         def _modifier(table: GameTable) -> None:
-    #             table.cancel_game(initiated_by=iniated_by)
-
-    #         return self._game_table_repository.modify(table_id, _modifier)
-    #     except AppException as e:
-    #         raise e.with_context(table_id=table_id, user_id=iniated_by, operation="cancel_game")
-
     def get_table(self, table_id: str) -> GameTable:
         try:
             return self._game_table_repository.find_by_id(table_id)

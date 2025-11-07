@@ -72,6 +72,7 @@ class GameConfigModel(Model):
 class GameEventModel(Model):
     game_table = ForeignKey(GameTableModel, on_delete=CASCADE, related_name="game_events")
     sequence_number = IntegerField()
+    turn_number = IntegerField()  # turn number is a number of turn in the game, it is not the same as sequence_number since one command/turn can produce multiple events
     data = JSONField()
     created_at = DateTimeField(auto_now_add=True)
     schema_version = IntegerField(default=1)
@@ -83,24 +84,3 @@ class GameEventModel(Model):
         ]
         indexes = [Index(fields=["game_table", "sequence_number"], name="event_table_seq_idx")]
         ordering = ["sequence_number"]
-
-
-# model to store game state snapshots time to time for smooth game replays, history views...
-# it will be stored like every 20? events or so...
-# removed by scheduled db maintance like 2 days after creation...
-class GameStateSnapshot(Model):
-    game_table = ForeignKey(GameTableModel, on_delete=CASCADE, related_name="game_state_snapshots")
-    event_sequence_number = IntegerField()
-    created_at = DateTimeField(auto_now_add=True)
-
-    data = JSONField()  # serialized GameState instance
-
-    class Meta:
-        db_table = "gamestate_snapshot"
-        indexes = [
-            Index(fields=["game_table", "event_sequence_number"], name="snapshot_table_event_seq_idx"),
-        ]
-        constraints = [
-            UniqueConstraint(fields=["game_table", "event_sequence_number"], name="uniq_snapshot_event_seq_per_table"),
-        ]
-        ordering = ["event_sequence_number"]
