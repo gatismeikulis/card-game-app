@@ -35,7 +35,13 @@ Five Hundred is a trick‑taking card game not well known globally and rarely av
 - [x] Game‑agnostic backend architecture
 - [x] REST API for managing users and interacting with game tables
 - [x] Minimalistic React FE for easier interaction with the API
-- [x] User‑friendly React frontend
+- [x] User‑friendly React frontend (mostly AI generated just for POC)
 - [x] WebSocket server
-- [ ] AI bot opponents
-- [ ] Game statistics and replays
+- [ ] Replay/history API using shortliving snapshot caching and bg tasks
+- [ ] Game statistics/analyzing
+- [ ] ELO tracking
+- [ ] Private tables/invites
+- [ ] Better UI, clean up AI generated sphageti code
+- [ ] Table Chat
+- [ ] AI and smart algorithmic bot opponents
+- [ ] More games
