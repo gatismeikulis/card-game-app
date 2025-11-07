@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any
 
+from .game_exception import GameParsingException
 from .seat import Seat
 
 
@@ -10,6 +11,21 @@ class GameEndingReason(Enum):
     FINISHED = "finished"  # finished because game reached its natural end...
     ABORTED = "aborted"  # aborted because some player left or was kicked out...
     CANCELLED = "cancelled"  # cancelled because players agreed to cancel the game...or admin cancelled the game...
+
+    @staticmethod
+    def from_string(reason: str) -> "GameEndingReason":
+        match reason.upper():
+            case "FINISHED":
+                return GameEndingReason.FINISHED
+            case "ABORTED":
+                return GameEndingReason.ABORTED
+            case "CANCELLED":
+                return GameEndingReason.CANCELLED
+            case _:
+                raise GameParsingException(
+                    reason="game_ending_reason_parsing_error",
+                    detail=f"Could not parse game ending reason from input: {reason}",
+                )
 
 
 @dataclass(frozen=True, slots=True)

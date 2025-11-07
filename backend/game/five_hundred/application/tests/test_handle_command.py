@@ -1,13 +1,15 @@
 from dataclasses import replace
 import pytest
 
-
 from ....common.card import Rank, Suit
+from ....common.game_ending import GameEndingReason
+from ....common.seat import Seat
 from ....common.hand import Hand
 from ....common.game_exception import GameRulesException
 from ...domain.five_hundred_deck import FiveHundredDeck
 from ...domain.five_hundred_phase import FiveHundredPhase
 from ...domain.five_hundred_command import (
+    EndGameCommand,
     StartGameCommand,
     MakeBidCommand,
     PassCardsCommand,
@@ -20,6 +22,7 @@ from ...domain.five_hundred_event import (
     CardsPassedEvent,
     CardPlayedEvent,
     DeclarerGaveUpEvent,
+    GameEndedEvent,
 )
 from ...domain.five_hundred_card import FiveHundredCard
 from ...domain.five_hundred_game import FiveHundredGame
@@ -142,3 +145,22 @@ def test_handle_play_card_command_happy_path(sample_game: FiveHundredGame):
     cmd = PlayCardCommand(card=card_to_play)
     event = handle_command(game_updated, cmd)
     assert event == CardPlayedEvent(card=card_to_play, played_by=sample_game.active_seat)
+
+
+@pytest.mark.parametrize(
+    argnames="ending_reason, blamed_seat, expected_event",
+    argvalues=[
+        (GameEndingReason.ABORTED, Seat(1), GameEndedEvent(reason=GameEndingReason.ABORTED, seat=Seat(1))),
+        (GameEndingReason.CANCELLED, None, GameEndedEvent(reason=GameEndingReason.CANCELLED, seat=None)),
+    ],
+    ids=["aborted", "cancelled"],
+)
+def test_handle_end_game_command_happy_path(
+    sample_game: FiveHundredGame,
+    ending_reason: GameEndingReason,
+    blamed_seat: Seat | None,
+    expected_event: GameEndedEvent,
+):
+    cmd = EndGameCommand(reason=ending_reason, seat=blamed_seat)
+    event = handle_command(sample_game, cmd)
+    assert event == expected_event

@@ -2,7 +2,6 @@ from dataclasses import replace
 import pytest_mock
 
 from ...domain.five_hundred_game import FiveHundredGame
-
 from ...domain.five_hundred_command import MakeBidCommand
 from ...domain.five_hundred_event import (
     BidMadeEvent,

@@ -1,5 +1,6 @@
 from collections.abc import Sequence
 
+from ...common.game_ending import GameEndingReason
 from ..domain.constants import (
     EMPTY_HAND_SIZE,
     LARGE_MARRIAGE_POINTS,
@@ -118,11 +119,11 @@ def check_for_additional_events(game: FiveHundredGame, last_event: FiveHundredEv
 
         case RoundFinishedEvent():
             if any(points <= 0 for points in game.summary.values()):
-                return GameEndedEvent()
+                return GameEndedEvent(reason=GameEndingReason.FINISHED, seat=None)
             if all(points >= NOT_ALLOWED_TO_BID_THRESHOLD for points in game.summary.values()):
-                return GameEndedEvent()
+                return GameEndedEvent(reason=GameEndingReason.FINISHED, seat=None)
             if game.round.round_number >= game.game_config.max_rounds:
-                return GameEndedEvent()
+                return GameEndedEvent(reason=GameEndingReason.FINISHED, seat=None)
             deck = FiveHundredDeck.build()
             return DeckShuffledEvent(deck=deck)
 

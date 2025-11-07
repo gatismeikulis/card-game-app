@@ -1,10 +1,14 @@
 from typing import Any, override
 
+from backend.game.common.game_ending import GameEndingReason
+from backend.game.common.seat import Seat
+
 from ..common.game_exception import GameParsingException
 from ..common.game_command import GameCommand
 from ..common.game_command_parser import GameCommandParser
 from .domain.five_hundred_card import FiveHundredCard
 from .domain.five_hundred_command import (
+    EndGameCommand,
     GiveUpCommand,
     MakeBidCommand,
     PassCardsCommand,
@@ -45,5 +49,12 @@ class FiveHundredCommandParser(GameCommandParser):
                 except Exception:
                     raise error("play_card")
                 return PlayCardCommand(card=card)
+            case "end_game":
+                try:
+                    reason = GameEndingReason.from_string(raw_command["params"]["reason"])
+                    seat = Seat.from_dict(raw_command["params"]["seat"]) if raw_command["params"]["seat"] else None
+                except Exception:
+                    raise error("end_game")
+                return EndGameCommand(reason=reason, seat=seat)
             case _:
                 raise error()

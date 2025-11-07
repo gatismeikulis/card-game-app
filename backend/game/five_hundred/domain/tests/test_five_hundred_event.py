@@ -1,4 +1,5 @@
 from typing import Any
+
 from ..five_hundred_event import (
     CardPlayedEvent,
     DeckShuffledEvent,
@@ -16,6 +17,7 @@ from ..five_hundred_card import FiveHundredCard
 from ..five_hundred_deck import FiveHundredDeck
 from ....common.card import Suit, Rank
 from ....common.seat import Seat
+from ....common.game_ending import GameEndingReason
 import pytest
 
 
@@ -46,7 +48,9 @@ import pytest
         (RoundFinishedEvent, {"round_number": 1, "declarer": Seat(1), "given_up": False}),
         (RoundFinishedEvent, {"round_number": 3, "declarer": None, "given_up": True}),
         (RoundFinishedEvent, {"round_number": 3, "declarer": None, "given_up": False}),
-        (GameEndedEvent, {}),
+        (GameEndedEvent, {"reason": GameEndingReason.FINISHED, "seat": None}),
+        (GameEndedEvent, {"reason": GameEndingReason.ABORTED, "seat": Seat(2)}),
+        (GameEndedEvent, {"reason": GameEndingReason.CANCELLED, "seat": None}),
     ],
     ids=[
         "deck_shuffled",
@@ -61,7 +65,9 @@ import pytest
         "round_finished_has_declarer",
         "round_finished_declarer_gave_up",
         "round_finished_no_declarer",
-        "game_ended",
+        "game_ended_finished",
+        "game_ended_aborted",
+        "game_ended_cancelled",
     ],
 )
 def test_event_to_dict_from_dict_roundtrip(event_class: type[FiveHundredEvent], kwargs: dict[str, Any]):

@@ -2,6 +2,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import ClassVar, Literal, Any, Self, override
 
+from ...common.game_ending import GameEndingReason
 from ...common.game_event import GameEvent
 from ...common.seat import Seat
 from .five_hundred_deck import FiveHundredDeck
@@ -220,20 +221,25 @@ class RoundFinishedEvent(GameEvent):
 @dataclass(frozen=True, slots=True)
 class GameEndedEvent(GameEvent):
     type: ClassVar[Literal["game_ended"]] = "game_ended"
+    reason: GameEndingReason
+    seat: Seat | None
 
     @override
     def to_dict(self) -> dict[str, Any]:
-        return {"type": self.type}
+        return {
+            "type": self.type,
+            "reason": self.reason.value,
+            "seat": self.seat.to_dict() if self.seat else None,
+        }
 
     @classmethod
     @override
     def from_dict(cls, data: dict[str, Any]) -> Self:
-        return cls()
+        return cls(
+            reason=GameEndingReason.from_string(data["reason"]),
+            seat=Seat.from_dict(data["seat"]) if data["seat"] else None,
+        )
 
-
-# TODO: consider adding an events like GameAbortedEvent and GameCancelledEvent...
-# figure out generic way to handle game ending since there are cancelled, aborted, finished as expected, finished in tie...
-# all cases require different handling for ELO calculations later...
 
 FiveHundredEvent = (
     DeckShuffledEvent

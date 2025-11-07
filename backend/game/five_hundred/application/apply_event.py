@@ -47,5 +47,5 @@ def apply_event(game: FiveHundredGame, event: FiveHundredEvent) -> FiveHundredGa
             return take_trick(game, taken_by)
         case RoundFinishedEvent(given_up=given_up):
             return finish_round(game, has_declarer_given_up=given_up)
-        case GameEndedEvent():
-            return end_game(game)
+        case GameEndedEvent(reason=reason, seat=seat):
+            return end_game(game, reason=reason, blamed_seat=seat)

@@ -1,5 +1,7 @@
 from ..logic.helpers import has_marriage_in_hand
 from ...common.game_exception import GameRulesException
+from ...common.game_ending import GameEndingReason
+from ...common.seat import Seat
 from ..domain.constants import (
     BID_STEP,
     CARDS_IN_STARTING_HAND,
@@ -10,6 +12,7 @@ from ..domain.constants import (
 from ..domain.five_hundred_deck import FiveHundredDeck
 from ..domain.five_hundred_card import FiveHundredCard
 from ..domain.five_hundred_command import (
+    EndGameCommand,
     FiveHundredCommand,
     GiveUpCommand,
     MakeBidCommand,
@@ -24,6 +27,7 @@ from ..domain.five_hundred_event import (
     DeckShuffledEvent,
     FiveHundredEvent,
     DeclarerGaveUpEvent,
+    GameEndedEvent,
 )
 from ..domain.five_hundred_game import FiveHundredGame
 from ..domain.five_hundred_phase import FiveHundredPhase
@@ -41,6 +45,8 @@ def handle_command(game: FiveHundredGame, cmd: FiveHundredCommand) -> FiveHundre
             return handle_pass_cards(game, card_to_next_seat, card_to_prev_seat)
         case PlayCardCommand(card=card):
             return handle_play_card(game, card)
+        case EndGameCommand(reason=reason, seat=seat):
+            return handle_end_game(reason, seat)
 
 
 def handle_start_game() -> FiveHundredEvent:
@@ -120,3 +126,9 @@ def handle_play_card(game: FiveHundredGame, card: FiveHundredCard) -> FiveHundre
         raise GameRulesException(detail="Could not play card: selected card is not allowed to play")
 
     return CardPlayedEvent(card=card, played_by=game.active_seat)
+
+
+def handle_end_game(reason: GameEndingReason, seat: Seat | None) -> FiveHundredEvent:
+    if reason == GameEndingReason.FINISHED:
+        raise GameRulesException(detail="Could not end game: reason must be 'aborted' or 'cancelled'")
+    return GameEndedEvent(reason=reason, seat=seat)
