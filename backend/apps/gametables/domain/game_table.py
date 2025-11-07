@@ -141,7 +141,7 @@ class GameTable:
         self._validate_status(acceptable_statuses={TableStatus.IN_PROGRESS})
         if self.active_player.user_id != user_id:
             raise GameTableRulesException(reason="not_player_turn", detail="Could not take turn: not the player's turn")
-        return self._take_turn(self.game_state, command)
+        return self._process_game_command(self.game_state, command)
 
     # automatic turn is a turn taken by a bot player by producing a command
     # it may take some time to create a command using bot strategy if some complicated algorithm or external service is used
@@ -159,9 +159,22 @@ class GameTable:
             )
         game_state = self.game_state
         command = bot_strategy.create_command(game_state)
-        return self._take_turn(game_state, command)
+        return self._process_game_command(game_state, command)
 
-    def _take_turn(self, game_state: GameState, command: GameCommand) -> Sequence[GameEvent]:
+    def cancel_game(self, initiated_by: int, command: GameCommand) -> Sequence[GameEvent]:
+        # TODO: check if all other players have agreed for this... (for now owner can cancel without asking)
+        self._validate_status(acceptable_statuses={TableStatus.IN_PROGRESS})
+        self._validate_is_owner(initiated_by)
+        return self._process_game_command(self.game_state, command)
+
+    def abort_game(self, initiated_by: int, to_blame: int, command: GameCommand) -> Sequence[GameEvent]:
+        # TODO: check if user to_blame is out of time or in some other way has broken rules... (for now owner can abort game and blame anyone for being abortion reason)
+        # TODO: in some hacky way need to check that command does not point to different player than to_blame
+        self._validate_status(acceptable_statuses={TableStatus.IN_PROGRESS})
+        self._validate_is_owner(initiated_by)
+        return self._process_game_command(self.game_state, command)
+
+    def _process_game_command(self, game_state: GameState, command: GameCommand) -> Sequence[GameEvent]:
         game_state_updated, events = self._engine.process_command(game_state, command)
         if game_state_updated.ending is not None:
             match game_state_updated.ending.reason:

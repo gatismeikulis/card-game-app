@@ -85,6 +85,17 @@ class TakeRegularTurnRequestSerializer(Serializer[dict[str, Any]]):
     params: DictField = DictField(required=False, default=dict)
 
 
+class CancelGameRequestSerializer(Serializer[dict[str, Any]]):
+    type: CharField = CharField()
+    params: DictField = DictField(required=False, default=dict)
+
+
+class AbortGameRequestSerializer(Serializer[dict[str, Any]]):
+    type: CharField = CharField()
+    params: DictField = DictField(required=False, default=dict)
+    to_blame: IntegerField = IntegerField()
+
+
 class HistoryRequestQuerySerializer(Serializer[dict[str, int]]):
     event = IntegerField(required=False, min_value=0, default=0)
 

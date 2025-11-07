@@ -4,7 +4,9 @@ from typing import Any, override
 from .domain.game_table import GameTable
 from .domain.game_table_action import GameTableAction
 from .serializers import (
+    AbortGameRequestSerializer,
     AddBotRequestSerializer,
+    CancelGameRequestSerializer,
     JoinGameTableRequestSerializer,
     RemoveBotRequestSerializer,
     TakeRegularTurnRequestSerializer,
@@ -88,6 +90,23 @@ class GameTableWebSocketConsumer(AppWebSocketConsumer):
             case GameTableAction.TAKE_AUTOMATIC_TURN:
                 events, table = await database_sync_to_async(table_manager.take_automatic_turn)(
                     table_id=self.table_id, initiated_by=self.user.pk
+                )
+                message = create_game_action_message(events, table)
+            case GameTableAction.CANCEL_GAME:
+                serializer = CancelGameRequestSerializer(data=data)
+                _ = serializer.is_valid(raise_exception=True)
+                events, table = await database_sync_to_async(table_manager.cancel_game)(
+                    table_id=self.table_id, initiated_by=self.user.pk, raw_command=serializer.validated_data
+                )
+                message = create_game_action_message(events, table)
+            case GameTableAction.ABORT_GAME:
+                serializer = AbortGameRequestSerializer(data=data)
+                _ = serializer.is_valid(raise_exception=True)
+                events, table = await database_sync_to_async(table_manager.abort_game)(
+                    table_id=self.table_id,
+                    initiated_by=self.user.pk,
+                    to_blame=serializer.validated_data["to_blame"],
+                    raw_command=serializer.validated_data,
                 )
                 message = create_game_action_message(events, table)
             case GameTableAction.JOIN_TABLE:

@@ -158,6 +158,32 @@ class GameTableManager:
         except AppException as e:
             raise e.with_context(table_id=table_id, user_id=initiated_by, operation="take_automatic_turn")
 
+    def cancel_game(
+        self, table_id: str, initiated_by: int, raw_command: dict[str, Any]
+    ) -> tuple[Sequence[GameEvent], GameTable]:
+        try:
+
+            def _modifier(table: GameTable) -> Sequence[GameEvent]:
+                command = get_command_parser(table.config.game_name).from_dict(raw_command)
+                return table.cancel_game(initiated_by=initiated_by, command=command)
+
+            return self._game_table_repository.modify_during_game_action(table_id, _modifier)
+        except AppException as e:
+            raise e.with_context(table_id=table_id, user_id=initiated_by, operation="cancel_game")
+
+    def abort_game(
+        self, table_id: str, initiated_by: int, to_blame: int, raw_command: dict[str, Any]
+    ) -> tuple[Sequence[GameEvent], GameTable]:
+        try:
+
+            def _modifier(table: GameTable) -> Sequence[GameEvent]:
+                command = get_command_parser(table.config.game_name).from_dict(raw_command)
+                return table.abort_game(initiated_by=initiated_by, to_blame=to_blame, command=command)
+
+            return self._game_table_repository.modify_during_game_action(table_id, _modifier)
+        except AppException as e:
+            raise e.with_context(table_id=table_id, user_id=initiated_by, operation="abort_game")
+
     def get_table_from_past(self, table_id: str, upto_event: int) -> GameTable:
         try:
             table = self._game_table_repository.find_by_id(table_id)

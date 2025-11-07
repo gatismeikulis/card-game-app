@@ -11,6 +11,8 @@ class GameTableAction(Enum):
     ADD_BOT = "add-bot"
     REMOVE_BOT = "remove-bot"
     START_GAME = "start-game"
+    CANCEL_GAME = "cancel-game"
+    ABORT_GAME = "abort-game"
 
     @staticmethod
     def from_str(s: str) -> "GameTableAction":
@@ -29,6 +31,10 @@ class GameTableAction(Enum):
                 return GameTableAction.REMOVE_BOT
             case "START_GAME":
                 return GameTableAction.START_GAME
+            case "CANCEL_GAME":
+                return GameTableAction.CANCEL_GAME
+            case "ABORT_GAME":
+                return GameTableAction.ABORT_GAME
             case _:
                 raise GameTableRulesException(
                     reason="game_table_action_parsing_error",

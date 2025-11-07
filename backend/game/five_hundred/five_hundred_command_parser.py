@@ -1,8 +1,7 @@
 from typing import Any, override
 
-from backend.game.common.game_ending import GameEndingReason
-from backend.game.common.seat import Seat
-
+from ..common.game_ending import GameEndingReason
+from ..common.seat import Seat
 from ..common.game_exception import GameParsingException
 from ..common.game_command import GameCommand
 from ..common.game_command_parser import GameCommandParser
