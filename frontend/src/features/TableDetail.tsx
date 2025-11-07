@@ -15,6 +15,7 @@ import { ErrorMessage } from "../components/ErrorMessage";
 import { PassCardsButton } from "../components/PassCardsButton";
 import { GiveUpButton } from "../components/GiveUpButton";
 import { Card, CardContent } from "../components/ui/card";
+import { Button } from "../components/ui/button";
 import { useUserData } from "../contexts/UserContext";
 import { useTableWebSocket } from "../hooks/useTableWebSocket";
 import { useGameActions } from "../hooks/useGameActions";
@@ -92,11 +93,41 @@ export function TableDetail() {
     takeAutomaticTurn,
     passCards,
     giveUp,
+    cancelGame,
+    abortGame,
   } = useGameActions({ sendMessage });
 
   // Card selection
   const { selectedCards, handleCardClick, clearSelection } = useCardSelection();
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
+
+  const handleCancelGame = useCallback(() => {
+    if (
+      typeof window !== "undefined" &&
+      window.confirm(
+        "Cancel the current game? This will end the game immediately for everyone."
+      )
+    ) {
+      cancelGame();
+    }
+  }, [cancelGame]);
+
+  const handleAbortPlayer = useCallback(
+    (player: any) => {
+      if (!player?.seat_number) return;
+      const playerName =
+        player.screen_name || player.name || `Seat ${player.seat_number}`;
+      if (
+        typeof window !== "undefined" &&
+        window.confirm(
+          `Abort the game and kick ${playerName}? This will end the current game immediately.`
+        )
+      ) {
+        abortGame(player.seat_number);
+      }
+    },
+    [abortGame]
+  );
 
   // Handle passing cards
   const handlePassCards = () => {
@@ -169,6 +200,20 @@ export function TableDetail() {
   const isOwner =
     tableData.owner_id === currentUser?.user_id ||
     tableData.owner_id === currentUser?.id;
+  const tableStatus = String(tableData.status || "").toLowerCase();
+  const isInProgress = tableStatus === "in_progress";
+  const ownerSeatNumber = tableData.players?.find(
+    (p: any) => p.user_id === tableData.owner_id
+  )?.seat_number;
+  const kickableSeatNumbers = isInProgress
+    ? (tableData.players || [])
+        .filter(
+          (p: any) =>
+            typeof p.seat_number === "number" &&
+            p.seat_number !== ownerSeatNumber
+        )
+        .map((p: any) => p.seat_number)
+    : undefined;
 
   return (
     <div className="min-h-screen game-gradient">
@@ -193,6 +238,20 @@ export function TableDetail() {
           isPending={wsPending}
           isAuthenticated={isLoggedIn}
         />
+
+        {isLoggedIn && isOwner && isInProgress && (
+          <div className="flex justify-end">
+            <Button
+              type="button"
+              size="sm"
+              variant="destructive"
+              onClick={handleCancelGame}
+              disabled={wsPending}
+            >
+              {wsPending ? "Cancelling..." : "Cancel Game"}
+            </Button>
+          </div>
+        )}
 
         <ErrorMessage message={wsError || ""} />
 
@@ -271,6 +330,10 @@ export function TableDetail() {
                 trumpSuit={tableData.game_state?.round?.trump_suit}
                 lastTrick={tableData.game_state?.round?.prev_trick}
                 highestBid={highestBidInfo}
+                canKickPlayers={isLoggedIn && isOwner && isInProgress}
+                kickableSeatNumbers={kickableSeatNumbers}
+                onKickPlayer={handleAbortPlayer}
+                kickDisabled={wsPending}
               />
             </div>
 

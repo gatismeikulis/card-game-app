@@ -1,7 +1,9 @@
 // GameBoard component for HTML-based game interface
+import type { ReactNode } from "react";
 import { Player } from "./Player";
 import { PlayerHand } from "./PlayerHand";
 import { PlayingCard } from "./PlayingCard";
+import { Button } from "./ui/button";
 
 // Helper to render suit as a colored badge with full name
 const renderSuitBadge = (value: any) => {
@@ -46,7 +48,7 @@ interface GameBoardProps {
   activeSeat?: number;
   phase?: string;
   cardsOnBoard?: Record<string, string | null>;
-  biddingPanel?: React.ReactNode;
+  biddingPanel?: ReactNode;
   playerStats?: {
     points?: number;
     marriage_points?: string[];
@@ -57,6 +59,10 @@ interface GameBoardProps {
   lastTrick?: string[];
   highestBid?: { bidder: string; amount: number };
   className?: string;
+  canKickPlayers?: boolean;
+  kickableSeatNumbers?: number[];
+  onKickPlayer?: (player: any) => void;
+  kickDisabled?: boolean;
 }
 
 export function GameBoard({
@@ -76,22 +82,26 @@ export function GameBoard({
   lastTrick,
   highestBid,
   className = "",
+  canKickPlayers = false,
+  kickableSeatNumbers,
+  onKickPlayer,
+  kickDisabled = false,
 }: GameBoardProps) {
   // Calculate player positions around the table
   const getPlayerPosition = (seatNumber: number) => {
     if (seatNumber === currentUserSeat) return "bottom";
     // for spectators view
-    if(!currentUserSeat && seatNumber === 1) return "bottom";
-    if(!currentUserSeat && seatNumber === 2) return "left";
-    if(!currentUserSeat && seatNumber === 3) return "right";
+    if (!currentUserSeat && seatNumber === 1) return "bottom";
+    if (!currentUserSeat && seatNumber === 2) return "left";
+    if (!currentUserSeat && seatNumber === 3) return "right";
 
     // for non current players
-    if(currentUserSeat === 1 && seatNumber === 2) return "left";
-    if(currentUserSeat === 1 && seatNumber === 3) return "right";
-    if(currentUserSeat === 2 && seatNumber === 1) return "right";
-    if(currentUserSeat === 2 && seatNumber === 3) return "left";
-    if(currentUserSeat === 3 && seatNumber === 1) return "left";
-    if(currentUserSeat === 3 && seatNumber === 2) return "right";
+    if (currentUserSeat === 1 && seatNumber === 2) return "left";
+    if (currentUserSeat === 1 && seatNumber === 3) return "right";
+    if (currentUserSeat === 2 && seatNumber === 1) return "right";
+    if (currentUserSeat === 2 && seatNumber === 3) return "left";
+    if (currentUserSeat === 3 && seatNumber === 1) return "left";
+    if (currentUserSeat === 3 && seatNumber === 2) return "right";
 
     // Default fallback
     return "top";
@@ -141,10 +151,9 @@ export function GameBoard({
       {phase === "Playing Cards" && (
         <div className="absolute top-8 left-2 z-10 lg:hidden">
           <div className="bg-black/20 rounded-lg p-2 text-white text-xs">
-          <div className="font-semibold mb-1">TRUMP</div>
-           
-                  {renderSuitBadge(trumpSuit)}
+            <div className="font-semibold mb-1">TRUMP</div>
 
+            {renderSuitBadge(trumpSuit)}
           </div>
         </div>
       )}
@@ -199,9 +208,7 @@ export function GameBoard({
       <div className="absolute inset-0 flex items-center justify-center z-10">
         <div className="text-center">
           {/* Bidding Panel */}
-          {biddingPanel && (
-            <div className="mb-24 pt-2">{biddingPanel}</div>
-          )}
+          {biddingPanel && <div className="mb-24 pt-2">{biddingPanel}</div>}
 
           {/* Cards on board during playing phase */}
           {phase === "Playing Cards" &&
@@ -239,6 +246,12 @@ export function GameBoard({
       {/* Other players positioned around the table */}
       {otherPlayers.map((player) => {
         const position = getPlayerPosition(player.seat_number);
+        const canKickThisPlayer =
+          canKickPlayers &&
+          !!onKickPlayer &&
+          (!!kickableSeatNumbers
+            ? kickableSeatNumbers.includes(player.seat_number)
+            : true);
         return (
           <Player
             key={player.seat_number}
@@ -251,6 +264,23 @@ export function GameBoard({
             position={position as "top" | "left" | "right" | "bottom"}
             phase={phase}
             className="z-10"
+            action={
+              canKickThisPlayer ? (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="icon"
+                  className="h-6 w-6 text-xs leading-none"
+                  disabled={kickDisabled}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onKickPlayer?.(player);
+                  }}
+                >
+                  ✕
+                </Button>
+              ) : undefined
+            }
           />
         );
       })}

@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { HiddenCard } from "./HiddenCard";
 
 interface PlayerProps {
@@ -11,6 +12,7 @@ interface PlayerProps {
   position: "top" | "left" | "right" | "bottom";
   phase?: string;
   className?: string;
+  action?: ReactNode;
 }
 
 export function Player({
@@ -23,6 +25,7 @@ export function Player({
   position,
   phase,
   className = "",
+  action,
 }: PlayerProps) {
   const positionClasses = {
     top: "top-1 sm:top-2 left-1/2 transform -translate-x-1/2",
@@ -35,7 +38,7 @@ export function Player({
     <div className={`absolute ${positionClasses[position]} ${className}`}>
       <div
         className={`
-        bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg shadow-lg p-0.5 sm:p-1 md:p-2 min-w-[50px] sm:min-w-[60px] md:min-w-[80px] text-center border border-gray-600
+        relative bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg shadow-lg p-0.5 sm:p-1 md:p-2 min-w-[50px] sm:min-w-[60px] md:min-w-[80px] text-center border border-gray-600
         ${
           isActive
             ? "ring-2 ring-yellow-400 bg-gradient-to-br from-yellow-600 to-yellow-700"
@@ -71,6 +74,11 @@ export function Player({
             {Array.from({ length: Math.min(handSize, 10) }).map((_, index) => (
               <HiddenCard key={index} size="sm" className="-ml-1 first:ml-0" />
             ))}
+          </div>
+        )}
+        {action && (
+          <div className="absolute -top-2 -right-2">
+            {action}
           </div>
         )}
       </div>

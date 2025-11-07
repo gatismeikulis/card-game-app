@@ -65,6 +65,30 @@ export function useGameActions({ sendMessage }: UseGameActionsProps) {
     });
   }, [sendMessage]);
 
+  const cancelGame = useCallback(() => {
+    sendMessage("CANCEL_GAME", {
+      type: "end_game",
+      params: {
+        reason: "CANCELLED",
+        seat: null,
+      },
+    });
+  }, [sendMessage]);
+
+  const abortGame = useCallback(
+    (seatNumber: number) => {
+      sendMessage("ABORT_GAME", {
+        type: "end_game",
+        params: {
+          reason: "ABORTED",
+          seat: seatNumber,
+        },
+        to_blame: seatNumber,
+      });
+    },
+    [sendMessage]
+  );
+
   return {
     join,
     leave,
@@ -75,6 +99,8 @@ export function useGameActions({ sendMessage }: UseGameActionsProps) {
     takeAutomaticTurn,
     passCards,
     giveUp,
+    cancelGame,
+    abortGame,
   };
 }
 

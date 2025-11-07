@@ -69,7 +69,7 @@ class GameTableViewSet(ViewSet):
         """
         DELETE /{table_id}
         """
-        table_manager.remove_table(table_id=pk)
+        table_manager.remove_table(table_id=pk, iniated_by=request.user.pk)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def retrieve(self, request: Request, pk: str):
