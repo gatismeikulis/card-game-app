@@ -47,22 +47,23 @@ class GameTableManager:
         except AppException as e:
             raise e.with_context(user_id=owner_id, operation="add_table")
 
-    # it should not be possible to remove table directly. it should happen during server maintance where some bg job remove all cancelled not-started tables.
-    def remove_table(self, table_id: str) -> None:
+    def remove_table(self, table_id: str, iniated_by: int) -> None:
         try:
-            self._game_table_repository.delete(table_id)
+            table = self._game_table_repository.find_by_id(table_id)
+            if table.can_remove(iniated_by):
+                self._game_table_repository.delete(table_id)
         except AppException as e:
             raise e.with_context(table_id=table_id, operation="remove_table")
 
-    def cancel_game(self, table_id: str, iniated_by: int) -> GameTable:
-        try:
+    # def cancel_game(self, table_id: str, iniated_by: int) -> GameTable:
+    #     try:
 
-            def _modifier(table: GameTable) -> None:
-                table.cancel_game(initiated_by=iniated_by)
+    #         def _modifier(table: GameTable) -> None:
+    #             table.cancel_game(initiated_by=iniated_by)
 
-            return self._game_table_repository.modify(table_id, _modifier)
-        except AppException as e:
-            raise e.with_context(table_id=table_id, user_id=iniated_by, operation="cancel_game")
+    #         return self._game_table_repository.modify(table_id, _modifier)
+    #     except AppException as e:
+    #         raise e.with_context(table_id=table_id, user_id=iniated_by, operation="cancel_game")
 
     def get_table(self, table_id: str) -> GameTable:
         try:

@@ -174,20 +174,15 @@ class GameTable:
         self._game_state = game_state_updated
         return events
 
-    # can cancel only not-finished/not-aborted games
-    def cancel_game(self, initiated_by: int) -> None:
-        self._validate_status(unacceptable_statuses={TableStatus.FINISHED, TableStatus.ABORTED})
-        self._validate_is_owner(initiated_by)
-        self._status = TableStatus.CANCELLED
-
-    # this should mark game as aborted (because player left or was kicked by owner for some reason) and link the user_id who to blame for this
-    # so that user's reputation can be affected etc... just a reminder for later when these features come in
-    # def abort_game(self, caused_by_user_id: int) -> None: ...
-
     def restore_game_state(self, events: Sequence[GameEvent]) -> None:
         restored_game_state = self._engine.restore_game_state(events, self._config.game_config, self.taken_seat_numbers)
         self._game_state = restored_game_state
         return None
+
+    def can_remove(self, initiated_by: int) -> bool:
+        self._validate_status(acceptable_statuses={TableStatus.NOT_STARTED})
+        self._validate_is_owner(initiated_by)
+        return True
 
     ###  Helper methods ###
 
