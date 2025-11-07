@@ -1,5 +1,6 @@
 from dataclasses import replace
 
+from ...common.game_ending import GameEnding, GameEndingReason
 from ..domain.five_hundred_game import FiveHundredGame
 from ..domain.five_hundred_phase import FiveHundredPhase
 
@@ -17,4 +18,8 @@ def end_game(game: FiveHundredGame) -> FiveHundredGame:
         round_number=0,
         is_marriage_announced=False,
     )
-    return replace(game, round=round_updated, is_ended=True)
+    return replace(
+        game,
+        round=round_updated,
+        ending=GameEnding(winners=[], losers=[], reason=GameEndingReason.FINISHED, point_differences={}),
+    )

@@ -11,6 +11,7 @@ from game.common.game_engine import GameEngine
 from game.common.game_event import GameEvent
 from game.common.game_state import GameState
 from game.common.seat import SeatNumber
+from game.common.game_ending import GameEndingReason
 from .game_table_config import GameTableConfig
 from .player import Player
 
@@ -162,8 +163,14 @@ class GameTable:
 
     def _take_turn(self, game_state: GameState, command: GameCommand) -> Sequence[GameEvent]:
         game_state_updated, events = self._engine.process_command(game_state, command)
-        if game_state_updated.is_ended:
-            self._status = TableStatus.FINISHED
+        if game_state_updated.ending is not None:
+            match game_state_updated.ending.reason:
+                case GameEndingReason.FINISHED:
+                    self._status = TableStatus.FINISHED
+                case GameEndingReason.ABORTED:
+                    self._status = TableStatus.ABORTED
+                case GameEndingReason.CANCELLED:
+                    self._status = TableStatus.CANCELLED
         self._game_state = game_state_updated
         return events
 

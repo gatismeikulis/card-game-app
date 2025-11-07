@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any, Self
 
+from .game_ending import GameEnding
 from .game_config import GameConfig
 from .seat import Seat, SeatNumber
 
@@ -9,7 +10,7 @@ from .seat import Seat, SeatNumber
 @dataclass(frozen=True, slots=True)
 class GameState(ABC):
     active_seat: Seat
-    is_ended: bool
+    ending: GameEnding | None
     game_config: GameConfig
     taken_seats: frozenset[Seat]
 

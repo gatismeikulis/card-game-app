@@ -2,6 +2,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any, Self, override
 
+from ...common.game_ending import GameEnding
 from ...common.game_config import GameConfig
 from ...common.seat import Seat
 from ...common.game_exception import GameEngineException
@@ -23,7 +24,7 @@ class FiveHundredGame(GameState):
     ]  # round-by-round results TODO: consider moving this out of the game state...
     summary: Mapping[Seat, int]  # running game-points
     active_seat: Seat
-    is_ended: bool
+    ending: GameEnding | None
     game_config: FiveHundredGameConfig
     taken_seats: frozenset[Seat]
 
@@ -42,16 +43,10 @@ class FiveHundredGame(GameState):
             round=round,
             results=[],
             summary={seat: GAME_STARTING_POINTS for seat in taken_seats},
-            is_ended=False,
+            ending=None,
             game_config=game_config,
             taken_seats=taken_seats,
         )
-
-    @property
-    def winners(self) -> Sequence[Seat]:
-        if self.round.phase != FiveHundredPhase.GAME_ENEDED:
-            raise GameEngineException(detail="Could not get winners: game has not ended yet")
-        return [seat for seat, points in self.summary.items() if points <= 0]
 
     @property
     def active_seats_info(self) -> FiveHundredSeatInfo:
@@ -61,7 +56,7 @@ class FiveHundredGame(GameState):
     def str_repr_for_table(self) -> str:
         match self.round.phase:
             case FiveHundredPhase.GAME_ENEDED:
-                return f"Game Ended, Winners: {', '.join(str(seat) for seat in self.winners)}, Final Scores: {', '.join(f'{seat}: {self.summary[seat]}' for seat in self.summary.keys())}"
+                return f"Game Ended, Final Scores: {', '.join(f'{seat}: {self.summary[seat]}' for seat in self.summary.keys())}"
             case _:
                 return f"Game in progress, Round {self.round.round_number}, {self.round.phase}, Seat {self.active_seat} is taking turn, Current scores: {', '.join(f'{seat}: {self.summary[seat]}' for seat in self.summary.keys())}"
 
@@ -73,7 +68,7 @@ class FiveHundredGame(GameState):
             "results": [result.to_dict() for result in self.results],
             "summary": {seat.to_dict(): points for seat, points in self.summary.items()},
             "active_seat": self.active_seat.to_dict(),
-            "is_ended": self.is_ended,
+            "ending": self.ending.to_dict() if self.ending else None,
             "game_config": self.game_config.to_dict(),
             "taken_seats": [seat.to_dict() for seat in self.taken_seats],
         }
@@ -87,7 +82,7 @@ class FiveHundredGame(GameState):
             results=[FiveHundredRoundResults.from_dict(result) for result in data["results"]],
             summary={Seat.from_dict(int(seat)): points for seat, points in data["summary"].items()},
             active_seat=Seat.from_dict(data["active_seat"]),
-            is_ended=data["is_ended"],
+            ending=GameEnding.from_dict(data["ending"]) if data["ending"] else None,
             game_config=FiveHundredGameConfig.from_dict(data["game_config"]),
             taken_seats=frozenset(Seat.from_dict(int(seat)) for seat in data["taken_seats"]),
         )
@@ -110,6 +105,7 @@ class FiveHundredGame(GameState):
                     seat.to_dict(): card.to_dict() if card else None for seat, card in self.round.cards_on_board.items()
                 },
                 "prev_trick": [card.to_dict() for card in self.round.prev_trick],
+                "ending": self.ending.to_dict() if self.ending else None,
                 "seat_infos": {
                     seat.to_dict(): (
                         info.to_dict()

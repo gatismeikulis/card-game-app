@@ -18,18 +18,13 @@ def test_init_requires_game_specific_game_config(sample_seats: frozenset[Seat]):
 def test_init_sets_correct_properties(sample_game_config: FiveHundredGameConfig, sample_seats: frozenset[Seat]):
     game = FiveHundredGame.init(sample_game_config, frozenset(seat.number for seat in sample_seats))
     expected_round = FiveHundredRound.create(round_number=1, first_seat=Seat(1), taken_seats=sample_seats)
-    assert game.is_ended is False
+    assert game.ending is None
     assert game.game_config == sample_game_config
     assert game.taken_seats == sample_seats
     assert game.active_seat in game.taken_seats
     assert game.round == expected_round
     assert game.summary == {seat: GAME_STARTING_POINTS for seat in sample_seats}
     assert game.results == []
-
-
-def test_winners_property_only_available_when_game_is_ended(sample_game: FiveHundredGame):
-    with pytest.raises(GameEngineException):
-        _ = sample_game.winners
 
 
 def test_to_dict_and_from_dict_roundtrip(sample_game: FiveHundredGame):
