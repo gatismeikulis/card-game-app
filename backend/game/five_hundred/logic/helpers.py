@@ -3,7 +3,9 @@ from collections.abc import Mapping, Sequence
 from ...common.hand import Hand
 from ...common.card import Rank, Suit
 from ...common.seat import Seat
+from ..domain.constants import MUST_BID_THRESHOLD
 from ..domain.five_hundred_card import FiveHundredCard
+from ..domain.five_hundred_game import FiveHundredGame
 from ..domain.five_hundred_seat_info import FiveHundredSeatInfo
 
 
@@ -78,3 +80,22 @@ def get_trick_winning_card(
         required_suit_cards_played = [card for card in trick_cards if card.suit == required_suit]
         required_suit_cards_played.sort(key=lambda c: c.strength().value, reverse=True)
         return required_suit_cards_played[0]
+
+
+def get_round_ending_points_per_seat(game: FiveHundredGame, has_declarer_given_up: bool = False) -> Mapping[Seat, int]:
+    bidding_winning_seat = game.round.highest_bid[0] if game.round.highest_bid else None
+
+    def get_round_points_for_seat(seat: Seat, seats_game_points: int) -> int:
+        points_from_tricks = game.round.seat_infos[seat].points
+        if bidding_winning_seat == seat:
+            winning_bid = game.round.highest_bid[1] if game.round.highest_bid else 0
+            return (
+                winning_bid if winning_bid <= points_from_tricks else -winning_bid
+            )  # this logic is correct also after giving up
+        else:
+            points = game.game_config.give_up_points if has_declarer_given_up else points_from_tricks
+            diff_of_five = points_from_tricks % 5
+            points_rounded = points - diff_of_five + 5 if diff_of_five > 2 else points - diff_of_five
+            return points_rounded if seats_game_points >= MUST_BID_THRESHOLD else 0
+
+    return {seat: -get_round_points_for_seat(seat, game.summary[seat]) for seat in game.taken_seats}

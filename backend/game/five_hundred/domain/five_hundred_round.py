@@ -14,7 +14,7 @@ from .five_hundred_seat_info import FiveHundredSeatInfo
 class FiveHundredRound:
     seat_infos: Mapping[Seat, FiveHundredSeatInfo]
     cards_on_board: Mapping[Seat, FiveHundredCard | None]
-    prev_trick: Sequence[FiveHundredCard]  # just for UI
+    prev_trick: Sequence[FiveHundredCard]  # just for UI, TODO: possibly better to store all tricks this round..
     cards_to_take: Sequence[FiveHundredCard]
     required_suit: Suit | None
     trump_suit: Suit | None

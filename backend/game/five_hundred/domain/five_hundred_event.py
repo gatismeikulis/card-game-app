@@ -1,4 +1,4 @@
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import ClassVar, Literal, Any, Self, override
 
@@ -196,6 +196,7 @@ class TrickTakenEvent(GameEvent):
 class RoundFinishedEvent(GameEvent):
     type: ClassVar[Literal["round_finished"]] = "round_finished"
     round_number: int
+    points: Mapping[Seat, int]  # round ending points per seat
     declarer: Seat | None
     given_up: bool
 
@@ -206,6 +207,7 @@ class RoundFinishedEvent(GameEvent):
             "round_number": self.round_number,
             "declarer": self.declarer.to_dict() if self.declarer else None,
             "given_up": self.given_up,
+            "points": {seat.to_dict(): value for seat, value in self.points.items()},
         }
 
     @classmethod
@@ -215,6 +217,7 @@ class RoundFinishedEvent(GameEvent):
             round_number=data["round_number"],
             declarer=Seat.from_dict(data["declarer"]) if data["declarer"] else None,
             given_up=data["given_up"],
+            points={Seat.from_dict(int(seat_num)): value for seat_num, value in data["points"].items()},
         )
 
 

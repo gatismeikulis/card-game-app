@@ -73,7 +73,6 @@ def sample_game(
 ) -> FiveHundredGame:
     return FiveHundredGame(
         round=sample_round,
-        results=[],
         summary={seat: GAME_STARTING_POINTS for seat in sample_seats},
         active_seat=sample_round.first_seat,
         ending=None,

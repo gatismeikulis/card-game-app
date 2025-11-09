@@ -24,7 +24,6 @@ def test_init_sets_correct_properties(sample_game_config: FiveHundredGameConfig,
     assert game.active_seat in game.taken_seats
     assert game.round == expected_round
     assert game.summary == {seat: GAME_STARTING_POINTS for seat in sample_seats}
-    assert game.results == []
 
 
 def test_to_dict_and_from_dict_roundtrip(sample_game: FiveHundredGame):
@@ -38,6 +37,5 @@ def test_to_public_dict_hides_private_and_non_essential_info(sample_game: FiveHu
 
     assert "cards_to_take" not in public_data["round"]
     # make sure that non-essential information for UI is also not included
-    assert "results" not in public_data
     assert "game_config" not in public_data
     assert "taken_seats" not in public_data

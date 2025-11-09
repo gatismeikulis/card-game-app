@@ -45,9 +45,28 @@ import pytest
                 "cards": [FiveHundredCard(Suit.SPADE, Rank.JACK), FiveHundredCard(Suit.CLUB, Rank.TEN)],
             },
         ),
-        (RoundFinishedEvent, {"round_number": 1, "declarer": Seat(1), "given_up": False}),
-        (RoundFinishedEvent, {"round_number": 3, "declarer": None, "given_up": True}),
-        (RoundFinishedEvent, {"round_number": 3, "declarer": None, "given_up": False}),
+        (
+            RoundFinishedEvent,
+            {
+                "round_number": 1,
+                "declarer": Seat(1),
+                "given_up": False,
+                "points": {Seat(1): 100, Seat(2): -35, Seat(3): 15},
+            },
+        ),
+        (
+            RoundFinishedEvent,
+            {
+                "round_number": 3,
+                "declarer": Seat(1),
+                "given_up": True,
+                "points": {Seat(1): 120, Seat(2): -50, Seat(3): -50},
+            },
+        ),
+        (
+            RoundFinishedEvent,
+            {"round_number": 3, "declarer": None, "given_up": False, "points": {Seat(1): 0, Seat(2): 0, Seat(3): 0}},
+        ),
         (GameEndedEvent, {"reason": GameEndingReason.FINISHED, "seat": None}),
         (GameEndedEvent, {"reason": GameEndingReason.ABORTED, "seat": Seat(2)}),
         (GameEndedEvent, {"reason": GameEndingReason.CANCELLED, "seat": None}),

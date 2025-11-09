@@ -1,57 +1,34 @@
-from dataclasses import replace
 import pytest
 
-from ...domain.five_hundred_round_results import FiveHundredRoundResults
 from ..finish_round import finish_round
 from ...domain.five_hundred_game import FiveHundredGame
+from ....common.seat import Seat
 
 
 @pytest.mark.parametrize(
-    "points_per_seat_number,declarer_gave_up, expected_results_per_seat_number, expected_summary_per_seat_number",
-    # assuming highest bidder was seat 1 with bid 100 and all seats are at STARTING_POINTS
+    "points_per_seat_number, expected_summary_per_seat_number",
+    # assuming all seats are at STARTING_POINTS
     [
         (
-            {1: 47, 2: 9, 3: 64},
-            False,
-            {1: 100, 2: -10, 3: -65},
-            {1: 600, 2: 490, 3: 435},
-        ),  # highest bidder failed to exceed the bid
+            {1: 100, 2: -50, 3: -60},
+            {1: 600, 2: 450, 3: 440},
+        ),
         (
-            {1: 103, 2: 17, 3: 0},
-            False,
-            {1: -100, 2: -15, 3: 0},
-            {1: 400, 2: 485, 3: 500},
-        ),  # highest bidder exceeded the bid
-        ({1: 0, 2: 0, 3: 0}, True, {1: 100, 2: -50, 3: -50}, {1: 600, 2: 450, 3: 450}),  # declarer gave up
+            {1: 0, 2: 0, 3: 0},
+            {1: 500, 2: 500, 3: 500},
+        ),
     ],
     ids=[
-        "highest_bidder_failed_to_exceed_the_bid",
-        "highest_bidder_exceeded_the_bid",
-        "declarer_gave_up",
+        "point_updates_for_all_seats",
+        "no_point_updates",
     ],
 )
 def test_finish_round_scoring_logic(
     sample_game: FiveHundredGame,
     points_per_seat_number: dict[int, int],
-    declarer_gave_up: bool,
-    expected_results_per_seat_number: dict[int, int],
     expected_summary_per_seat_number: dict[int, int],
 ):
-    sample_round = sample_game.round
-    sample_seat_infos = sample_game.round.seat_infos
-    sample_seat_infos_updated = {
-        seat: replace(seat_info, points=points_per_seat_number[seat.number])
-        for seat, seat_info in sample_seat_infos.items()
-    }
-    sample_round_updated = replace(sample_round, seat_infos=sample_seat_infos_updated)
-    sample_game_updated = replace(sample_game, round=sample_round_updated)
-    game = finish_round(sample_game_updated, has_declarer_given_up=declarer_gave_up)
+    points_per_seat = {Seat(seat_number): points for seat_number, points in points_per_seat_number.items()}
+    game = finish_round(sample_game, points_per_seat)
 
-    expected_round_result = FiveHundredRoundResults(
-        round_number=sample_game.round.round_number,
-        bidding_results=sample_round.highest_bid,
-        seat_points={seat: expected_results_per_seat_number[seat.number] for seat in sample_seat_infos.keys()},
-    )
-
-    assert game.results[-1] == expected_round_result
-    assert game.summary == {seat: expected_summary_per_seat_number[seat.number] for seat in sample_seat_infos.keys()}
+    assert game.summary == {seat: expected_summary_per_seat_number[seat.number] for seat in game.taken_seats}

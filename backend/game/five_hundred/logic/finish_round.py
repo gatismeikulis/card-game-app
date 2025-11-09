@@ -1,37 +1,13 @@
+from collections.abc import Mapping
 from dataclasses import replace
 
 from ...common.seat import Seat
-from ..domain.constants import MUST_BID_THRESHOLD
 from ..domain.five_hundred_game import FiveHundredGame
 from ..domain.five_hundred_round import FiveHundredRound
-from ..domain.five_hundred_round_results import FiveHundredRoundResults
 
 
-def finish_round(game: FiveHundredGame, has_declarer_given_up: bool = False) -> FiveHundredGame:
-    bidding_winning_seat = game.round.highest_bid[0] if game.round.highest_bid else None
-
-    def get_round_points_for_seat(seat: Seat, seats_game_points: int) -> int:
-        points_from_tricks = game.round.seat_infos[seat].points
-        if bidding_winning_seat == seat:
-            winning_bid = game.round.highest_bid[1] if game.round.highest_bid else 0
-            return (
-                winning_bid if winning_bid <= points_from_tricks else -winning_bid
-            )  # this logic is correct also after giving up
-        else:
-            points = game.game_config.give_up_points if has_declarer_given_up else points_from_tricks
-            diff_of_five = points_from_tricks % 5
-            points_rounded = points - diff_of_five + 5 if diff_of_five > 2 else points - diff_of_five
-            return points_rounded if seats_game_points >= MUST_BID_THRESHOLD else 0
-
-    seat_points = {seat: -get_round_points_for_seat(seat, game.summary[seat]) for seat in game.taken_seats}
-
-    round_results = FiveHundredRoundResults(
-        round_number=game.round.round_number,
-        bidding_results=game.round.highest_bid,
-        seat_points=seat_points,
-    )
-
-    game_summary_updated = {seat: game.summary[seat] + seat_points[seat] for seat in seat_points.keys()}
+def finish_round(game: FiveHundredGame, points_per_seat: Mapping[Seat, int]) -> FiveHundredGame:
+    game_summary_updated = {seat: game.summary[seat] + points_per_seat[seat] for seat in points_per_seat.keys()}
 
     first_seat_updated = game.round.first_seat.next(game.taken_seats)
 
@@ -40,7 +16,6 @@ def finish_round(game: FiveHundredGame, has_declarer_given_up: bool = False) -> 
     return replace(
         game,
         active_seat=first_seat_updated,
-        results=list(game.results) + [round_results],
         summary=game_summary_updated,
         round=round_updated,
     )

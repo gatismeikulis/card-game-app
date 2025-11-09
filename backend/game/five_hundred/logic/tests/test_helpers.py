@@ -4,10 +4,12 @@ import pytest
 from ....common.card import Suit, Rank
 from ....common.hand import Hand
 from ....common.seat import Seat
+from ...domain.five_hundred_game import FiveHundredGame
 from ...domain.five_hundred_card import FiveHundredCard
 from ...domain.five_hundred_seat_info import FiveHundredSeatInfo
 from ..helpers import (
     get_next_seat_to_bid,
+    get_round_ending_points_per_seat,
     has_marriage_in_hand,
     is_played_card_part_of_marriage,
     get_trick_winning_card,
@@ -116,3 +118,35 @@ def test_get_trick_winning_card_tiny_trump_wins_big_cards():
     ]
     winning_card = get_trick_winning_card(trick, required_suit=Suit.DIAMOND, trump_suit=Suit.HEART)
     assert winning_card == FiveHundredCard(Suit.HEART, Rank.NINE)
+
+
+@pytest.mark.parametrize(
+    "highest_bid,round_points_per_seat_number,declarer_gave_up, expected_points_per_seat",
+    [
+        (None, {1: 0, 2: 0, 3: 0}, False, {Seat(1): 0, Seat(2): 0, Seat(3): 0}),
+        ((Seat(2), 95), {1: 24, 2: 96, 3: 0}, False, {Seat(1): -25, Seat(2): -95, Seat(3): 0}),
+        ((Seat(2), 120), {1: 17, 2: 85, 3: 18}, False, {Seat(1): -15, Seat(2): 120, Seat(3): -20}),
+        ((Seat(1), 100), {1: 0, 2: 0, 3: 0}, True, {Seat(1): 100, Seat(2): -50, Seat(3): -50}),
+    ],
+    ids=["all_passed", "declarer_exceeds_the_bid", "declarer_fails_to_exceed_the_bid", "declarer_gives_up"],
+)
+def test_get_round_ending_points_per_seat(
+    sample_game: FiveHundredGame,
+    highest_bid: tuple[Seat, int] | None,
+    round_points_per_seat_number: dict[int, int],
+    declarer_gave_up: bool,
+    expected_points_per_seat: dict[int, int],
+):
+    sample_round = sample_game.round
+    sample_seat_infos = sample_game.round.seat_infos
+    sample_seat_infos_updated = {
+        seat: replace(seat_info, points=round_points_per_seat_number[seat.number])
+        for seat, seat_info in sample_seat_infos.items()
+    }
+    sample_round_updated = replace(sample_round, seat_infos=sample_seat_infos_updated, highest_bid=highest_bid)
+    sample_game_updated = replace(sample_game, round=sample_round_updated)
+    round_ending_points_per_seat = get_round_ending_points_per_seat(
+        sample_game_updated, has_declarer_given_up=declarer_gave_up
+    )
+
+    assert round_ending_points_per_seat == expected_points_per_seat

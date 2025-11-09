@@ -1,4 +1,4 @@
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any, Self, override
 
@@ -12,16 +12,12 @@ from .constants import GAME_STARTING_POINTS
 from .five_hundred_game_config import FiveHundredGameConfig
 from .five_hundred_phase import FiveHundredPhase
 from .five_hundred_round import FiveHundredRound
-from .five_hundred_round_results import FiveHundredRoundResults
 from .five_hundred_seat_info import FiveHundredSeatInfo
 
 
 @dataclass(frozen=True, slots=True)
 class FiveHundredGame(GameState):
     round: FiveHundredRound  # current round
-    results: Sequence[
-        FiveHundredRoundResults
-    ]  # round-by-round results TODO: consider moving this out of the game state...
     summary: Mapping[Seat, int]  # running game-points
     active_seat: Seat
     ending: GameEnding | None
@@ -42,7 +38,6 @@ class FiveHundredGame(GameState):
         return cls(
             active_seat=round.first_seat,
             round=round,
-            results=[],
             summary={seat: GAME_STARTING_POINTS for seat in taken_seats},
             ending=None,
             game_config=game_config,
@@ -67,7 +62,6 @@ class FiveHundredGame(GameState):
         """Serialize to JSON-compatible dict"""
         return {
             "round": self.round.to_dict(),
-            "results": [result.to_dict() for result in self.results],
             "summary": {seat.to_dict(): points for seat, points in self.summary.items()},
             "active_seat": self.active_seat.to_dict(),
             "ending": self.ending.to_dict() if self.ending else None,
@@ -82,7 +76,6 @@ class FiveHundredGame(GameState):
         """Reconstruct from JSON-compatible dict"""
         return cls(
             round=FiveHundredRound.from_dict(data["round"]),
-            results=[FiveHundredRoundResults.from_dict(result) for result in data["results"]],
             summary={Seat.from_dict(int(seat)): points for seat, points in data["summary"].items()},
             active_seat=Seat.from_dict(data["active_seat"]),
             ending=GameEnding.from_dict(data["ending"]) if data["ending"] else None,
