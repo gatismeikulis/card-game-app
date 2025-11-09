@@ -4,7 +4,7 @@ from typing import Protocol
 from game.common.game_event import GameEvent
 
 
-class IGamePlayEventRepository(Protocol):
+class IGameEventRepository(Protocol):
     def find_many(
         self, table_id: str, start_inclusive: int | None = None, end_inclusive: int | None = None
     ) -> Sequence[GameEvent]:

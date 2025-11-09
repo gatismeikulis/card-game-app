@@ -3,14 +3,14 @@ from typing import override
 
 from core.exceptions.not_exist_exception import NotExistException
 from core.exceptions.infrastructure_exception import InfrastructureException
-from ..application.igame_play_event_repository import IGamePlayEventRepository
+from ..application.igame_play_event_repository import IGameEventRepository
 from ..models import GameEventModel, GameTableModel
 from ..registries.game_event_parsers import get_game_event_parser
 from game.game_name import GameName
 from game.common.game_event import GameEvent
 
 
-class GamePlayEventRepository(IGamePlayEventRepository):
+class GameEventRepository(IGameEventRepository):
     @override
     def find_many(
         self, table_id: str, start_inclusive: int | None = None, end_inclusive: int | None = None

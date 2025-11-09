@@ -3,7 +3,7 @@ from typing import Any, final
 import uuid
 
 from core.exceptions.app_exception import AppException
-from .igame_play_event_repository import IGamePlayEventRepository
+from .igame_event_repository import IGameEventRepository
 from .igame_table_repository import IGameTableRepository
 from ..exceptions import GameTableInternalException
 from ..registries.table_config_parsers import get_table_config_parser
@@ -25,10 +25,10 @@ class GameTableManager:
     def __init__(
         self,
         game_table_repository: IGameTableRepository,
-        game_play_event_repository: IGamePlayEventRepository,
+        game_play_event_repository: IGameEventRepository,
     ) -> None:
         self._game_table_repository: IGameTableRepository = game_table_repository
-        self._game_play_event_repository: IGamePlayEventRepository = game_play_event_repository
+        self._game_play_event_repository: IGameEventRepository = game_play_event_repository
 
     def _generate_table_id(self) -> str:
         return str(uuid.uuid4())
