@@ -5,7 +5,7 @@ from .application.game_table_manager import GameTableManager
 
 # Creating singletons at module load
 game_table_repository = GameTableRepository()
-game_play_event_repository = GameEventRepository()
+game_event_repository = GameEventRepository()
 table_manager = GameTableManager(
-    game_table_repository=game_table_repository, game_play_event_repository=game_play_event_repository
+    game_table_repository=game_table_repository, game_event_repository=game_event_repository
 )

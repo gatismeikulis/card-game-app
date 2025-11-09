@@ -3,7 +3,7 @@ from typing import override
 
 from core.exceptions.not_exist_exception import NotExistException
 from core.exceptions.infrastructure_exception import InfrastructureException
-from ..application.igame_play_event_repository import IGameEventRepository
+from ..application.igame_event_repository import IGameEventRepository
 from ..models import GameEventModel, GameTableModel
 from ..registries.game_event_parsers import get_game_event_parser
 from game.game_name import GameName

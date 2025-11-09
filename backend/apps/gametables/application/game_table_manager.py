@@ -25,10 +25,10 @@ class GameTableManager:
     def __init__(
         self,
         game_table_repository: IGameTableRepository,
-        game_play_event_repository: IGameEventRepository,
+        game_event_repository: IGameEventRepository,
     ) -> None:
         self._game_table_repository: IGameTableRepository = game_table_repository
-        self._game_play_event_repository: IGameEventRepository = game_play_event_repository
+        self._game_event_repository: IGameEventRepository = game_event_repository
 
     def _generate_table_id(self) -> str:
         return str(uuid.uuid4())
@@ -177,7 +177,7 @@ class GameTableManager:
     def get_table_from_past(self, table_id: str, upto_event: int) -> GameTable:
         try:
             table = self._game_table_repository.find_by_id(table_id)
-            events = self._game_play_event_repository.find_many(table_id, end_inclusive=upto_event)
+            events = self._game_event_repository.find_many(table_id, end_inclusive=upto_event)
             if not events:
                 raise GameTableInternalException(detail="Could not get table from past: no history availble")
             table.restore_game_state(events)
