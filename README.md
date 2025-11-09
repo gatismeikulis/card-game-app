@@ -10,7 +10,7 @@ Try it out: https://gm-card-games.up.railway.app/
 
 - **Real-time multiplayer** via WebSockets
 - **Bot players** with different levels; ML-capable
-- **Event‑sourced architecture** with event‑sourced game engines
+- **Event‑sourced architecture** with stateless event‑sourced game engines
 - **Detailed statistics** and game analysis tools (planned)
 - **Multiple card games** (starting with ‘Five Hundred’)
 
@@ -22,7 +22,7 @@ Try it out: https://gm-card-games.up.railway.app/
 
 ## Project Status
 
-🚧 Work in Progress — working on improving db models and game replays
+🚧 Work in Progress — working on implementing game history api using caching and background tasks (redis,dramatiq)
 
 ## About Five Hundred
 
