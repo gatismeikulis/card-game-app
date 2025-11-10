@@ -105,7 +105,7 @@ export function TableDetail() {
     if (
       typeof window !== "undefined" &&
       window.confirm(
-        "Cancel the current game? This will end the game immediately for everyone."
+        "Cancel the current game? This will end the game immediately for everyone.",
       )
     ) {
       cancelGame();
@@ -120,13 +120,13 @@ export function TableDetail() {
       if (
         typeof window !== "undefined" &&
         window.confirm(
-          `Abort the game and kick ${playerName}? This will end the current game immediately.`
+          `Abort the game and kick ${playerName}? This will end the current game immediately.`,
         )
       ) {
         abortGame(player.seat_number);
       }
     },
-    [abortGame]
+    [abortGame],
   );
 
   // Handle passing cards
@@ -176,14 +176,14 @@ export function TableDetail() {
     typeof normalizedOwnerIdRaw === "number"
       ? normalizedOwnerIdRaw
       : normalizedOwnerIdRaw != null
-      ? Number.parseInt(String(normalizedOwnerIdRaw), 10)
-      : null;
+        ? Number.parseInt(String(normalizedOwnerIdRaw), 10)
+        : null;
   const currentUser =
     normalizedUserId === null
       ? null
       : tableData.players?.find(
           (p: any) =>
-            Number.parseInt(String(p.user_id), 10) === normalizedUserId
+            Number.parseInt(String(p.user_id), 10) === normalizedUserId,
         );
   const currentUserSeat = currentUser?.seat_number;
   // Convert seat_number to string for accessing seat_infos (keys are strings)
@@ -199,14 +199,14 @@ export function TableDetail() {
   // Process data
   const processedPlayers = processPlayers(
     tableData.players || [],
-    tableData.game_state
+    tableData.game_state,
   );
   const biddingStatus = extractBiddingStatus(
-    tableData.game_state?.round?.seat_infos
+    tableData.game_state?.round?.seat_infos,
   );
   const highestBidInfo = extractHighestBid(
     tableData.game_state?.round?.highest_bid,
-    tableData.players || []
+    tableData.players || [],
   );
 
   // Check if it's bot's turn
@@ -219,7 +219,7 @@ export function TableDetail() {
         : activeSeat
       : null;
   const activePlayer = tableData.players?.find(
-    (p: any) => p.seat_number === activeSeatNum
+    (p: any) => p.seat_number === activeSeatNum,
   );
   const isBotTurn = activePlayer?.bot_strategy_kind;
   const isOwner =
@@ -231,14 +231,14 @@ export function TableDetail() {
   const ownerSeatNumber = tableData.players?.find(
     (p: any) =>
       normalizedOwnerId !== null &&
-      Number.parseInt(String(p.user_id), 10) === normalizedOwnerId
+      Number.parseInt(String(p.user_id), 10) === normalizedOwnerId,
   )?.seat_number;
   const kickableSeatNumbers = isInProgress
     ? (tableData.players || [])
         .filter(
           (p: any) =>
             typeof p.seat_number === "number" &&
-            p.seat_number !== ownerSeatNumber
+            p.seat_number !== ownerSeatNumber,
         )
         .map((p: any) => p.seat_number)
     : undefined;
@@ -327,7 +327,7 @@ export function TableDetail() {
                     card,
                     currentPhase,
                     tableData.game_state?.is_my_turn || false,
-                    (card) => takeTurn({ type: "play_card", params: { card } })
+                    (card) => takeTurn({ type: "play_card", params: { card } }),
                   )
                 }
                 onCardHover={setHoveredCard}
@@ -356,7 +356,11 @@ export function TableDetail() {
                 playerStats={currentPlayerSeatInfo}
                 requiredSuit={tableData.game_state?.round?.required_suit}
                 trumpSuit={tableData.game_state?.round?.trump_suit}
-                lastTrick={tableData.game_state?.round?.prev_trick}
+                lastTrick={Object.values(
+                  tableData.game_state?.round?.tricks[
+                    tableData.game_state?.round?.tricks.length - 1
+                  ] || {},
+                )}
                 highestBid={highestBidInfo}
                 canKickPlayers={isLoggedIn && isOwner && isInProgress}
                 kickableSeatNumbers={kickableSeatNumbers}
@@ -381,7 +385,11 @@ export function TableDetail() {
                 trumpSuit={tableData.game_state?.round?.trump_suit}
                 highestBid={tableData.game_state?.round?.highest_bid}
                 players={tableData.players || []}
-                prevTrick={tableData.game_state?.round?.prev_trick}
+                prevTrick={Object.values(
+                  tableData.game_state?.round?.tricks[
+                    tableData.game_state?.round?.tricks.length - 1
+                  ] || {},
+                )}
               />
 
               {isLoggedIn && isOwner && isBotTurn && (

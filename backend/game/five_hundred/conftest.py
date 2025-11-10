@@ -50,7 +50,7 @@ def sample_round(sample_seat_infos: dict[Seat, FiveHundredSeatInfo]) -> FiveHund
     return FiveHundredRound(
         seat_infos=sample_seat_infos,
         cards_on_board={Seat(1): None, Seat(2): None, Seat(3): None},
-        prev_trick=[],
+        tricks=[],
         cards_to_take=[],
         required_suit=None,
         trump_suit=None,

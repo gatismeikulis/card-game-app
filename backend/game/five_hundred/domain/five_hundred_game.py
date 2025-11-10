@@ -101,7 +101,9 @@ class FiveHundredGame(GameState):
                 "cards_on_board": {
                     seat.to_dict(): card.to_dict() if card else None for seat, card in self.round.cards_on_board.items()
                 },
-                "prev_trick": [card.to_dict() for card in self.round.prev_trick],
+                "tricks": [
+                    {seat.to_dict(): card.to_dict() for seat, card in trick.items()} for trick in self.round.tricks
+                ],
                 "ending": self.ending.to_dict() if self.ending else None,
                 "seat_infos": {
                     seat.to_dict(): (

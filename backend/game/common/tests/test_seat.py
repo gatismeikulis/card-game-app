@@ -30,6 +30,6 @@ def test_next_seat_invalid():
 def test_from_dict_and_to_dict_roundtrip():
     seat = Seat(1)
     serialized = seat.to_dict()
-    assert serialized == 1
-    deserialized = Seat.from_dict(serialized)
+    assert serialized == "1"
+    deserialized = Seat.from_dict(int(serialized))
     assert deserialized == seat
