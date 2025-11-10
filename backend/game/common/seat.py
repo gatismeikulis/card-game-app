@@ -29,14 +29,14 @@ class Seat:
             prev_num = max(seat.number for seat in possible_seats if seat.number < self.number)
             return Seat(prev_num)
 
-    def to_dict(self) -> int:
+    def to_dict(self) -> str:
         """Serialize to seat number"""
-        return self.number
+        return str(self.number)
 
     @staticmethod
     def from_dict(data: int) -> "Seat":
         """Reconstruct from seat number"""
-        return Seat(data)
+        return Seat(int(data))
 
     @override
     def __str__(self) -> str:

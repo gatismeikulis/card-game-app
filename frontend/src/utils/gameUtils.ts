@@ -98,7 +98,10 @@ export function extractHighestBid(
   if (!highestBid || typeof highestBid !== "object") return undefined;
 
   if (highestBid["0"] !== undefined && highestBid["1"] !== undefined) {
-    const seatNumber = parseInt(highestBid["0"]);
+    // highestBid["0"] might be string or number, normalize to number for comparison
+    const seatNumber = typeof highestBid["0"] === "string" 
+      ? parseInt(highestBid["0"], 10) 
+      : highestBid["0"];
     const bidAmount = highestBid["1"];
     const player = players?.find((p: any) => p.seat_number === seatNumber);
     const playerName = player?.screen_name || `Seat ${seatNumber}`;
@@ -113,7 +116,9 @@ export function extractHighestBid(
  */
 export function processPlayers(players: any[], gameState: any) {
   return (players || []).map((player: any) => {
-    const seatInfo = gameState?.round?.seat_infos?.[player.seat_number];
+    // Convert seat_number to string for accessing seat_infos (keys are strings)
+    const seatKey = String(player.seat_number);
+    const seatInfo = gameState?.round?.seat_infos?.[seatKey];
     const hand = seatInfo?.hand;
 
     let hand_size = 0;

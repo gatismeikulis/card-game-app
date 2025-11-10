@@ -62,7 +62,7 @@ class GameTableWebSocketConsumer(AppWebSocketConsumer):
                 "game_events": [event.to_dict() for event in events],
                 "public_game_state": game_table.game_state.to_public_dict(),
                 "private_game_states": {
-                    p.user_id: game_table.game_state.to_public_dict(p.seat_number) for p in game_table.players
+                    str(p.user_id): game_table.game_state.to_public_dict(p.seat_number) for p in game_table.players
                 },
                 "table_status": game_table.status.value,
             }
@@ -154,7 +154,7 @@ class GameTableWebSocketConsumer(AppWebSocketConsumer):
     async def game_action(self, event: dict[str, Any]):
         """Handle game actions"""
         game_events = event["game_events"]
-        game_state = event["private_game_states"].get(self.user.pk, event["public_game_state"])
+        game_state = event["private_game_states"].get(str(self.user.pk), event["public_game_state"])
         table_status = event["table_status"]
         await self.send_json(
             {

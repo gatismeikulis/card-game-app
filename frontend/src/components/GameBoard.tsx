@@ -216,12 +216,14 @@ export function GameBoard({
               <div className="flex justify-center gap-2 mt-2 sm:mt-4">
                 {Object.entries(cardsOnBoard).map(([seat, card]) => {
                   if (!card) return null;
+                  // Convert seat (string) to number for comparison with player.seat_number
+                  const seatNum = typeof seat === "string" ? parseInt(seat, 10) : seat;
                   return (
                     <div key={seat} className="text-center mb-24 sm:mb-2">
                       <div className="text-xs text-green-200 mb-1">
                         {(() => {
                           const player = players.find(
-                            (p) => p.seat_number === parseInt(seat)
+                            (p) => p.seat_number === seatNum
                           );
                           return (
                             (player as any)?.screen_name ||

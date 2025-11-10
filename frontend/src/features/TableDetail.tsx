@@ -186,8 +186,11 @@ export function TableDetail() {
             Number.parseInt(String(p.user_id), 10) === normalizedUserId
         );
   const currentUserSeat = currentUser?.seat_number;
-  const currentPlayerSeatInfo = currentUserSeat
-    ? tableData.game_state?.round?.seat_infos?.[currentUserSeat]
+  // Convert seat_number to string for accessing seat_infos (keys are strings)
+  const currentUserSeatStr =
+    currentUserSeat != null ? String(currentUserSeat) : null;
+  const currentPlayerSeatInfo = currentUserSeatStr
+    ? tableData.game_state?.round?.seat_infos?.[currentUserSeatStr]
     : null;
   const playerHand = currentPlayerSeatInfo?.hand || [];
   const cardsOnBoard = tableData.game_state?.round?.cards_on_board || {};
@@ -207,9 +210,16 @@ export function TableDetail() {
   );
 
   // Check if it's bot's turn
+  // activeSeat comes as string from backend, but player.seat_number is int
   const activeSeat = tableData.game_state?.active_seat;
+  const activeSeatNum =
+    activeSeat != null
+      ? typeof activeSeat === "string"
+        ? parseInt(activeSeat, 10)
+        : activeSeat
+      : null;
   const activePlayer = tableData.players?.find(
-    (p: any) => p.seat_number === activeSeat
+    (p: any) => p.seat_number === activeSeatNum
   );
   const isBotTurn = activePlayer?.bot_strategy_kind;
   const isOwner =
@@ -321,7 +331,7 @@ export function TableDetail() {
                   )
                 }
                 onCardHover={setHoveredCard}
-                activeSeat={tableData.game_state.active_seat}
+                activeSeat={activeSeatNum}
                 phase={currentPhase}
                 cardsOnBoard={cardsOnBoard}
                 biddingPanel={
