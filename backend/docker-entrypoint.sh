@@ -1,15 +1,28 @@
 #!/bin/sh
 set -e # exit immediately on error
 
-echo "Running database migrations..."
-uv run python manage.py migrate
+# Multiple services can be started based on same Dockerfile
+# Use SERVICE_LABEL environment variable to start the desired service
 
-echo "Collecting static files..."
-uv run python manage.py collectstatic --noinput
+SERVICE=${SERVICE_LABEL:-daphne_django} 
 
-# Create superuser only if environment variables are set and user does not already exist
-if [ -n "$SUPERUSER_USERNAME" ] && [ -n "$SUPERUSER_PASSWORD" ]; then
-    uv run python manage.py shell -c "
+if [ "$SERVICE" = "dramatiq_worker" ]; then
+    echo "Starting Dramatiq worker..."
+
+    exec uv run python manage.py rundramatiq
+fi
+
+if [ "$SERVICE" = "daphne_django" ]; then
+
+    echo "Running database migrations..."
+    uv run python manage.py migrate
+
+    echo "Collecting static files..."
+    uv run python manage.py collectstatic --noinput
+
+    # Create superuser only if environment variables are set and user does not already exist
+    if [ -n "$SUPERUSER_USERNAME" ] && [ -n "$SUPERUSER_PASSWORD" ]; then
+        uv run python manage.py shell -c "
 from django.contrib.auth import get_user_model
 User = get_user_model()
 print('Attempting to create superuser: $SUPERUSER_USERNAME...')
@@ -19,17 +32,18 @@ if not User.objects.filter(username='$SUPERUSER_USERNAME').exists():
 else:
     print('Superuser already exists')
 "
-else
-    echo "Skipping superuser creation - credentials not provided"
-fi
+    else
+        echo "Skipping superuser creation - credentials not provided"
+    fi
 
-echo "Starting server..."
-if [ "$ENVIRONMENT" = "production" ]; then
-    echo "Running Daphne for production (ASGI with WebSocket support)..."
-    PORT=${PORT:-8000}
-    echo "Using PORT=$PORT"
-    exec uv run daphne -b 0.0.0.0 -p "$PORT" config.asgi:application
-else
-    echo "Running Django development server (uv run)..."
-    exec uv run python manage.py runserver 0.0.0.0:8000
+    echo "Starting server..."
+    if [ "$ENVIRONMENT" = "production" ]; then
+        echo "Running Daphne for production (ASGI with WebSocket support)..."
+        PORT=${PORT:-8000}
+        echo "Using PORT=$PORT"
+        exec uv run daphne -b 0.0.0.0 -p "$PORT" config.asgi:application
+    else
+        echo "Running Django development server (uv run)..."
+        exec uv run python manage.py runserver 0.0.0.0:8000
+    fi
 fi

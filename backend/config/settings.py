@@ -74,6 +74,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "corsheaders",
+    "django_dramatiq",
     "apps.users",
     "apps.gametables",
 ]
@@ -112,8 +113,28 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 ASGI_APPLICATION = "config.asgi.application"
 
-CHANNEL_LAYERS = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}
+_redis_url = os.getenv("REDIS_URL", "redis://localhost:6379")
 
+_redis_channels_layer_db_index = os.getenv("CHANNELS_REDIS_DB", 1)
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [(f"{_redis_url}/{_redis_channels_layer_db_index}")],
+        },
+    },
+}
+
+
+_redis_cache_db_index = os.getenv("CACHE_REDIS_DB", 0)
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": f"{_redis_url}/{_redis_cache_db_index}",
+    }
+}
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
@@ -129,6 +150,26 @@ DATABASES = {
     }
 }
 
+_redis_dramatiq_broker_db_index = os.getenv("DRAMATIQ_BROKER_REDIS_DB", 2)
+
+DRAMATIQ_BROKER = {
+    "BROKER": "dramatiq.brokers.redis.RedisBroker",
+    "OPTIONS": {"url": f"{_redis_url}/{_redis_dramatiq_broker_db_index}"},
+    "MIDDLEWARE": [
+        "dramatiq.middleware.Prometheus",
+        "dramatiq.middleware.AgeLimit",
+        "dramatiq.middleware.TimeLimit",
+        "dramatiq.middleware.Callbacks",
+        "dramatiq.middleware.Retries",
+        "django_dramatiq.middleware.DbConnectionsMiddleware",
+        "django_dramatiq.middleware.AdminMiddleware",
+    ],
+}
+
+# Defines which database should be used to persist Task objects when the
+# AdminMiddleware is enabled. The default value is "default".
+DRAMATIQ_TASKS_DATABASE = "default"
+DRAMATIQ_AUTODISCOVER_MODULES = ["tasks"]
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators

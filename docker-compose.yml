@@ -28,13 +28,30 @@ services:
       timeout: 5s
       retries: 5
 
-  backend:
+  backend-daphne-django:
     build: ./backend
     restart: unless-stopped
     ports:
-      - "${BACKEND_HOST_PORT:-8000}:8000" # host's port: container's  port
+      - "${BACKEND_HOST_PORT:-8000}:8000" # host's port: container's port
     env_file:
       - .env
+    environment:
+      SERVICE_LABEL: ${DAPHNE_DJANGO_SERVICE_LABEL:-daphne_django}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:  # development only (for hot reloading)
+      - ./backend:/app # 'bind mount' syncs changes from host to container
+
+  backend-dramatiq-worker:
+    build: ./backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      SERVICE_LABEL: ${DRAMATIQ_WORKER_SERVICE_LABEL:-dramatiq_worker}
     depends_on:
       postgres:
         condition: service_healthy
