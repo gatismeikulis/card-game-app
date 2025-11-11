@@ -21,8 +21,11 @@ def make_bid(game: FiveHundredGame, bid: int) -> FiveHundredGame:
 
     next_seat_to_bid = get_next_seat_to_bid(active_seat, game.round.seat_infos)
 
+    turn_number_updated = game.turn_number + 1
+
     return replace(
         game,
         round=round_updated,
         active_seat=(next_seat_to_bid if next_seat_to_bid is not None else active_seat),
+        turn_number=turn_number_updated,
     )

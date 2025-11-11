@@ -36,4 +36,6 @@ def pass_cards(
         phase=FiveHundredPhase.PLAYING_CARDS,
     )
 
-    return replace(game, round=round_updated)
+    turn_number_updated = game.turn_number + 1
+
+    return replace(game, round=round_updated, turn_number=turn_number_updated)

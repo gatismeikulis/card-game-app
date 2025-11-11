@@ -1,5 +1,4 @@
 from collections.abc import Sequence
-from dataclasses import replace
 
 from ...common.game_ending import GameEndingReason
 from ..domain.constants import (
@@ -39,7 +38,7 @@ def process_command(
 ) -> tuple[FiveHundredGame, Sequence[FiveHundredEvent]]:
     event = handle_command(game, command)
 
-    game_updated = replace(game, turn_number=game.turn_number + 1)
+    game_updated = game
     all_events: list[FiveHundredEvent] = []
 
     current_event: FiveHundredEvent | None = event

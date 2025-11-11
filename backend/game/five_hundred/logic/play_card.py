@@ -15,6 +15,8 @@ def play_card(game: FiveHundredGame, card: FiveHundredCard) -> FiveHundredGame:
 
     active_seats_info_updated = replace(active_seats_info, hand=active_seats_hand_updated)
 
+    turn_number_updated = game.turn_number + 1
+
     # 1st card played for this trick (cards on board is empty)
     if cards_on_board_count == 0:
         required_suit_updated = card.suit
@@ -30,7 +32,9 @@ def play_card(game: FiveHundredGame, card: FiveHundredCard) -> FiveHundredGame:
             trump_suit=trump_suit_updated,
         )
 
-        return replace(game, round=round_updated, active_seat=active_seat.next(game.taken_seats))
+        return replace(
+            game, round=round_updated, active_seat=active_seat.next(game.taken_seats), turn_number=turn_number_updated
+        )
 
     # 2nd or 3rd card played for this trick
     else:
@@ -42,4 +46,6 @@ def play_card(game: FiveHundredGame, card: FiveHundredCard) -> FiveHundredGame:
             seat_infos=seat_infos_updated,
         )
 
-        return replace(game, round=round_updated, active_seat=active_seat.next(game.taken_seats))
+        return replace(
+            game, round=round_updated, active_seat=active_seat.next(game.taken_seats), turn_number=turn_number_updated
+        )
