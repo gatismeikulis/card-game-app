@@ -5,7 +5,7 @@ import uuid
 from core.exceptions.app_exception import AppException
 from .igame_event_repository import IGameEventRepository
 from .igame_table_repository import IGameTableRepository
-from ..exceptions import GameTableInternalException
+from .igame_state_snapshot_repository import IGameStateSnapshotRepository
 from ..registries.table_config_parsers import get_table_config_parser
 from ..registries.game_config_parsers import get_game_config_parser
 from ..registries.bot_strategies import get_bot_strategy
@@ -26,9 +26,11 @@ class GameTableManager:
         self,
         game_table_repository: IGameTableRepository,
         game_event_repository: IGameEventRepository,
+        game_state_snapshot_repository: IGameStateSnapshotRepository,
     ) -> None:
         self._game_table_repository: IGameTableRepository = game_table_repository
         self._game_event_repository: IGameEventRepository = game_event_repository
+        self._game_state_snapshot_repository: IGameStateSnapshotRepository = game_state_snapshot_repository
 
     def _generate_table_id(self) -> str:
         return str(uuid.uuid4())
@@ -174,13 +176,7 @@ class GameTableManager:
         except AppException as e:
             raise e.with_context(table_id=table_id, user_id=initiated_by, operation="abort_game")
 
-    def get_table_from_past(self, table_id: str, upto_event: int) -> GameTable:
-        try:
-            table = self._game_table_repository.find_by_id(table_id)
-            events = self._game_event_repository.find_many(table_id, end_inclusive=upto_event)
-            if not events:
-                raise GameTableInternalException(detail="Could not get table from past: no history availble")
-            table.restore_game_state(events)
-            return table
-        except AppException as e:
-            raise e.with_context(table_id=table_id, upto_event=upto_event, operation="get_table_from_past")
+    def get_game_state_snapshot(
+        self, table_id: str, turn_number: int | None, event_number: int | None
+    ) -> dict[str, Any] | None:
+        return self._game_state_snapshot_repository.get(table_id, turn_number, event_number)

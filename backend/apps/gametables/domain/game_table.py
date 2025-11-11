@@ -187,11 +187,6 @@ class GameTable:
         self._game_state = game_state_updated
         return events
 
-    def restore_game_state(self, events: Sequence[GameEvent]) -> None:
-        restored_game_state = self._engine.restore_game_state(events, self._config.game_config, self.taken_seat_numbers)
-        self._game_state = restored_game_state
-        return None
-
     def can_remove(self, initiated_by: int) -> bool:
         self._validate_status(acceptable_statuses={TableStatus.NOT_STARTED})
         self._validate_is_owner(initiated_by)

@@ -115,6 +115,10 @@ ASGI_APPLICATION = "config.asgi.application"
 
 _redis_url = os.getenv("REDIS_URL", "redis://localhost:6379")
 
+_redis_cache_db_index = os.getenv("CACHE_REDIS_DB", 0)
+
+REDIS_CACHE_URL = f"{_redis_url}/{_redis_cache_db_index}"
+
 _redis_channels_layer_db_index = os.getenv("CHANNELS_REDIS_DB", 1)
 
 CHANNEL_LAYERS = {
@@ -124,16 +128,6 @@ CHANNEL_LAYERS = {
             "hosts": [(f"{_redis_url}/{_redis_channels_layer_db_index}")],
         },
     },
-}
-
-
-_redis_cache_db_index = os.getenv("CACHE_REDIS_DB", 0)
-
-CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": f"{_redis_url}/{_redis_cache_db_index}",
-    }
 }
 
 # Database

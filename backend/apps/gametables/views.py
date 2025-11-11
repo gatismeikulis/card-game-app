@@ -7,6 +7,8 @@ from rest_framework.request import Request
 from rest_framework.permissions import AllowAny, BasePermission, IsAuthenticated
 from rest_framework.pagination import LimitOffsetPagination
 
+from .tasks import create_game_state_snapshots
+
 from .serializers import (
     AddBotRequestSerializer,
     CreateGameTableRequestSerializer,
@@ -23,7 +25,7 @@ from .dependencies import game_table_repository, table_manager
 class GameTableViewSet(ViewSet):
     @override
     def get_permissions(self) -> list[BasePermission]:
-        if self.action in ["list", "retrieve", "history"]:
+        if self.action in ["list", "retrieve", "get_game_history"]:
             return [AllowAny()]
         else:
             return [IsAuthenticated()]
@@ -187,14 +189,20 @@ class GameTableViewSet(ViewSet):
         return Response({}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=["get"], url_path="history")
-    def history(self, request: Request, pk: str) -> Response:
+    def get_game_history(self, request: Request, pk: str) -> Response:
         """
-        GET /{table_id}/history?event=100
+        GET /{table_id}/history?event=100&turn=5
         """
         serializer = HistoryRequestQuerySerializer(data=request.query_params)
         _ = serializer.is_valid(raise_exception=True)
 
-        table = table_manager.get_table_from_past(table_id=pk, upto_event=serializer.validated_data["event"])
-        table_dict = table.to_dict()  # TODO: NOT SAFE during in-progress tables, because contains private info...
+        snapshot = table_manager.get_game_state_snapshot(
+            table_id=pk, turn_number=serializer.validated_data["turn"], event_number=serializer.validated_data["event"]
+        )
 
-        return Response(table_dict, status=status.HTTP_200_OK)
+        # if not availabe, trigger snapshot creation
+        if snapshot:
+            return Response(data={"game_state": snapshot}, status=status.HTTP_200_OK)
+        else:
+            _ = create_game_state_snapshots.send(pk)
+            return Response(status=status.HTTP_202_ACCEPTED)

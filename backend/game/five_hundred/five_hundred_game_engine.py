@@ -45,20 +45,21 @@ class FiveHundredGameEngine(GameEngine):
         return game_state_updated, events
 
     @override
-    def restore_game_state(
-        self, events: Sequence[GameEvent], game_config: GameConfig, taken_seat_numbers: frozenset[SeatNumber]
-    ) -> GameState:
+    def apply_event(self, game_state: GameState, event: GameEvent) -> GameState:
+        if not isinstance(game_state, FiveHundredGame):
+            raise GameEngineException(
+                detail=f"Could not apply event: expected FiveHundredGame, got {type(game_state).__name__}"
+            )
+        if not isinstance(event, FiveHundredEvent):
+            raise GameEngineException(
+                detail=f"Could not apply event: expected FiveHundredEvent, got {type(event).__name__}"
+            )
+        return apply_event(game_state, event)
+
+    @override
+    def init_game_state(self, game_config: GameConfig, taken_seat_numbers: frozenset[SeatNumber]) -> GameState:
         if not isinstance(game_config, FiveHundredGameConfig):
             raise GameEngineException(
                 detail=f"Could not initialize the game state: expected FiveHundredGameConfig, got {type(game_config).__name__}"
             )
-        restored_game_state = FiveHundredGame.init(game_config, taken_seat_numbers)
-        for event in events:
-            # Validate and narrow event type to Five Hundred specifics
-            if not isinstance(event, FiveHundredEvent):
-                raise GameEngineException(
-                    detail=f"Could not restore game state: expected FiveHundredEvent, got {type(event).__name__}"
-                )
-            restored_game_state = apply_event(restored_game_state, event)
-
-        return restored_game_state
+        return FiveHundredGame.init(game_config, taken_seat_numbers)
