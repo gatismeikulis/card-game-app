@@ -76,7 +76,7 @@ class GameTableWebSocketConsumer(AppWebSocketConsumer):
         match action:
             case GameTableAction.START_GAME:
                 events, table = await database_sync_to_async(table_manager.start_game)(
-                    table_id=self.table_id, iniated_by=self.user.pk
+                    table_id=self.table_id, initiated_by=self.user.pk
                 )
                 message = create_game_action_message(events, table)
             case GameTableAction.TAKE_REGULAR_TURN:
@@ -128,7 +128,7 @@ class GameTableWebSocketConsumer(AppWebSocketConsumer):
                 serializer = AddBotRequestSerializer(data=data)
                 _ = serializer.is_valid(raise_exception=True)
                 table = await database_sync_to_async(table_manager.add_bot_player)(
-                    table_id=self.table_id, iniated_by=self.user.pk, options=serializer.validated_data
+                    table_id=self.table_id, initiated_by=self.user.pk, options=serializer.validated_data
                 )
                 message = create_table_action_message(table)
             case GameTableAction.REMOVE_BOT:
@@ -136,7 +136,7 @@ class GameTableWebSocketConsumer(AppWebSocketConsumer):
                 _ = serializer.is_valid(raise_exception=True)
                 table = await database_sync_to_async(table_manager.remove_bot_player)(
                     table_id=self.table_id,
-                    iniated_by=self.user.pk,
+                    initiated_by=self.user.pk,
                     seat_number_to_remove=serializer.validated_data["seat_number"],
                 )
                 message = create_table_action_message(table)

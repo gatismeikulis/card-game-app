@@ -71,7 +71,7 @@ class GameTableViewSet(ViewSet):
         """
         DELETE /{table_id}
         """
-        table_manager.remove_table(table_id=pk, iniated_by=request.user.pk)
+        table_manager.remove_table(table_id=pk, initiated_by=request.user.pk)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def retrieve(self, request: Request, pk: str):
@@ -132,7 +132,7 @@ class GameTableViewSet(ViewSet):
         _ = serializer.is_valid(raise_exception=True)
         _ = table_manager.add_bot_player(
             table_id=pk,
-            iniated_by=request.user.pk,
+            initiated_by=request.user.pk,
             options=serializer.validated_data,
         )
 
@@ -149,7 +149,7 @@ class GameTableViewSet(ViewSet):
         serializer = RemoveBotRequestSerializer(data=request.data)
         _ = serializer.is_valid(raise_exception=True)
         _ = table_manager.remove_bot_player(
-            table_id=pk, iniated_by=request.user.pk, seat_number_to_remove=serializer.validated_data["seat_number"]
+            table_id=pk, initiated_by=request.user.pk, seat_number_to_remove=serializer.validated_data["seat_number"]
         )
 
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -159,7 +159,7 @@ class GameTableViewSet(ViewSet):
         """
         POST /{table_id}/start-game/
         """
-        _ = table_manager.start_game(table_id=pk, iniated_by=request.user.pk)
+        _ = table_manager.start_game(table_id=pk, initiated_by=request.user.pk)
 
         return Response({}, status=status.HTTP_200_OK)
 

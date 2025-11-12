@@ -49,10 +49,10 @@ class GameTableManager:
         except AppException as e:
             raise e.with_context(user_id=owner_id, operation="add_table")
 
-    def remove_table(self, table_id: str, iniated_by: int) -> None:
+    def remove_table(self, table_id: str, initiated_by: int) -> None:
         try:
             table = self._game_table_repository.find_by_id(table_id)
-            if table.can_remove(iniated_by):
+            if table.can_remove(initiated_by):
                 self._game_table_repository.delete(table_id)
         except AppException as e:
             raise e.with_context(table_id=table_id, operation="remove_table")
@@ -90,7 +90,7 @@ class GameTableManager:
     def add_bot_player(
         self,
         table_id: str,
-        iniated_by: int,
+        initiated_by: int,
         options: dict[str, Any],
     ) -> GameTable:
         try:
@@ -100,32 +100,32 @@ class GameTableManager:
                 preferred_seat_number = options.get("preferred_seat", None)
                 bot_strategy = get_bot_strategy(table.config.game_name, bot_strategy_kind)
                 table.add_bot_player(
-                    bot_strategy=bot_strategy, initiated_by=iniated_by, preferred_seat_number=preferred_seat_number
+                    bot_strategy=bot_strategy, initiated_by=initiated_by, preferred_seat_number=preferred_seat_number
                 )
 
             return self._game_table_repository.modify(table_id, _modifier)
         except AppException as e:
-            raise e.with_context(table_id=table_id, user_id=iniated_by, operation="add_bot_player")
+            raise e.with_context(table_id=table_id, user_id=initiated_by, operation="add_bot_player")
 
-    def remove_bot_player(self, table_id: str, iniated_by: int, seat_number_to_remove: SeatNumber) -> GameTable:
+    def remove_bot_player(self, table_id: str, initiated_by: int, seat_number_to_remove: SeatNumber) -> GameTable:
         try:
 
             def _modifier(table: GameTable) -> None:
-                table.remove_bot_player(seat_number=seat_number_to_remove, initiated_by=iniated_by)
+                table.remove_bot_player(seat_number=seat_number_to_remove, initiated_by=initiated_by)
 
             return self._game_table_repository.modify(table_id, _modifier)
         except AppException as e:
-            raise e.with_context(table_id=table_id, user_id=iniated_by, operation="remove_bot_player")
+            raise e.with_context(table_id=table_id, user_id=initiated_by, operation="remove_bot_player")
 
-    def start_game(self, table_id: str, iniated_by: int) -> tuple[Sequence[GameEvent], GameTable]:
+    def start_game(self, table_id: str, initiated_by: int) -> tuple[Sequence[GameEvent], GameTable]:
         try:
 
             def _modifier(table: GameTable) -> Sequence[GameEvent]:
-                return table.start_game(initiated_by=iniated_by)
+                return table.start_game(initiated_by=initiated_by)
 
             return self._game_table_repository.modify_during_game_action(table_id, _modifier)
         except AppException as e:
-            raise e.with_context(table_id=table_id, user_id=iniated_by, operation="start_game")
+            raise e.with_context(table_id=table_id, user_id=initiated_by, operation="start_game")
 
     def take_regular_turn(
         self, table_id: str, user_id: int, raw_command: dict[str, Any]
