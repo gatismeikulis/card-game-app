@@ -1,6 +1,7 @@
 from typing import Any
 from django.db.models import QuerySet
 import dramatiq
+import logging
 
 from .models import GameEventModel
 from .registries.game_classes import get_game_class
@@ -14,6 +15,8 @@ from .dependencies import (
 )
 from game.common.game_state import GameState
 
+logger = logging.getLogger(__name__)
+
 
 @dramatiq.actor()
 def create_game_state_snapshots(
@@ -24,7 +27,7 @@ def create_game_state_snapshots(
     lock_acquired = get_task_lock_repository().set_lock(lock_key)
 
     if not lock_acquired:
-        print(f"Game state snapshots creation for {table_id} already in progress, skipping...")
+        logger.info(f"Game state snapshots creation for {table_id} already in progress, skipping...")
         return
 
     try:
@@ -32,7 +35,7 @@ def create_game_state_snapshots(
         table = get_table_manager().get_table(table_id)
 
         if table.status == TableStatus.NOT_STARTED:
-            print(f"Game at table {table_id} is not started, skipping...")
+            logger.info(f"Game at table {table_id} is not started, skipping...")
             return
 
         db_events: QuerySet[GameEventModel] = get_game_event_repository().find_many(
@@ -73,8 +76,8 @@ def create_game_state_snapshots(
             )
 
         get_game_state_snapshot_repository().store(snapshots_to_store)
-        print(f"Game state snapshots created for table {table_id}, task finished")
+        logger.info(f"Game state snapshots for table {table_id} created and stored successfully!")
     except Exception as e:
-        print(f"Error: {e}")
+        logger.error(f"Error: {e}")
     finally:
         get_task_lock_repository().release_lock(lock_key)

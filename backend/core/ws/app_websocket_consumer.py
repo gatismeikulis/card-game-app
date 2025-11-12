@@ -1,5 +1,6 @@
 import json
 from typing import Any, override
+import logging
 
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from django.contrib.auth import get_user_model
@@ -7,6 +8,8 @@ from ..exceptions.infrastructure_exception import InfrastructureException
 from ..exceptions.app_exception import AppException
 
 User = get_user_model()
+
+logger = logging.getLogger(__name__)
 
 
 class AppWebSocketConsumer(AsyncJsonWebsocketConsumer):
@@ -24,7 +27,7 @@ class AppWebSocketConsumer(AsyncJsonWebsocketConsumer):
         except Exception as e:
             if not isinstance(e, AppException):
                 e = InfrastructureException(detail=str(e)).with_context(error=e)
-            print(f"Error in consumer: {e.to_dict()}")
+            logger.error(f"Error in consumer: {e.to_dict()}")
             await self.send_json({"type": "error", "data": e.to_dict_minimal()})
 
     async def _on_connect(self):
