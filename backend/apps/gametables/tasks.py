@@ -6,7 +6,12 @@ from .models import GameEventModel
 from .registries.game_classes import get_game_class
 from .registries.game_event_parsers import get_game_event_parser
 from .domain.table_status import TableStatus
-from .dependencies import table_manager, task_lock_repository, game_event_repository, game_state_snapshot_repository
+from .dependencies import (
+    get_table_manager,
+    get_task_lock_repository,
+    get_game_event_repository,
+    get_game_state_snapshot_repository,
+)
 from game.common.game_state import GameState
 
 
@@ -16,7 +21,7 @@ def create_game_state_snapshots(
 ) -> None:
     lock_key = f"create_game_state_snapshots_lock:{table_id}:{start_event_number}:{end_event_number}"
 
-    lock_acquired = task_lock_repository.set_lock(lock_key)
+    lock_acquired = get_task_lock_repository().set_lock(lock_key)
 
     if not lock_acquired:
         print(f"Game state snapshots creation for {table_id} already in progress, skipping...")
@@ -24,13 +29,13 @@ def create_game_state_snapshots(
 
     try:
         print(f"Starting to create game state snapshots for table {table_id}")
-        table = table_manager.get_table(table_id)
+        table = get_table_manager().get_table(table_id)
 
         if table.status == TableStatus.NOT_STARTED:
             print(f"Game at table {table_id} is not started, skipping...")
             return
 
-        db_events: QuerySet[GameEventModel] = game_event_repository.find_many(
+        db_events: QuerySet[GameEventModel] = get_game_event_repository().find_many(
             table_id, start_event_number, end_event_number
         )
 
@@ -38,7 +43,7 @@ def create_game_state_snapshots(
         state: GameState | None = None
 
         if start_event_number is not None and start_event_number > 0:
-            initial_game_state_snapshot = game_state_snapshot_repository.get(
+            initial_game_state_snapshot = get_game_state_snapshot_repository().get(
                 table_id, turn_number=None, event_number=start_event_number - 1
             )
 
@@ -67,9 +72,9 @@ def create_game_state_snapshots(
                 }
             )
 
-        game_state_snapshot_repository.store(snapshots_to_store)
+        get_game_state_snapshot_repository().store(snapshots_to_store)
         print(f"Game state snapshots created for table {table_id}, task finished")
     except Exception as e:
         print(f"Error: {e}")
     finally:
-        task_lock_repository.release_lock(lock_key)
+        get_task_lock_repository().release_lock(lock_key)

@@ -15,7 +15,7 @@ from game.common.game_event import GameEvent
 from core.exceptions.app_exception import AppException
 from core.ws.app_websocket_consumer import AppWebSocketConsumer
 from channels.db import database_sync_to_async
-from .dependencies import table_manager
+from .dependencies import get_table_manager
 
 
 class GameTableWebSocketConsumer(AppWebSocketConsumer):
@@ -25,7 +25,7 @@ class GameTableWebSocketConsumer(AppWebSocketConsumer):
 
         # Validate table exists BEFORE accepting the connection
         try:
-            table = await database_sync_to_async(table_manager.get_table)(self.table_id)
+            table = await database_sync_to_async(get_table_manager().get_table)(self.table_id)
             self.game_name = table.config.game_name
             self.group_name = f"table_{self.game_name.value}_{self.table_id}"
         except AppException as e:
@@ -75,7 +75,7 @@ class GameTableWebSocketConsumer(AppWebSocketConsumer):
 
         match action:
             case GameTableAction.START_GAME:
-                events, table = await database_sync_to_async(table_manager.start_game)(
+                events, table = await database_sync_to_async(get_table_manager().start_game)(
                     table_id=self.table_id, initiated_by=self.user.pk
                 )
                 message = create_game_action_message(events, table)
@@ -83,26 +83,26 @@ class GameTableWebSocketConsumer(AppWebSocketConsumer):
                 serializer = TakeRegularTurnRequestSerializer(data=data)
                 _ = serializer.is_valid(raise_exception=True)
 
-                events, table = await database_sync_to_async(table_manager.take_regular_turn)(
+                events, table = await database_sync_to_async(get_table_manager().take_regular_turn)(
                     table_id=self.table_id, user_id=self.user.pk, raw_command=serializer.validated_data
                 )
                 message = create_game_action_message(events, table)
             case GameTableAction.TAKE_AUTOMATIC_TURN:
-                events, table = await database_sync_to_async(table_manager.take_automatic_turn)(
+                events, table = await database_sync_to_async(get_table_manager().take_automatic_turn)(
                     table_id=self.table_id, initiated_by=self.user.pk
                 )
                 message = create_game_action_message(events, table)
             case GameTableAction.CANCEL_GAME:
                 serializer = CancelGameRequestSerializer(data=data)
                 _ = serializer.is_valid(raise_exception=True)
-                events, table = await database_sync_to_async(table_manager.cancel_game)(
+                events, table = await database_sync_to_async(get_table_manager().cancel_game)(
                     table_id=self.table_id, initiated_by=self.user.pk, raw_command=serializer.validated_data
                 )
                 message = create_game_action_message(events, table)
             case GameTableAction.ABORT_GAME:
                 serializer = AbortGameRequestSerializer(data=data)
                 _ = serializer.is_valid(raise_exception=True)
-                events, table = await database_sync_to_async(table_manager.abort_game)(
+                events, table = await database_sync_to_async(get_table_manager().abort_game)(
                     table_id=self.table_id,
                     initiated_by=self.user.pk,
                     to_blame=serializer.validated_data["to_blame"],
@@ -113,28 +113,28 @@ class GameTableWebSocketConsumer(AppWebSocketConsumer):
                 serializer = JoinGameTableRequestSerializer(data=data)
                 _ = serializer.is_valid(raise_exception=True)
 
-                table = await database_sync_to_async(table_manager.join_table)(
+                table = await database_sync_to_async(get_table_manager().join_table)(
                     table_id=self.table_id,
                     user=self.user,
                     preferred_seat_number=serializer.validated_data["preferred_seat"],
                 )
                 message = create_table_action_message(table)
             case GameTableAction.LEAVE_TABLE:
-                table = await database_sync_to_async(table_manager.leave_table)(
+                table = await database_sync_to_async(get_table_manager().leave_table)(
                     table_id=self.table_id, user_id=self.user.pk
                 )
                 message = create_table_action_message(table)
             case GameTableAction.ADD_BOT:
                 serializer = AddBotRequestSerializer(data=data)
                 _ = serializer.is_valid(raise_exception=True)
-                table = await database_sync_to_async(table_manager.add_bot_player)(
+                table = await database_sync_to_async(get_table_manager().add_bot_player)(
                     table_id=self.table_id, initiated_by=self.user.pk, options=serializer.validated_data
                 )
                 message = create_table_action_message(table)
             case GameTableAction.REMOVE_BOT:
                 serializer = RemoveBotRequestSerializer(data=data)
                 _ = serializer.is_valid(raise_exception=True)
-                table = await database_sync_to_async(table_manager.remove_bot_player)(
+                table = await database_sync_to_async(get_table_manager().remove_bot_player)(
                     table_id=self.table_id,
                     initiated_by=self.user.pk,
                     seat_number_to_remove=serializer.validated_data["seat_number"],
