@@ -192,6 +192,12 @@ class GameTable:
         self._validate_is_owner(initiated_by)
         return True
 
+    # no side effects, used when restoring game state from events for game replays
+    def get_game_state_after_event(self, game_state: GameState | None, event_to_apply: GameEvent) -> GameState:
+        if game_state is None:
+            game_state = self._engine.init_game_state(self.config.game_config, self.taken_seat_numbers)
+        return self._engine.apply_event(game_state, event_to_apply)
+
     ###  Helper methods ###
 
     def _generate_seat_number(self, choices: set[SeatNumber]) -> SeatNumber:
