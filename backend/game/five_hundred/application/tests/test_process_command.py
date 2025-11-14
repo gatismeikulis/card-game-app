@@ -15,8 +15,8 @@ def test_process_command_runs_until_no_more_events(mocker: pytest_mock.MockerFix
     mock_apply = mocker.patch.object(process_command_module, "apply_event")
     mock_check = mocker.patch.object(process_command_module, "check_for_additional_events")
 
-    e1 = BidMadeEvent(bid=60, made_by=sample_game.active_seat)
-    e2 = BiddingFinishedEvent(bid=60, made_by=sample_game.active_seat)
+    e1 = BidMadeEvent(bid=60, made_by=sample_game.active_seat, seq_number=2)
+    e2 = BiddingFinishedEvent(bid=60, made_by=sample_game.active_seat, seq_number=3)
 
     mock_handle.return_value = e1
     mock_check.side_effect = [e2, None]
@@ -32,7 +32,7 @@ def test_process_command_runs_until_no_more_events(mocker: pytest_mock.MockerFix
 
 
 def test_check_for_additional_events_bidding_finished_if_all_passed(sample_game: FiveHundredGame):
-    event = BidMadeEvent(bid=-1, made_by=sample_game.active_seat)
+    event = BidMadeEvent(bid=-1, made_by=sample_game.active_seat, seq_number=2)
 
     # all seats passed
     seat_infos_updated = {seat: replace(seat_info, bid=-1) for seat, seat_info in sample_game.round.seat_infos.items()}

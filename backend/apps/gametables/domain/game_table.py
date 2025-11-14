@@ -193,9 +193,11 @@ class GameTable:
         return True
 
     # no side effects, used when restoring game state from events for game replays
-    def get_game_state_after_event(self, game_state: GameState | None, event_to_apply: GameEvent) -> GameState:
+    def get_game_state_after_event(self, game_state: GameState | None, event_to_apply: GameEvent | None) -> GameState:
         if game_state is None:
             game_state = self._engine.init_game_state(self.config.game_config, self.taken_seat_numbers)
+        if event_to_apply is None:
+            return game_state
         return self._engine.apply_event(game_state, event_to_apply)
 
     ###  Helper methods ###

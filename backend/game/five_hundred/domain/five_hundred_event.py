@@ -19,6 +19,7 @@ class DeckShuffledEvent(GameEvent):
         return {
             "type": self.type,
             "deck": self.deck.to_dict(),
+            "seq_number": self.seq_number,
         }
 
     @classmethod
@@ -26,6 +27,7 @@ class DeckShuffledEvent(GameEvent):
     def from_dict(cls, data: dict[str, Any]) -> Self:
         return cls(
             deck=FiveHundredDeck.from_dict(data["deck"], FiveHundredCard),
+            seq_number=int(data["seq_number"]),
         )
 
 
@@ -41,6 +43,7 @@ class BidMadeEvent(GameEvent):
             "type": self.type,
             "bid": self.bid,
             "made_by": self.made_by.to_dict(),
+            "seq_number": self.seq_number,
         }
 
     @classmethod
@@ -49,6 +52,7 @@ class BidMadeEvent(GameEvent):
         return cls(
             bid=data["bid"],
             made_by=Seat.from_dict(data["made_by"]),
+            seq_number=int(data["seq_number"]),
         )
 
 
@@ -60,7 +64,12 @@ class BiddingFinishedEvent(GameEvent):
 
     @override
     def to_dict(self) -> dict[str, Any]:
-        return {"type": self.type, "bid": self.bid, "made_by": self.made_by.to_dict() if self.made_by else None}
+        return {
+            "type": self.type,
+            "bid": self.bid,
+            "made_by": self.made_by.to_dict() if self.made_by else None,
+            "seq_number": self.seq_number,
+        }
 
     @classmethod
     @override
@@ -68,6 +77,7 @@ class BiddingFinishedEvent(GameEvent):
         return cls(
             bid=data["bid"],
             made_by=Seat.from_dict(data["made_by"]) if data["made_by"] else None,
+            seq_number=int(data["seq_number"]),
         )
 
 
@@ -77,12 +87,12 @@ class HiddenCardsTakenEvent(GameEvent):
 
     @override
     def to_dict(self) -> dict[str, Any]:
-        return {"type": self.type}
+        return {"type": self.type, "seq_number": self.seq_number}
 
     @classmethod
     @override
     def from_dict(cls, data: dict[str, Any]) -> Self:
-        return cls()
+        return cls(seq_number=int(data["seq_number"]))
 
 
 @dataclass(frozen=True, slots=True)
@@ -92,12 +102,12 @@ class DeclarerGaveUpEvent(GameEvent):
 
     @override
     def to_dict(self) -> dict[str, Any]:
-        return {"type": self.type, "made_by": self.made_by.to_dict()}
+        return {"type": self.type, "made_by": self.made_by.to_dict(), "seq_number": self.seq_number}
 
     @classmethod
     @override
     def from_dict(cls, data: dict[str, Any]) -> Self:
-        return cls(made_by=Seat.from_dict(data["made_by"]))
+        return cls(made_by=Seat.from_dict(data["made_by"]), seq_number=int(data["seq_number"]))
 
 
 @dataclass(frozen=True, slots=True)
@@ -112,6 +122,7 @@ class CardsPassedEvent(GameEvent):
             "type": self.type,
             "card_to_next_seat": self.card_to_next_seat.to_dict(),
             "card_to_prev_seat": self.card_to_prev_seat.to_dict(),
+            "seq_number": self.seq_number,
         }
 
     @classmethod
@@ -120,6 +131,7 @@ class CardsPassedEvent(GameEvent):
         return cls(
             card_to_next_seat=FiveHundredCard.from_dict(data["card_to_next_seat"]),
             card_to_prev_seat=FiveHundredCard.from_dict(data["card_to_prev_seat"]),
+            seq_number=int(data["seq_number"]),
         )
 
 
@@ -135,6 +147,7 @@ class CardPlayedEvent(GameEvent):
             "type": self.type,
             "card": self.card.to_dict(),
             "played_by": self.played_by.to_dict(),
+            "seq_number": self.seq_number,
         }
 
     @classmethod
@@ -143,6 +156,7 @@ class CardPlayedEvent(GameEvent):
         return cls(
             card=FiveHundredCard.from_dict(data["card"]),
             played_by=Seat.from_dict(data["played_by"]),
+            seq_number=int(data["seq_number"]),
         )
 
 
@@ -158,6 +172,7 @@ class MarriagePointsAddedEvent(GameEvent):
             "type": self.type,
             "points": self.points,
             "added_to": self.added_to.to_dict(),
+            "seq_number": self.seq_number,
         }
 
     @classmethod
@@ -166,6 +181,7 @@ class MarriagePointsAddedEvent(GameEvent):
         return cls(
             points=data["points"],
             added_to=Seat.from_dict(data["added_to"]),
+            seq_number=int(data["seq_number"]),
         )
 
 
@@ -181,6 +197,7 @@ class TrickTakenEvent(GameEvent):
             "type": self.type,
             "taken_by": self.taken_by.to_dict(),
             "cards": [card.to_dict() for card in self.cards],
+            "seq_number": self.seq_number,
         }
 
     @classmethod
@@ -189,6 +206,7 @@ class TrickTakenEvent(GameEvent):
         return cls(
             taken_by=Seat.from_dict(data["taken_by"]),
             cards=[FiveHundredCard.from_dict(card_data) for card_data in data["cards"]],
+            seq_number=int(data["seq_number"]),
         )
 
 
@@ -208,6 +226,7 @@ class RoundFinishedEvent(GameEvent):
             "declarer": self.declarer.to_dict() if self.declarer else None,
             "given_up": self.given_up,
             "points": {seat.to_dict(): value for seat, value in self.points.items()},
+            "seq_number": self.seq_number,
         }
 
     @classmethod
@@ -218,6 +237,7 @@ class RoundFinishedEvent(GameEvent):
             declarer=Seat.from_dict(data["declarer"]) if data["declarer"] else None,
             given_up=data["given_up"],
             points={Seat.from_dict(int(seat_num)): value for seat_num, value in data["points"].items()},
+            seq_number=int(data["seq_number"]),
         )
 
 
@@ -233,6 +253,7 @@ class GameEndedEvent(GameEvent):
             "type": self.type,
             "reason": self.reason.value,
             "seat": self.seat.to_dict() if self.seat else None,
+            "seq_number": self.seq_number,
         }
 
     @classmethod
@@ -241,6 +262,7 @@ class GameEndedEvent(GameEvent):
         return cls(
             reason=GameEndingReason.from_string(data["reason"]),
             seat=Seat.from_dict(data["seat"]) if data["seat"] else None,
+            seq_number=int(data["seq_number"]),
         )
 
 

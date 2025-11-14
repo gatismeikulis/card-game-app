@@ -1,3 +1,4 @@
+from dataclasses import replace
 import pytest
 
 from ..finish_round import finish_round
@@ -23,12 +24,14 @@ from ....common.seat import Seat
         "no_point_updates",
     ],
 )
-def test_finish_round_scoring_logic(
+def test_finish_round_logic(
     sample_game: FiveHundredGame,
     points_per_seat_number: dict[int, int],
     expected_summary_per_seat_number: dict[int, int],
 ):
+    sample_game_updated = replace(sample_game, event_number=15)
     points_per_seat = {Seat(seat_number): points for seat_number, points in points_per_seat_number.items()}
-    game = finish_round(sample_game, points_per_seat)
+    game = finish_round(sample_game_updated, points_per_seat)
 
     assert game.summary == {seat: expected_summary_per_seat_number[seat.number] for seat in game.taken_seats}
+    assert game.replay_safe_event_number == sample_game_updated.event_number

@@ -36,7 +36,7 @@ from ..domain.five_hundred_phase import FiveHundredPhase
 def handle_command(game: FiveHundredGame, cmd: FiveHundredCommand) -> FiveHundredEvent:
     match cmd:
         case StartGameCommand():
-            return handle_start_game()
+            return handle_start_game(game)
         case MakeBidCommand(bid=bid):
             return handle_make_bid(game, bid)
         case GiveUpCommand():
@@ -46,12 +46,12 @@ def handle_command(game: FiveHundredGame, cmd: FiveHundredCommand) -> FiveHundre
         case PlayCardCommand(card=card):
             return handle_play_card(game, card)
         case EndGameCommand(reason=reason, seat=seat):
-            return handle_end_game(reason, seat)
+            return handle_end_game(game, reason, seat)
 
 
-def handle_start_game() -> FiveHundredEvent:
+def handle_start_game(game: FiveHundredGame) -> FiveHundredEvent:
     deck = FiveHundredDeck.build()
-    return DeckShuffledEvent(deck=deck)
+    return DeckShuffledEvent(deck=deck, seq_number=game.event_number + 1)
 
 
 def handle_make_bid(game: FiveHundredGame, bid: int) -> FiveHundredEvent:
@@ -77,14 +77,14 @@ def handle_make_bid(game: FiveHundredGame, bid: int) -> FiveHundredEvent:
         if not has_marriage_in_hand(game.active_seats_info.hand):
             raise GameRulesException(detail="Could not make bid: bid is too high for hand without marriage")
 
-    return BidMadeEvent(bid=bid, made_by=game.active_seat)
+    return BidMadeEvent(bid=bid, made_by=game.active_seat, seq_number=game.event_number + 1)
 
 
 def handle_give_up(game: FiveHundredGame) -> FiveHundredEvent:
     if game.round.phase != FiveHundredPhase.FORMING_HANDS:
         raise GameRulesException(detail="Could not give up: not 'forming hands' phase")
 
-    return DeclarerGaveUpEvent(made_by=game.active_seat)
+    return DeclarerGaveUpEvent(made_by=game.active_seat, seq_number=game.event_number + 1)
 
 
 def handle_pass_cards(
@@ -106,6 +106,7 @@ def handle_pass_cards(
     return CardsPassedEvent(
         card_to_next_seat=card_to_next_seat,
         card_to_prev_seat=card_to_prev_seat,
+        seq_number=game.event_number + 1,
     )
 
 
@@ -125,10 +126,10 @@ def handle_play_card(game: FiveHundredGame, card: FiveHundredCard) -> FiveHundre
     if card not in cards_allowed_to_play:
         raise GameRulesException(detail="Could not play card: selected card is not allowed to play")
 
-    return CardPlayedEvent(card=card, played_by=game.active_seat)
+    return CardPlayedEvent(card=card, played_by=game.active_seat, seq_number=game.event_number + 1)
 
 
-def handle_end_game(reason: GameEndingReason, seat: Seat | None) -> FiveHundredEvent:
+def handle_end_game(game: FiveHundredGame, reason: GameEndingReason, seat: Seat | None) -> FiveHundredEvent:
     if reason == GameEndingReason.FINISHED:
         raise GameRulesException(detail="Could not end game: reason must be 'aborted' or 'cancelled'")
-    return GameEndedEvent(reason=reason, seat=seat)
+    return GameEndedEvent(reason=reason, seat=seat, seq_number=game.event_number + 1)

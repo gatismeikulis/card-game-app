@@ -1,3 +1,4 @@
+from dataclasses import replace
 from ..domain.five_hundred_event import (
     DeckShuffledEvent,
     BiddingFinishedEvent,
@@ -27,26 +28,27 @@ from ..logic.take_trick import take_trick
 
 
 def apply_event(game: FiveHundredGame, event: FiveHundredEvent) -> FiveHundredGame:
+    game_updated = replace(game, event_number=event.seq_number)
     match event:
         case DeckShuffledEvent(deck=deck):
-            return deal_cards(game, deck)
+            return deal_cards(game_updated, deck)
         case BidMadeEvent(bid=bid):
-            return make_bid(game, bid)
+            return make_bid(game_updated, bid)
         case BiddingFinishedEvent():
-            return finish_bidding(game)
+            return finish_bidding(game_updated)
         case HiddenCardsTakenEvent():
-            return take_hidden_cards(game)
+            return take_hidden_cards(game_updated)
         case DeclarerGaveUpEvent():
-            return give_up(game)
+            return give_up(game_updated)
         case CardsPassedEvent(card_to_next_seat=card_to_next_seat, card_to_prev_seat=card_to_prev_seat):
-            return pass_cards(game, card_to_next_seat, card_to_prev_seat)
+            return pass_cards(game_updated, card_to_next_seat, card_to_prev_seat)
         case CardPlayedEvent(card=card):
-            return play_card(game, card)
+            return play_card(game_updated, card)
         case MarriagePointsAddedEvent(points=points, added_to=added_to):
-            return add_marriage_points(game, points, added_to)
+            return add_marriage_points(game_updated, points, added_to)
         case TrickTakenEvent(taken_by=taken_by):
-            return take_trick(game, taken_by)
+            return take_trick(game_updated, taken_by)
         case RoundFinishedEvent(points=points):
-            return finish_round(game, points_per_seat=points)
+            return finish_round(game_updated, points_per_seat=points)
         case GameEndedEvent(reason=reason, seat=seat):
-            return end_game(game, reason=reason, blamed_seat=seat)
+            return end_game(game_updated, reason=reason, blamed_seat=seat)

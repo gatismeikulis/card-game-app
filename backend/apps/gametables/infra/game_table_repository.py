@@ -67,25 +67,18 @@ class GameTableRepository(IGameTableRepository):
 
             # appending events logic
             rows = []
-            current_last_event_sequence_number = db_game_table.last_event_sequence_number or 0
-            running_last_event_sequence_number: int = current_last_event_sequence_number
-            turn_number = game_table.game_state.turn_number
 
-            for i, event in enumerate(events, start=current_last_event_sequence_number + 1):
+            for event in events:
                 rows.append(
-                    GameEventModel(
-                        game_table=db_game_table, sequence_number=i, data=event.to_dict(), turn_number=turn_number
-                    )
+                    GameEventModel(game_table=db_game_table, sequence_number=event.seq_number, data=event.to_dict())
                 )
-                running_last_event_sequence_number = i
 
             _ = GameEventModel.objects.bulk_create(rows)
 
             db_game_table.snapshot = game_table.to_dict()
             db_game_table.status = game_table.status.value
             db_game_table.updated_at = timezone.now()
-            db_game_table.last_event_sequence_number = running_last_event_sequence_number
-            db_game_table.save(update_fields=["snapshot", "status", "updated_at", "last_event_sequence_number"])
+            db_game_table.save(update_fields=["snapshot", "status", "updated_at"])
 
             return events, game_table
 

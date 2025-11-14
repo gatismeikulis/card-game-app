@@ -63,6 +63,7 @@ def check_for_additional_events(game: FiveHundredGame, last_event: FiveHundredEv
                 return BiddingFinishedEvent(
                     bid=game.round.highest_bid[1] if game.round.highest_bid else None,
                     made_by=game.round.highest_bid[0] if game.round.highest_bid else None,
+                    seq_number=game.event_number + 1,
                 )
             return None
 
@@ -70,10 +71,14 @@ def check_for_additional_events(game: FiveHundredGame, last_event: FiveHundredEv
             if game.round.highest_bid is None:
                 points_per_seat = get_round_ending_points_per_seat(game, has_declarer_given_up=False)
                 return RoundFinishedEvent(
-                    round_number=game.round.round_number, declarer=None, given_up=False, points=points_per_seat
+                    round_number=game.round.round_number,
+                    declarer=None,
+                    given_up=False,
+                    points=points_per_seat,
+                    seq_number=game.event_number + 1,
                 )
             else:
-                return HiddenCardsTakenEvent()
+                return HiddenCardsTakenEvent(seq_number=game.event_number + 1)
 
         case DeclarerGaveUpEvent():
             points_per_seat = get_round_ending_points_per_seat(game, has_declarer_given_up=True)
@@ -82,6 +87,7 @@ def check_for_additional_events(game: FiveHundredGame, last_event: FiveHundredEv
                 declarer=game.round.highest_bid[0] if game.round.highest_bid else None,
                 given_up=True,
                 points=points_per_seat,
+                seq_number=game.event_number + 1,
             )
 
         case CardPlayedEvent(played_by=card_played_by, card=played_card):
@@ -99,11 +105,13 @@ def check_for_additional_events(game: FiveHundredGame, last_event: FiveHundredEv
                         return MarriagePointsAddedEvent(
                             points=LARGE_MARRIAGE_POINTS,
                             added_to=card_played_by,
+                            seq_number=game.event_number + 1,
                         )
                     elif played_card.suit != game.round.trump_suit and game.round.is_marriage_announced:
                         return MarriagePointsAddedEvent(
                             points=SMALL_MARRIAGE_POINTS,
                             added_to=card_played_by,
+                            seq_number=game.event_number + 1,
                         )
 
             # if 3rd card played for this trick, then trick is finished
@@ -114,7 +122,7 @@ def check_for_additional_events(game: FiveHundredGame, last_event: FiveHundredEv
                     trick_cards, game.round.required_suit, game.round.trump_suit
                 )
                 trick_winning_seat = next(seat for seat, card in cards_on_board.items() if card == trick_winning_card)
-                return TrickTakenEvent(taken_by=trick_winning_seat, cards=trick_cards)
+                return TrickTakenEvent(taken_by=trick_winning_seat, cards=trick_cards, seq_number=game.event_number + 1)
             return None
 
         case TrickTakenEvent():
@@ -126,18 +134,19 @@ def check_for_additional_events(game: FiveHundredGame, last_event: FiveHundredEv
                     declarer=game.round.highest_bid[0] if game.round.highest_bid else None,
                     given_up=False,
                     points=points_per_seat,
+                    seq_number=game.event_number + 1,
                 )
             return None
 
         case RoundFinishedEvent():
             if any(points <= 0 for points in game.summary.values()):
-                return GameEndedEvent(reason=GameEndingReason.FINISHED, seat=None)
+                return GameEndedEvent(reason=GameEndingReason.FINISHED, seat=None, seq_number=game.event_number + 1)
             if all(points >= NOT_ALLOWED_TO_BID_THRESHOLD for points in game.summary.values()):
-                return GameEndedEvent(reason=GameEndingReason.FINISHED, seat=None)
+                return GameEndedEvent(reason=GameEndingReason.FINISHED, seat=None, seq_number=game.event_number + 1)
             if game.round.round_number >= game.game_config.max_rounds:
-                return GameEndedEvent(reason=GameEndingReason.FINISHED, seat=None)
+                return GameEndedEvent(reason=GameEndingReason.FINISHED, seat=None, seq_number=game.event_number + 1)
             deck = FiveHundredDeck.build()
-            return DeckShuffledEvent(deck=deck)
+            return DeckShuffledEvent(deck=deck, seq_number=game.event_number + 1)
 
         case _:
             return None

@@ -14,6 +14,8 @@ class GameState(ABC):
     game_config: GameConfig
     taken_seats: frozenset[Seat]
     turn_number: int  # total turns made in the game so far
+    event_number: int  # total events processed so far
+    replay_safe_event_number: int  # event number to which we can replay game history without exposing private details
 
     @classmethod
     @abstractmethod

@@ -45,4 +45,5 @@ def end_game(game: FiveHundredGame, reason: GameEndingReason, blamed_seat: Seat 
         game,
         round=round_updated,
         ending=GameEnding(winners=winners, losers=losers, reason=reason, point_differences=point_differences),
+        replay_safe_event_number=game.event_number,
     )

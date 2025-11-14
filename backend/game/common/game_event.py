@@ -6,6 +6,7 @@ from typing import ClassVar, Any, Self
 @dataclass(frozen=True, slots=True)
 class GameEvent(ABC):
     type: ClassVar[str]  # event kind/type
+    seq_number: int  # sequence number of the event
 
     @abstractmethod
     def to_dict(self) -> dict[str, Any]: ...

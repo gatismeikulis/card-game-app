@@ -65,7 +65,7 @@ def test_handle_make_bid_command_happy_path(sample_game: FiveHundredGame):
     game_updated = replace(sample_game, round=round_updated)
     cmd = MakeBidCommand(bid=round_updated.highest_bid[1] + 5 if round_updated.highest_bid else 105)
     event = handle_command(game_updated, cmd)
-    assert event == BidMadeEvent(bid=cmd.bid, made_by=sample_game.active_seat)
+    assert event == BidMadeEvent(bid=cmd.bid, made_by=sample_game.active_seat, seq_number=game_updated.event_number + 1)
 
 
 def test_handle_give_up_command_incorrect_phase(sample_game: FiveHundredGame):
@@ -79,7 +79,7 @@ def test_handle_give_up_command_happy_path(sample_game: FiveHundredGame):
     game_updated = replace(sample_game, round=round_updated)
     cmd = GiveUpCommand()
     event = handle_command(game_updated, cmd)
-    assert event == DeclarerGaveUpEvent(made_by=sample_game.active_seat)
+    assert event == DeclarerGaveUpEvent(made_by=sample_game.active_seat, seq_number=game_updated.event_number + 1)
 
 
 def test_handle_pass_cards_command_incorrect_phase(sample_game: FiveHundredGame):
@@ -114,7 +114,11 @@ def test_handle_pass_cards_command_happy_path(sample_game: FiveHundredGame):
     game_updated = replace(sample_game, round=round_updated)
     cmd = PassCardsCommand(card_to_next_seat=card_to_next_seat, card_to_prev_seat=card_to_prev_seat)
     event = handle_command(game_updated, cmd)
-    assert event == CardsPassedEvent(card_to_next_seat=cmd.card_to_next_seat, card_to_prev_seat=cmd.card_to_prev_seat)
+    assert event == CardsPassedEvent(
+        card_to_next_seat=cmd.card_to_next_seat,
+        card_to_prev_seat=cmd.card_to_prev_seat,
+        seq_number=game_updated.event_number + 1,
+    )
 
 
 def test_handle_play_card_command_incorrect_phase(sample_game: FiveHundredGame):
@@ -144,14 +148,20 @@ def test_handle_play_card_command_happy_path(sample_game: FiveHundredGame):
     game_updated = replace(sample_game, round=round_updated)
     cmd = PlayCardCommand(card=card_to_play)
     event = handle_command(game_updated, cmd)
-    assert event == CardPlayedEvent(card=card_to_play, played_by=sample_game.active_seat)
+    assert event == CardPlayedEvent(
+        card=card_to_play, played_by=sample_game.active_seat, seq_number=game_updated.event_number + 1
+    )
 
 
 @pytest.mark.parametrize(
     argnames="ending_reason, blamed_seat, expected_event",
     argvalues=[
-        (GameEndingReason.ABORTED, Seat(1), GameEndedEvent(reason=GameEndingReason.ABORTED, seat=Seat(1))),
-        (GameEndingReason.CANCELLED, None, GameEndedEvent(reason=GameEndingReason.CANCELLED, seat=None)),
+        (
+            GameEndingReason.ABORTED,
+            Seat(1),
+            GameEndedEvent(reason=GameEndingReason.ABORTED, seat=Seat(1), seq_number=1),
+        ),
+        (GameEndingReason.CANCELLED, None, GameEndedEvent(reason=GameEndingReason.CANCELLED, seat=None, seq_number=1)),
     ],
     ids=["aborted", "cancelled"],
 )

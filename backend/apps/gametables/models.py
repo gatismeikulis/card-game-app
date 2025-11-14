@@ -22,7 +22,6 @@ class GameTableModel(Model):
     owner = ForeignKey(User, on_delete=SET_NULL, null=True)
     created_at = DateTimeField(auto_now_add=True)
     updated_at = DateTimeField(auto_now=True)
-    last_event_sequence_number = IntegerField(default=0)
 
     snapshot = JSONField()  # serialized GameTable instance, snapshot
 
@@ -72,7 +71,6 @@ class GameConfigModel(Model):
 class GameEventModel(Model):
     game_table = ForeignKey(GameTableModel, on_delete=CASCADE, related_name="game_events")
     sequence_number = IntegerField()
-    turn_number = IntegerField()  # turn number is a number of turn in the game, it is not the same as sequence_number since one command/turn can produce multiple events
     data = JSONField()
     created_at = DateTimeField(auto_now_add=True)
     schema_version = IntegerField(default=1)

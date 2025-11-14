@@ -24,25 +24,30 @@ import pytest
 @pytest.mark.parametrize(
     argnames="event_class, kwargs",
     argvalues=[
-        (DeckShuffledEvent, {"deck": FiveHundredDeck.from_card_strings(["9H", "JH", "QH", "KH", "TH", "AH"])}),
-        (BidMadeEvent, {"bid": 100, "made_by": Seat(1)}),
-        (BiddingFinishedEvent, {"bid": None, "made_by": None}),
-        (BiddingFinishedEvent, {"bid": 100, "made_by": Seat(1)}),
-        (HiddenCardsTakenEvent, {}),
+        (
+            DeckShuffledEvent,
+            {"deck": FiveHundredDeck.from_card_strings(["9H", "JH", "QH", "KH", "TH", "AH"]), "seq_number": 1},
+        ),
+        (BidMadeEvent, {"bid": 100, "made_by": Seat(1), "seq_number": 1}),
+        (BiddingFinishedEvent, {"bid": None, "made_by": None, "seq_number": 1}),
+        (BiddingFinishedEvent, {"bid": 100, "made_by": Seat(1), "seq_number": 1}),
+        (HiddenCardsTakenEvent, {"seq_number": 1}),
         (
             CardsPassedEvent,
             {
                 "card_to_next_seat": FiveHundredCard(Suit.HEART, Rank.ACE),
                 "card_to_prev_seat": FiveHundredCard(Suit.CLUB, Rank.KING),
+                "seq_number": 1,
             },
         ),
-        (CardPlayedEvent, {"card": FiveHundredCard(Suit.DIAMOND, Rank.QUEEN), "played_by": Seat(2)}),
-        (MarriagePointsAddedEvent, {"points": 10, "added_to": Seat(3)}),
+        (CardPlayedEvent, {"card": FiveHundredCard(Suit.DIAMOND, Rank.QUEEN), "played_by": Seat(2), "seq_number": 1}),
+        (MarriagePointsAddedEvent, {"points": 10, "added_to": Seat(3), "seq_number": 1}),
         (
             TrickTakenEvent,
             {
                 "taken_by": Seat(4),
                 "cards": [FiveHundredCard(Suit.SPADE, Rank.JACK), FiveHundredCard(Suit.CLUB, Rank.TEN)],
+                "seq_number": 1,
             },
         ),
         (
@@ -52,6 +57,7 @@ import pytest
                 "declarer": Seat(1),
                 "given_up": False,
                 "points": {Seat(1): 100, Seat(2): -35, Seat(3): 15},
+                "seq_number": 1,
             },
         ),
         (
@@ -61,15 +67,22 @@ import pytest
                 "declarer": Seat(1),
                 "given_up": True,
                 "points": {Seat(1): 120, Seat(2): -50, Seat(3): -50},
+                "seq_number": 1,
             },
         ),
         (
             RoundFinishedEvent,
-            {"round_number": 3, "declarer": None, "given_up": False, "points": {Seat(1): 0, Seat(2): 0, Seat(3): 0}},
+            {
+                "round_number": 3,
+                "declarer": None,
+                "given_up": False,
+                "points": {Seat(1): 0, Seat(2): 0, Seat(3): 0},
+                "seq_number": 1,
+            },
         ),
-        (GameEndedEvent, {"reason": GameEndingReason.FINISHED, "seat": None}),
-        (GameEndedEvent, {"reason": GameEndingReason.ABORTED, "seat": Seat(2)}),
-        (GameEndedEvent, {"reason": GameEndingReason.CANCELLED, "seat": None}),
+        (GameEndedEvent, {"reason": GameEndingReason.FINISHED, "seat": None, "seq_number": 1}),
+        (GameEndedEvent, {"reason": GameEndingReason.ABORTED, "seat": Seat(2), "seq_number": 1}),
+        (GameEndedEvent, {"reason": GameEndingReason.CANCELLED, "seat": None, "seq_number": 1}),
     ],
     ids=[
         "deck_shuffled",
