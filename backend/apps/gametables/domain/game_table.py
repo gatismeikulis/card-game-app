@@ -78,6 +78,10 @@ class GameTable:
     def replay_safe_game_event_number(self) -> int:
         return self._game_state.replay_safe_event_number if self._game_state else -1
 
+    @property
+    def is_game_ended(self) -> bool:
+        return self.status in {TableStatus.FINISHED, TableStatus.ABORTED, TableStatus.CANCELLED}
+
     def add_human_player(self, user_id: int, screen_name: str, preferred_seat_number: SeatNumber | None = None) -> None:
         self._validate_status(acceptable_statuses={TableStatus.NOT_STARTED})
         self._validate_has_free_seats()

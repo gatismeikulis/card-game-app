@@ -214,7 +214,7 @@ class GameTableManager:
             start_event_number: int | None = raw_game_state["event_number"] + 1 if raw_game_state else None
 
             logger.info(
-                f"Creating and storing game state snapshots for table {table.id} from up to event number {up_to_event_number}"
+                f"Creating and storing game state snapshots for table {table.id} from event number {start_event_number or 0} up to event number {up_to_event_number}"
             )
 
             db_events = self._game_event_repository.find_many(table.id, start_event_number, up_to_event_number)

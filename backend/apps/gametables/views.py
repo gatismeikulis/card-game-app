@@ -8,7 +8,7 @@ from rest_framework.permissions import AllowAny, BasePermission, IsAuthenticated
 from rest_framework.pagination import LimitOffsetPagination
 import logging
 
-# from .tasks import create_game_state_snapshots
+from .tasks import create_all_game_state_snapshots_for_table
 
 from .serializers import (
     AddBotRequestSerializer,
@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 class GameTableViewSet(ViewSet):
     @override
     def get_permissions(self) -> list[BasePermission]:
-        if self.action in ["list", "retrieve", "get_game_history"]:
+        if self.action in ["list", "retrieve", "get_game_history", "create_game_history"]:
             return [AllowAny()]
         else:
             return [IsAuthenticated()]
@@ -193,10 +193,10 @@ class GameTableViewSet(ViewSet):
 
         return Response({}, status=status.HTTP_200_OK)
 
-    @action(detail=True, methods=["get"], url_path="history")
+    @action(detail=True, methods=["get"], url_path="game-history")
     def get_game_history(self, request: Request, pk: str) -> Response:
         """
-        GET /{table_id}/history?event=100&turn=5
+        GET /{table_id}/game-history?event=12
         """
         serializer = HistoryRequestQuerySerializer(data=request.query_params)
         _ = serializer.is_valid(raise_exception=True)
@@ -206,3 +206,14 @@ class GameTableViewSet(ViewSet):
         )
 
         return Response(data={"game_state": snapshot}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=["POST"], url_path="create-game-history")
+    def create_game_history(self, request: Request, pk: str) -> Response:
+        """
+        Triggers background task to create all game state snapshots for the table
+        POST /{table_id}/create-game-history/
+        """
+
+        _ = create_all_game_state_snapshots_for_table.send(pk)
+
+        return Response(data={}, status=status.HTTP_202_ACCEPTED)
