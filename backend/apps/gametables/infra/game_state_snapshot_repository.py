@@ -1,9 +1,13 @@
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 import json
+import logging
 from typing import Any, override
 from redis import Redis
 
+from core.exceptions.infrastructure_exception import InfrastructureException
 from ..application.igame_state_snapshot_repository import IGameStateSnapshotRepository
+
+logger = logging.getLogger(__name__)
 
 
 class GameStateSnapshotRepository(IGameStateSnapshotRepository):
@@ -12,48 +16,60 @@ class GameStateSnapshotRepository(IGameStateSnapshotRepository):
         self.prefix: str = "game_state_snapshot"
         self.ttl_in_seconds: int = 60 * 60 * 6  # 6 hours
 
-    def _make_key(self, table_id: str, turn_number: int, event_number: int) -> str:
-        return f"{self.prefix}:{table_id}:{turn_number}:{event_number}"
+    def _make_key(self, table_id: str, event_number: int) -> str:
+        return f"{self.prefix}:{table_id}:{event_number}"
 
     @override
-    def get(self, table_id: str, turn_number: int | None, event_number: int | None) -> dict[str, Any] | None:
-        sets = [f"index:table_id:{table_id}"]
+    def get_exact_or_nearest_snapshot_data(self, table_id: str, event_number: int = 0) -> Mapping[str, Any] | None:
+        try:
+            # attempt to get exact snapshot
+            exact_key = self._make_key(table_id, event_number)
+            raw_exact_snapshot = self.redis.get(exact_key)
 
-        if turn_number is not None:
-            sets.append(f"index:turn_number:{turn_number}")
-        elif event_number is not None:
-            sets.append(f"index:event_number:{event_number}")
-        else:
-            sets.append("index:event_number:0")
+            if raw_exact_snapshot:
+                return {
+                    "is_exact": True,
+                    "snapshot": json.loads(raw_exact_snapshot),
+                }
 
-        # Get intersection of all sets (keys that match all criteria)
-        keys = self.redis.sinter(sets)
+            # attempt to find a key for neareast snapshot to the desired one
+            zset_key = f"index:zset:table_id:{table_id}"
+            nearest_keys = self.redis.zrevrangebyscore(name=zset_key, max=event_number, min="-inf", start=0, num=1)
 
-        if not keys:
-            return None
+            if not nearest_keys:
+                return None
 
-        # in case filtering by turn_number, there can be multiple snapshots with the same turn_number, so we need to find the one with the smallest event_number
-        key = min(keys, key=lambda k: int(int(k.decode().rsplit(":", 1)[-1])))
+            nearest_key = nearest_keys[0].decode() if isinstance(nearest_keys[0], bytes) else nearest_keys[0]
+            raw_nearest_snapshot = self.redis.get(nearest_key)
 
-        snapshot = self.redis.get(key)
+            if not raw_nearest_snapshot:
+                logger.error(f"Could not find game_state snapshot for table {table_id} and event number {event_number}")
+                return None
 
-        return json.loads(snapshot) if snapshot else None
+            return {"is_exact": False, "snapshot": json.loads(raw_nearest_snapshot)}
+
+        except Exception as e:
+            logger.error(f"Unexpected error getting snapshot for table {table_id}, event {event_number}", exc_info=True)
+            raise InfrastructureException(detail=f"Unexpected error: {e}", reason="unexpected_error") from e
 
     @override
-    def store(self, snapshots: Sequence[dict[str, Any]]) -> None:
-        if not snapshots:
+    def store(self, table_id: str, raw_snapshots: Sequence[dict[str, Any]]) -> None:
+        if not raw_snapshots:
             return
 
         # batch mode
-        with self.redis.pipeline(transaction=False) as pipe:
-            for snap in snapshots:
-                key = self._make_key(snap["table_id"], snap["turn_number"], snap["event_number"])
-                _ = pipe.set(key, json.dumps(snap["payload"]), ex=self.ttl_in_seconds)
-                _ = pipe.sadd(f"index:table_id:{snap['table_id']}", key)
-                _ = pipe.sadd(f"index:turn_number:{snap['turn_number']}", key)
-                _ = pipe.sadd(f"index:event_number:{snap['event_number']}", key)
-                _ = pipe.expire(f"index:table_id:{snap['table_id']}", self.ttl_in_seconds)
-                _ = pipe.expire(f"index:turn_number:{snap['turn_number']}", self.ttl_in_seconds)
-                _ = pipe.expire(f"index:event_number:{snap['event_number']}", self.ttl_in_seconds)
+        try:
+            with self.redis.pipeline(transaction=False) as pipe:
+                for data in raw_snapshots:
+                    key = self._make_key(table_id, event_number=data["event_number"])
+                    _ = pipe.set(key, json.dumps(data), ex=self.ttl_in_seconds)
 
-            _ = pipe.execute()
+                    # add zset index so we can find the nearest snapshot to desired one by event_number
+                    zset_key = f"index:zset:table_id:{table_id}"
+                    _ = pipe.zadd(zset_key, {key: data["event_number"]})
+                    _ = pipe.expire(zset_key, self.ttl_in_seconds)
+
+                _ = pipe.execute()
+        except Exception as e:
+            logger.error(f"Unexpected error storing snapshots for table {table_id}", exc_info=True)
+            raise InfrastructureException(detail=f"Unexpected error: {e}", reason="unexpected_error") from e

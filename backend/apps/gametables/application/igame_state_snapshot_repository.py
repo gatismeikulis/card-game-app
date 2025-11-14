@@ -1,16 +1,16 @@
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from typing import Any, Protocol
 
 
 class IGameStateSnapshotRepository(Protocol):
-    def get(self, table_id: str, turn_number: int | None, event_number: int | None) -> dict[str, Any] | None:
-        """
-        Gets serialized game-state snapshot for specific table based on turn (priority) or event number (secondary).
-        If none provided, returns initial game state snapshot.
+    def get_exact_or_nearest_snapshot_data(self, table_id: str, event_number: int = 0) -> Mapping[str, Any] | None:
+        f"""
+        Gets serialized game-state snapshot and metadata for specific table based on event number
+        Returns: {"is_exact": bool, "snapshot": dict[str, Any]}
         """
         ...
 
-    def store(self, snapshots: Sequence[dict[str, Any]]) -> None:
+    def store(self, table_id: str, raw_snapshots: Sequence[dict[str, Any]]) -> None:
         """
         Stores serialized game-state snapshots in bulk.
         """

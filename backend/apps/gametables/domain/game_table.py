@@ -74,6 +74,10 @@ class GameTable:
     def taken_seat_numbers(self) -> frozenset[SeatNumber]:
         return frozenset({player.seat_number for player in self._players})
 
+    @property
+    def replay_safe_game_event_number(self) -> int:
+        return self._game_state.replay_safe_event_number if self._game_state else -1
+
     def add_human_player(self, user_id: int, screen_name: str, preferred_seat_number: SeatNumber | None = None) -> None:
         self._validate_status(acceptable_statuses={TableStatus.NOT_STARTED})
         self._validate_has_free_seats()
@@ -193,7 +197,9 @@ class GameTable:
         return True
 
     # no side effects, used when restoring game state from events for game replays
-    def get_game_state_after_event(self, game_state: GameState | None, event_to_apply: GameEvent | None) -> GameState:
+    def get_initial_or_after_event_game_state(
+        self, game_state: GameState | None, event_to_apply: GameEvent | None
+    ) -> GameState:
         if game_state is None:
             game_state = self._engine.init_game_state(self.config.game_config, self.taken_seat_numbers)
         if event_to_apply is None:

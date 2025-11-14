@@ -1,7 +1,9 @@
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from typing import Any, final
 import uuid
+import logging
 
+from core.exceptions.infrastructure_exception import InfrastructureException
 from core.exceptions.app_exception import AppException
 from .igame_event_repository import IGameEventRepository
 from .igame_table_repository import IGameTableRepository
@@ -11,13 +13,18 @@ from ..registries.game_config_parsers import get_game_config_parser
 from ..registries.bot_strategies import get_bot_strategy
 from ..registries.game_command_parsers import get_command_parser
 from ..registries.game_engines import get_game_engine
+from ..registries.game_classes import get_game_class
+from ..registries.game_event_parsers import get_game_event_parser
 from apps.users.models import User
 from game.bot_strategy_kind import BotStrategyKind
 from game.common.game_event import GameEvent
 from game.common.seat import SeatNumber
 from game.game_name import GameName
+from game.common.game_state import GameState
 from ..domain.game_table import GameTable
 from ..domain.game_table_config import GameTableConfig
+
+logger = logging.getLogger(__name__)
 
 
 @final
@@ -176,7 +183,73 @@ class GameTableManager:
         except AppException as e:
             raise e.with_context(table_id=table_id, user_id=initiated_by, operation="abort_game")
 
-    def get_game_state_snapshot(
-        self, table_id: str, turn_number: int | None, event_number: int | None
-    ) -> dict[str, Any] | None:
-        return self._game_state_snapshot_repository.get(table_id, turn_number, event_number)
+    def get_game_state_snapshot(self, table_id: str, event_number: int) -> Mapping[str, Any]:
+        try:
+            data = self._game_state_snapshot_repository.get_exact_or_nearest_snapshot_data(table_id, event_number)
+
+            if data and data["is_exact"]:
+                logger.info(f"Exact snapshot found for table {table_id} and event number {event_number}")
+                return data["snapshot"]
+
+            table = self._game_table_repository.find_by_id(table_id)
+
+            if table.replay_safe_game_event_number < event_number:
+                raise AppException(
+                    detail="Event number is greater than the replay safe event number", reason="event_number_too_large"
+                )
+
+            return self.create_and_store_game_state_snapshots(
+                table, raw_initial_game_state=data["snapshot"] if data else None, up_to_event_number=event_number
+            )
+
+        except AppException as e:
+            raise e.with_context(table_id=table_id, event_number=event_number, operation="get_game_state_snapshot")
+
+    def create_and_store_game_state_snapshots(
+        self, table: GameTable, raw_initial_game_state: dict[str, Any] | None, up_to_event_number: int | None
+    ) -> Mapping[str, Any]:
+        try:
+            raw_game_state: dict[str, Any] | None = raw_initial_game_state
+            game_state: GameState | None = None
+            start_event_number: int | None = raw_game_state["event_number"] + 1 if raw_game_state else None
+
+            logger.info(
+                f"Creating and storing game state snapshots for table {table.id} from up to event number {up_to_event_number}"
+            )
+
+            db_events = self._game_event_repository.find_many(table.id, start_event_number, up_to_event_number)
+
+            if raw_game_state:
+                game_state = get_game_class(table.config.game_name).from_dict(raw_game_state)
+
+            data_to_store: list[dict[str, Any]] = []
+
+            game_event_parser = get_game_event_parser(table.config.game_name)
+
+            if not game_state:
+                game_state = table.get_initial_or_after_event_game_state(None, None)
+                raw_game_state = game_state.to_dict()
+                data_to_store.append(raw_game_state)
+
+            db_events = self._game_event_repository.find_many(table.id, start_event_number, up_to_event_number)
+
+            for db_event in db_events:
+                event = game_event_parser.from_dict(db_event.data)
+                game_state = table.get_initial_or_after_event_game_state(game_state=game_state, event_to_apply=event)
+                raw_game_state = game_state.to_dict()
+
+                if raw_game_state["event_number"] != event.seq_number:
+                    logger.error(f"Event number mismatch: {raw_game_state['event_number']} != {event.seq_number}")
+                    raise InfrastructureException(detail="Event number mismatch", reason="event_number_mismatch")
+
+                data_to_store.append(raw_game_state)
+
+            self._game_state_snapshot_repository.store(table.id, data_to_store)
+
+            if not raw_game_state:
+                raise AppException(detail="Could not restore game state from events", reason="game_state_not_restored")
+
+            return raw_game_state
+
+        except AppException as e:
+            raise e.with_context(table_id=table.id, operation="create_and_store_game_state_snapshots")

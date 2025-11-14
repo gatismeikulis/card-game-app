@@ -6,8 +6,9 @@ from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework.permissions import AllowAny, BasePermission, IsAuthenticated
 from rest_framework.pagination import LimitOffsetPagination
+import logging
 
-from .tasks import create_game_state_snapshots
+# from .tasks import create_game_state_snapshots
 
 from .serializers import (
     AddBotRequestSerializer,
@@ -20,6 +21,8 @@ from .serializers import (
     TakeRegularTurnRequestSerializer,
 )
 from .dependencies import get_game_table_repository, get_table_manager
+
+logger = logging.getLogger(__name__)
 
 
 class GameTableViewSet(ViewSet):
@@ -199,12 +202,7 @@ class GameTableViewSet(ViewSet):
         _ = serializer.is_valid(raise_exception=True)
 
         snapshot = get_table_manager().get_game_state_snapshot(
-            table_id=pk, turn_number=serializer.validated_data["turn"], event_number=serializer.validated_data["event"]
+            table_id=pk, event_number=serializer.validated_data["event"]
         )
 
-        # if not availabe, trigger snapshot creation
-        if snapshot:
-            return Response(data={"game_state": snapshot}, status=status.HTTP_200_OK)
-        else:
-            _ = create_game_state_snapshots.send(pk)
-            return Response(status=status.HTTP_202_ACCEPTED)
+        return Response(data={"game_state": snapshot}, status=status.HTTP_200_OK)

@@ -7,6 +7,7 @@ from .domain.five_hundred_event import (
     BidMadeEvent,
     BiddingFinishedEvent,
     DeckShuffledEvent,
+    DeclarerGaveUpEvent,
     HiddenCardsTakenEvent,
     CardsPassedEvent,
     CardPlayedEvent,
@@ -29,6 +30,8 @@ class FiveHundredEventParser(GameEventParser):
                 return BidMadeEvent.from_dict(data)
             case "bidding_finished":
                 return BiddingFinishedEvent.from_dict(data)
+            case "declarer_gave_up":
+                return DeclarerGaveUpEvent.from_dict(data)
             case "hidden_cards_taken":
                 return HiddenCardsTakenEvent.from_dict(data)
             case "cards_passed":

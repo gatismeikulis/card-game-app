@@ -97,8 +97,7 @@ class AbortGameRequestSerializer(Serializer[dict[str, Any]]):
 
 
 class HistoryRequestQuerySerializer(Serializer[dict[str, int]]):
-    event: IntegerField | None = IntegerField(required=False, min_value=0, default=None)
-    turn: IntegerField | None = IntegerField(required=False, min_value=0, default=None)
+    event: IntegerField = IntegerField(required=True, min_value=0)
 
 
 class CommaSeparatedMultipleChoiceField(MultipleChoiceField):
